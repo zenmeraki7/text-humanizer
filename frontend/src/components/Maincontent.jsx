@@ -660,34 +660,171 @@ const MagicWandIcon = () => (
   </svg>
 );
 
+const AnalyzeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M7.07,18.28C7.5,17.38 8.12,16.5 8.91,15.77L10.32,17.18C9.89,17.96 9.16,18.68 8.28,19.25C7.86,18.83 7.46,18.57 7.07,18.28M16.93,18.28C16.54,18.57 16.14,18.83 15.72,19.25C14.84,18.68 14.11,17.96 13.68,17.18L15.09,15.77C15.88,16.5 16.5,17.38 16.93,18.28M12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10M7.07,5.72C7.46,5.43 7.86,5.17 8.28,4.75C9.16,5.32 9.89,6.04 10.32,6.82L8.91,8.23C8.12,7.5 7.5,6.62 7.07,5.72M16.93,5.72C16.5,6.62 15.88,7.5 15.09,8.23L13.68,6.82C14.11,6.04 14.84,5.32 15.72,4.75C16.14,5.17 16.54,5.43 16.93,5.72Z" />
+  </svg>
+);
+
 export default function MainContent() {
   const [inputText, setInputText] = useState("");
   const [outputText, setOutputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [analysisData, setAnalysisData] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
-  const handleTransform = () => {
+  // API base URL - your backend is running on localhost:8000
+  const API_BASE_URL = "http://localhost:8000";
+
+  const analyzeText = async () => {
     if (!inputText.trim()) return;
+    
+    setAnalyzing(true);
+    setError("");
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: inputText }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAnalysisData(data);
+      console.log('Analysis result:', data);
+    } catch (err) {
+      console.error('Error analyzing text:', err);
+      setError('Failed to analyze text. Please check if the backend is running.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleTransform = async () => {
+    if (!inputText.trim()) return;
+    
     setLoading(true);
-    setTimeout(() => {
-      const transformed = inputText
-        .replace(/it is important to note that/gi, "what's interesting is")
-        .replace(/furthermore/gi, "plus")
-        .replace(/in conclusion/gi, "bottom line")
-        .replace(/utilize/gi, "use")
-        .replace(/demonstrate/gi, "show")
-        .replace(/facilitate/gi, "help")
-        .replace(/implement/gi, "put in place")
-        .replace(/However,/gi, "But");
-      setOutputText(transformed || "Your humanized text will appear here...");
+    setError("");
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/humanize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: inputText }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setOutputText(data.humanized_text);
+      console.log('Humanization result:', data);
+    } catch (err) {
+      console.error('Error calling API:', err);
+      setError('Failed to humanize text. Please check if the backend is running on http://localhost:8000');
+      // No fallback - we want to know if the API isn't working
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(outputText);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    try {
+      await navigator.clipboard.writeText(outputText);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([outputText], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "humanized.txt";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
+  const renderAnalysisResults = () => {
+    if (!analysisData) return null;
+
+    const getScoreColor = (score) => {
+      if (score >= 70) return '#ef4444'; // red
+      if (score >= 50) return '#f97316'; // orange
+      if (score >= 30) return '#eab308'; // yellow
+      return '#22c55e'; // green
+    };
+
+    return (
+      <div style={{
+        background: '#f8fafc',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '16px',
+        margin: '16px 0',
+        fontSize: '14px'
+      }}>
+        <h4 style={{ margin: '0 0 12px 0', color: '#1e293b' }}>Analysis Results</h4>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: `conic-gradient(${getScoreColor(analysisData.ai_score)} ${analysisData.ai_score * 3.6}deg, #e2e8f0 0deg)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative'
+          }}>
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              background: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              color: getScoreColor(analysisData.ai_score)
+            }}>
+              {Math.round(analysisData.ai_score)}%
+            </div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{analysisData.classification}</div>
+            <div style={{ color: '#64748b' }}>Confidence: {analysisData.confidence}</div>
+          </div>
+        </div>
+        
+        {analysisData.patterns && Object.keys(analysisData.patterns).length > 0 && (
+          <div>
+            <strong>Detected Patterns:</strong>
+            <div style={{ marginTop: '8px' }}>
+              {Object.entries(analysisData.patterns).map(([category, data]) => (
+                <div key={category} style={{ marginBottom: '4px' }}>
+                  <span style={{ color: '#7c3aed', fontWeight: '500' }}>{category}:</span> {data.indicators?.join(', ') || 'Found'}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -703,6 +840,20 @@ export default function MainContent() {
         </div>
       </header>
 
+      {error && (
+        <div className="error-message" style={{
+          background: '#fee2e2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          padding: '12px',
+          borderRadius: '8px',
+          margin: '16px 0',
+          fontSize: '14px'
+        }}>
+          {error}
+        </div>
+      )}
+
       <div className="content-grid">
         {/* Input */}
         <div className="content-panel">
@@ -713,10 +864,25 @@ export default function MainContent() {
             placeholder="Paste your AI-generated text here..."
           />
           <div className="panel-actions">
-            <button className="action-btn" onClick={handleTransform} disabled={loading}>
+            <button 
+              className="action-btn secondary" 
+              onClick={analyzeText} 
+              disabled={analyzing || !inputText.trim()}
+              style={{ marginRight: '8px' }}
+            >
+              <AnalyzeIcon />
+              {analyzing ? "Analyzing..." : "Analyze"}
+            </button>
+            <button 
+              className="action-btn" 
+              onClick={handleTransform} 
+              disabled={loading || !inputText.trim()}
+            >
               {loading ? "Transforming..." : "Humanize"}
             </button>
           </div>
+          
+          {renderAnalysisResults()}
         </div>
 
         {/* Output */}
@@ -729,19 +895,10 @@ export default function MainContent() {
           />
           {outputText && (
             <div className="panel-actions">
-              <button className="action-btn" onClick={handleCopy}>
+              <button className="action-btn secondary" onClick={handleCopy}>
                 <CopyIcon /> {copySuccess ? "Copied!" : "Copy"}
               </button>
-              <button
-                className="action-btn"
-                onClick={() => {
-                  const blob = new Blob([outputText], { type: "text/plain" });
-                  const link = document.createElement("a");
-                  link.href = URL.createObjectURL(blob);
-                  link.download = "humanized.txt";
-                  link.click();
-                }}
-              >
+              <button className="action-btn secondary" onClick={handleDownload}>
                 <DownloadIcon /> Download
               </button>
             </div>
