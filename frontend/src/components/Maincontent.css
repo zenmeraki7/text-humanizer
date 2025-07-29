@@ -1,0 +1,107 @@
+.main-wrapper {
+  font-family: "Inter", sans-serif;
+  color: #fff;
+  background: linear-gradient(135deg, #1f1c2c, #928dab);
+  min-height: 100vh;
+  padding: 40px;
+}
+
+.main-header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.main-header h1 {
+  font-size: 2.5rem;
+  margin: 10px 0;
+}
+
+.main-header h1 span {
+  color: #ffd700;
+}
+
+.main-header p {
+  color: #e0e0e0;
+  margin-bottom: 15px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 215, 0, 0.2);
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+.content-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.8s ease;
+}
+
+.content-panel h3 {
+  margin-bottom: 10px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 200px;
+  border-radius: 12px;
+  border: none;
+  padding: 15px;
+  font-size: 1rem;
+  outline: none;
+  resize: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+textarea::placeholder {
+  color: #aaa;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.action-btn {
+  background: #ffd700;
+  color: #000;
+  font-weight: 600;
+  padding: 10px 15px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  transition: 0.3s;
+}
+
+.action-btn:hover {
+  background: #ffea70;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
