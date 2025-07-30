@@ -186,7 +186,6 @@ const MainContent = ({ sidebarOpen = false }) => {
     fontFamily: 'inherit',
     resize: 'none',
     outline: 'none',
-    marginBottom: '24px',
     transition: 'border-color 0.2s ease-in-out',
     boxSizing: 'border-box',
   };
@@ -540,10 +539,7 @@ const MainContent = ({ sidebarOpen = false }) => {
             </div>
             <textarea
               className="textarea"
-              style={{
-                ...textareaStyles,
-                marginBottom: '0'
-              }}
+              style={textareaStyles}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Enter the text you want to humanize here"
@@ -569,49 +565,52 @@ const MainContent = ({ sidebarOpen = false }) => {
                 }}>
                   Humanized Text
                 </h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    onClick={handleCopy}
-                    style={{
-                      ...outputButtonStyles,
-                      ...(copySuccess ? { color: '#10b981', borderColor: '#10b981' } : {})
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!copySuccess) {
-                        Object.assign(e.target.style, outputButtonHoverStyles);
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!copySuccess) {
-                        Object.assign(e.target.style, outputButtonStyles);
-                      }
-                    }}
-                  >
-                    <CopyIcon />
-                    {copySuccess ? 'Copied!' : 'Copy'}
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    style={outputButtonStyles}
-                    onMouseEnter={(e) => Object.assign(e.target.style, outputButtonHoverStyles)}
-                    onMouseLeave={(e) => Object.assign(e.target.style, outputButtonStyles)}
-                  >
-                    <DownloadIcon />
-                    Download
-                  </button>
-                </div>
               </div>
               <textarea
-                style={{
-                  ...textareaStyles,
-                  marginBottom: '0'
-                }}
+                style={textareaStyles}
                 value={outputText}
                 onChange={(e) => setOutputText(e.target.value)}
                 placeholder="Your humanized text will appear here..."
                 onFocus={(e) => e.target.style.borderColor = '#6366f1'}
                 onBlur={(e) => e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)'}
               />
+              {/* Copy and Download buttons below the output box */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '8px', 
+                marginTop: '12px',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={handleCopy}
+                  style={{
+                    ...outputButtonStyles,
+                    ...(copySuccess ? { color: '#10b981', borderColor: '#10b981' } : {})
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!copySuccess) {
+                      Object.assign(e.target.style, outputButtonHoverStyles);
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!copySuccess) {
+                      Object.assign(e.target.style, outputButtonStyles);
+                    }
+                  }}
+                >
+                  <CopyIcon />
+                  {copySuccess ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={handleDownload}
+                  style={outputButtonStyles}
+                  onMouseEnter={(e) => Object.assign(e.target.style, outputButtonHoverStyles)}
+                  onMouseLeave={(e) => Object.assign(e.target.style, outputButtonStyles)}
+                >
+                  <DownloadIcon />
+                  Download
+                </button>
+              </div>
             </div>
           )}
         </div>
