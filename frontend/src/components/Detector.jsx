@@ -1,13 +1,5 @@
-// Detector.jsx - Main Detector Component (Refactored with Fixed Imports)
+// Detector.jsx - Main Detector Component (Updated with File Upload)
 import React, { useState } from 'react';
-
-// Import all the split components and utilities
-// import { 
-//   UploadIcon, 
-//   DocumentIcon, 
-//   PasteIcon, 
-//   AnalyzeIcon 
-// } from '../Icons';
 
 import { getDetectorStyles, CSS_STYLES } from './DetectorComponents/styles';
 
@@ -15,6 +7,7 @@ import {
   analyzeText, 
   handlePasteText, 
   handleCopyResults, 
+  handleFileUpload,
   SAMPLE_TEXTS, 
   TIPS_DATA 
 } from './DetectorComponents/utils';
@@ -28,7 +21,8 @@ import {
   FullPatternAnalysis,
   TechnicalAnalysis,
   QuickTestSamples,
-  TipsSection
+  TipsSection,
+  FileInfoDisplay
 } from './DetectorComponents/DetectorComponent';
 import { AnalyzeIcon, DocumentIcon, PasteIcon, UploadIcon } from './Icons';
 
@@ -42,6 +36,8 @@ const Detector = ({ sidebarOpen = false }) => {
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   // Get styles
   const styles = getDetectorStyles(sidebarOpen, showTips);
@@ -81,6 +77,25 @@ const Detector = ({ sidebarOpen = false }) => {
     }
   };
 
+  // Handle file upload
+  const handleUpload = () => {
+    handleFileUpload(
+      // onTextExtracted
+      (extractedText) => {
+        setText(extractedText);
+      },
+      // onError
+      (errorMessage) => {
+        setError(errorMessage);
+      },
+      // onUploadStateChange
+      (uploading, file) => {
+        setIsUploading(uploading);
+        setUploadedFile(file);
+      }
+    );
+  };
+
   // Handle copy results
   const handleCopy = async () => {
     try {
@@ -102,6 +117,7 @@ const Detector = ({ sidebarOpen = false }) => {
     setText('');
     setResults(null);
     setError(null);
+    setUploadedFile(null);
   };
 
   return (
@@ -115,6 +131,9 @@ const Detector = ({ sidebarOpen = false }) => {
       <div className="card" style={styles.cardStyles}>
         {/* Error Message */}
         <ErrorMessage error={error} />
+
+        {/* File Info Display */}
+        <FileInfoDisplay uploadedFile={uploadedFile} error={error} />
 
         {/* Input and Results Grid */}
         <div style={{
@@ -149,7 +168,7 @@ const Detector = ({ sidebarOpen = false }) => {
               style={styles.textareaStyles}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Paste your text here for AI detection analysis...
+              placeholder="Paste your text here for AI detection analysis, or upload a file (.txt, .docx, .pdf, .rtf) - processed locally in your browser...
 
 ✨ Pro tip: Try different types of content to see how our advanced AI detection works!"
               onFocus={(e) => e.target.style.borderColor = '#6366f1'}
@@ -195,22 +214,52 @@ const Detector = ({ sidebarOpen = false }) => {
         {/* Action Buttons */}
         <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[
-            { icon: UploadIcon, text: 'Upload File', id: 'upload', action: () => {} },
-            { icon: DocumentIcon, text: 'Try Sample Text', id: 'sample', action: () => handleSampleText(SAMPLE_TEXTS[0].text) },
-            { icon: PasteIcon, text: 'Paste Text', id: 'paste', action: handlePaste }
+            { 
+              icon: UploadIcon, 
+              text: isUploading ? 'Uploading...' : 'Upload File', 
+              id: 'upload', 
+              action: handleUpload,
+              disabled: isUploading
+            },
+            { 
+              icon: DocumentIcon, 
+              text: 'Try Sample Text', 
+              id: 'sample', 
+              action: () => handleSampleText(SAMPLE_TEXTS[0].text) 
+            },
+            { 
+              icon: PasteIcon, 
+              text: 'Paste Text', 
+              id: 'paste', 
+              action: handlePaste 
+            }
           ].map((item) => (
             <button
               key={item.id}
               className="action-button"
-              onClick={item.action}
+              onClick={item.disabled ? undefined : item.action}
               style={{
                 ...styles.actionButtonStyles,
-                ...(hoveredButton === item.id ? styles.actionButtonHoverStyles : {}),
+                ...(hoveredButton === item.id && !item.disabled ? styles.actionButtonHoverStyles : {}),
+                opacity: item.disabled ? 0.6 : 1,
+                cursor: item.disabled ? 'not-allowed' : 'pointer',
               }}
-              onMouseEnter={() => setHoveredButton(item.id)}
+              onMouseEnter={() => !item.disabled && setHoveredButton(item.id)}
               onMouseLeave={() => setHoveredButton(null)}
+              disabled={item.disabled}
             >
-              <item.icon />
+              {item.id === 'upload' && isUploading ? (
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid transparent',
+                  borderTop: '2px solid #a1a1aa',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+              ) : (
+                <item.icon />
+              )}
               {item.text}
             </button>
           ))}

@@ -1,7 +1,7 @@
 // DetectorComponents.jsx - Reusable UI components for the Detector
 import React from 'react';
 // Correct import path: go up one level to components folder, then access Icons.jsx
-import { CopyIcon, LightBulbIcon, CheckIcon, ChevronDownIcon } from '../Icons';
+import { CopyIcon, LightBulbIcon, CheckIcon, ChevronDownIcon, DocumentIcon } from '../Icons';
 import { getScoreColor, getConfidenceColor, getScoreIcon, getClassification } from './utils';
 
 // Header Component
@@ -48,7 +48,7 @@ export const DetectorHeader = () => {
         onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
         onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
       >
-        🔍 Advanced AI Pattern Detection →
+        🔍 Advanced AI Pattern Detection + Local File Processing 🔒
       </div>
     </div>
   );
@@ -58,17 +58,45 @@ export const DetectorHeader = () => {
 export const ErrorMessage = ({ error }) => {
   if (!error) return null;
 
+  const isSuccess = error.startsWith('✅');
+
   return (
     <div style={{
-      background: 'rgba(239, 68, 68, 0.1)',
-      border: '1px solid rgba(239, 68, 68, 0.3)',
-      color: '#fca5a5',
+      background: isSuccess ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+      border: isSuccess ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+      color: isSuccess ? '#34d399' : '#fca5a5',
       padding: '12px',
       borderRadius: '8px',
       marginBottom: '16px',
       fontSize: '14px'
     }}>
       {error}
+    </div>
+  );
+};
+
+// File Info Display Component
+export const FileInfoDisplay = ({ uploadedFile, error }) => {
+  if (!uploadedFile || error?.startsWith('Failed')) return null;
+
+  return (
+    <div style={{
+      marginBottom: '16px',
+      padding: '12px 16px',
+      background: 'rgba(99, 102, 241, 0.1)',
+      border: '1px solid rgba(99, 102, 241, 0.3)',
+      borderRadius: '8px',
+      color: '#a78bfa',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
+    }}>
+      <DocumentIcon />
+      <span>
+        <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB) - 
+        Text extracted locally in your browser 🔒
+      </span>
     </div>
   );
 };
@@ -459,7 +487,7 @@ export const TipsSection = ({ tips, showTips, onToggleTips, styles }) => {
             gap: '8px'
           }}>
             <CheckIcon />
-            Advanced pattern detection with 95%+ accuracy
+            Advanced pattern detection with 95%+ accuracy + secure local file processing
           </p>
         </div>
       </div>
