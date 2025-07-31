@@ -1,443 +1,64 @@
-// import React, { useState, useEffect } from 'react';
-// import './Detector.css';
+// Detector.jsx - Main Detector Component (Refactored with Fixed Imports)
+import React, { useState } from 'react';
 
-// const Detector = () => {
-//   const [text, setText] = useState('');
-//   const [results, setResults] = useState(null);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState(null);
-//   const [showResults, setShowResults] = useState(false);
-//   const [animateScore, setAnimateScore] = useState(false);
+// Import all the split components and utilities
+// import { 
+//   UploadIcon, 
+//   DocumentIcon, 
+//   PasteIcon, 
+//   AnalyzeIcon 
+// } from '../Icons';
 
-//   const analyzeText = async () => {
-//     if (!text.trim()) {
-//       setError('Please enter some text to analyze');
-//       return;
-//     }
+import { getDetectorStyles, CSS_STYLES } from './DetectorComponents/styles';
 
-//     setLoading(true);
-//     setError(null);
-//     setResults(null);
-//     setShowResults(false);
-//     setAnimateScore(false);
+import { 
+  analyzeText, 
+  handlePasteText, 
+  handleCopyResults, 
+  SAMPLE_TEXTS, 
+  TIPS_DATA 
+} from './DetectorComponents/utils';
 
-//     try {
-//       const response = await fetch('http://localhost:8000/analyze', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'Accept': 'application/json'
-//         },
-//         body: JSON.stringify({ text: text.trim() })
-//       });
+import {
+  DetectorHeader,
+  ErrorMessage,
+  ScoreCircle,
+  CompactPatternAnalysis,
+  CopyButton,
+  FullPatternAnalysis,
+  TechnicalAnalysis,
+  QuickTestSamples,
+  TipsSection
+} from './DetectorComponents/DetectorComponent';
+import { AnalyzeIcon, DocumentIcon, PasteIcon, UploadIcon } from './Icons';
 
-//       if (!response.ok) {
-//         const errorText = await response.text();
-//         throw new Error(`Analysis failed: ${errorText}`);
-//       }
-
-//       const data = await response.json();
-      
-//       if (!data || typeof data.ai_score === 'undefined') {
-//         throw new Error('Invalid response from server');
-//       }
-
-//       setResults(data);
-//       setShowResults(true);
-      
-//       // Animate score after a short delay
-//       setTimeout(() => setAnimateScore(true), 500);
-
-//     } catch (err) {
-//       setError(err.message || 'Analysis failed');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const getClassification = (score) => {
-//     if (score >= 80) return 'HIGHLY LIKELY AI-GENERATED';
-//     if (score >= 60) return 'LIKELY AI-GENERATED';
-//     if (score >= 40) return 'POSSIBLY AI-GENERATED';
-//     if (score >= 20) return 'LIKELY HUMAN-WRITTEN';
-//     return 'HIGHLY LIKELY HUMAN-WRITTEN';
-//   };
-
-//   const getScoreColor = (score) => {
-//     if (score >= 80) return '#ef4444';
-//     if (score >= 60) return '#f97316';
-//     if (score >= 40) return '#eab308';
-//     if (score >= 20) return '#22c55e';
-//     return '#10b981';
-//   };
-
-//   const getConfidenceColor = (score) => {
-//     if (score >= 80) return '#fef2f2';
-//     if (score >= 60) return '#fff7ed';
-//     if (score >= 40) return '#fefce8';
-//     if (score >= 20) return '#f0fdf4';
-//     return '#ecfdf5';
-//   };
-
-//   const getScoreIcon = (score) => {
-//     if (score >= 80) return '🤖';
-//     if (score >= 60) return '⚠️';
-//     if (score >= 40) return '🔍';
-//     if (score >= 20) return '✅';
-//     return '👤';
-//   };
-
-//   return (
-//     <div className="detector-wrapper">
-//       <div className="detector-container">
-//         {/* Header */}
-//         <div className="detector-header">
-//           <div className="header-icon">🔍</div>
-//           <h1 className="header-title">AI Content Detector</h1>
-//           <p className="header-subtitle">Analyze text to detect AI-generated content with advanced pattern recognition</p>
-//         </div>
-
-//         {/* Input Section */}
-//         <div className="input-section">
-//           <div className="input-header">
-//             <h2>📝 Text Analysis</h2>
-//             <div className="input-stats">
-//               <span className="stat-item">
-//                 <span className="stat-label">Characters:</span>
-//                 <span className="stat-value">{text.length}</span>
-//               </span>
-//               <span className="stat-item">
-//                 <span className="stat-label">Words:</span>
-//                 <span className="stat-value">{text.trim() ? text.trim().split(/\s+/).length : 0}</span>
-//               </span>
-//             </div>
-//           </div>
-          
-//           <textarea
-//             value={text}
-//             onChange={(e) => setText(e.target.value)}
-//             placeholder="Paste your text here for AI detection analysis...
-
-// ✨ Pro tip: Try different types of content to see how our advanced AI detection works!"
-//             className="text-input"
-//             rows={8}
-//           />
-          
-//           <div className="input-actions">
-//             <button 
-//               onClick={analyzeText}
-//               disabled={loading || !text.trim()}
-//               className={`analyze-btn ${loading ? 'loading' : ''}`}
-//             >
-//               {loading ? (
-//                 <>
-//                   <div className="loading-spinner"></div>
-//                   Analyzing...
-//                 </>
-//               ) : (
-//                 <>
-//                   <span className="btn-icon">🔬</span>
-//                   Analyze Text
-//                 </>
-//               )}
-//             </button>
-            
-//             <button 
-//               onClick={() => setText('')}
-//               className="clear-btn"
-//               disabled={!text.trim()}
-//             >
-//               <span className="btn-icon">🗑️</span>
-//               Clear
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Error Display */}
-//         {error && (
-//           <div className="error-section">
-//             <div className="error-icon">⚠️</div>
-//             <div className="error-content">
-//               <h3>Analysis Error</h3>
-//               <p>{error}</p>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Results Display */}
-//         {showResults && results && (
-//           <div className="results-modal">
-//             <div className="results-content">
-//               <div className="results-header">
-//                 <h2>
-//                   <span className="results-icon">{getScoreIcon(results.ai_score)}</span>
-//                   AI Detection Results
-//                 </h2>
-//                 <button 
-//                   className="close-btn"
-//                   onClick={() => setShowResults(false)}
-//                 >
-//                   ✕
-//                 </button>
-//               </div>
-
-//               {/* Main Score Display */}
-//               <div className="score-section">
-//                 <div className="score-container">
-//                   <div 
-//                     className={`score-circle ${animateScore ? 'animate' : ''}`}
-//                     style={{ 
-//                       '--score': results.ai_score,
-//                       '--color': getScoreColor(results.ai_score)
-//                     }}
-//                   >
-//                     <div className="score-percentage">
-//                       {results.ai_score?.toFixed(1) || 0}%
-//                     </div>
-//                     <div className="score-label">AI Score</div>
-//                   </div>
-//                 </div>
-
-//                 <div className="classification-section">
-//                   <div 
-//                     className="classification-badge"
-//                     style={{ 
-//                       backgroundColor: getConfidenceColor(results.ai_score),
-//                       color: getScoreColor(results.ai_score),
-//                       border: `2px solid ${getScoreColor(results.ai_score)}20`
-//                     }}
-//                   >
-//                     <span className="classification-icon">{getScoreIcon(results.ai_score)}</span>
-//                     <span className="classification-text">{getClassification(results.ai_score)}</span>
-//                   </div>
-//                   <div className="confidence-text">
-//                     Confidence: <span style={{ color: getScoreColor(results.ai_score) }}>
-//                       {results.confidence || 'High'}
-//                     </span>
-//                   </div>
-//                 </div>
-//               </div>
-
-//               {/* Pattern Analysis */}
-//               {results.patterns && Object.keys(results.patterns).length > 0 && (
-//                 <div className="patterns-section">
-//                   <h3>📊 Detected Patterns ({Object.keys(results.patterns).length} categories)</h3>
-//                   <div className="patterns-grid">
-//                     {Object.entries(results.patterns).map(([category, data], index) => (
-//                       <div 
-//                         key={category} 
-//                         className="pattern-card"
-//                         style={{ animationDelay: `${index * 0.1}s` }}
-//                       >
-//                         <div className="pattern-header">
-//                           <h4>{category.replace(/_/g, ' ').toUpperCase()}</h4>
-//                           <div className="pattern-score">
-//                             Score: <span style={{ color: getScoreColor(data.score || 0) }}>
-//                               {data.score || 0}
-//                             </span>
-//                           </div>
-//                         </div>
-                        
-//                         {data.indicators && data.indicators.length > 0 && (
-//                           <div className="pattern-indicators">
-//                             <div className="indicators-header">
-//                               Found {data.indicators.length} indicators:
-//                             </div>
-//                             <div className="indicators-list">
-//                               {data.indicators.slice(0, 3).map((indicator, idx) => (
-//                                 <div key={idx} className="indicator-item">
-//                                   <span className="indicator-bullet">•</span>
-//                                   <span className="indicator-text">"{indicator}"</span>
-//                                 </div>
-//                               ))}
-//                               {data.indicators.length > 3 && (
-//                                 <div className="indicator-more">
-//                                   +{data.indicators.length - 3} more...
-//                                 </div>
-//                               )}
-//                             </div>
-//                           </div>
-//                         )}
-//                       </div>
-//                     ))}
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Technical Analysis */}
-//               {results.technical_details && (
-//                 <div className="technical-section">
-//                   <h3>🔍 Technical Analysis</h3>
-//                   <div className="tech-grid">
-//                     <div className="tech-card">
-//                       <div className="tech-icon">📊</div>
-//                       <div className="tech-info">
-//                         <div className="tech-value">{results.technical_details.total_patterns || 0}</div>
-//                         <div className="tech-label">Total Patterns</div>
-//                       </div>
-//                     </div>
-                    
-//                     <div className="tech-card">
-//                       <div className="tech-icon">📝</div>
-//                       <div className="tech-info">
-//                         <div className="tech-value">{results.technical_details.word_count || 0}</div>
-//                         <div className="tech-label">Words Analyzed</div>
-//                       </div>
-//                     </div>
-                    
-//                     <div className="tech-card">
-//                       <div className="tech-icon">📈</div>
-//                       <div className="tech-info">
-//                         <div className="tech-value">
-//                           {results.technical_details.pattern_density?.toFixed(1) || 0}%
-//                         </div>
-//                         <div className="tech-label">Pattern Density</div>
-//                       </div>
-//                     </div>
-                    
-//                     <div className="tech-card">
-//                       <div className="tech-icon">🎯</div>
-//                       <div className="tech-info">
-//                         <div className="tech-value">{Object.keys(results.patterns || {}).length}</div>
-//                         <div className="tech-label">Categories</div>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 </div>
-//               )}
-
-//               {/* Action Buttons */}
-//               <div className="results-actions">
-//                 <button 
-//                   className="action-btn primary"
-//                   onClick={() => setShowResults(false)}
-//                 >
-//                   <span className="btn-icon">✨</span>
-//                   Analyze Another Text
-//                 </button>
-                
-//                 <button 
-//                   className="action-btn secondary"
-//                   onClick={() => {
-//                     navigator.clipboard.writeText(JSON.stringify(results, null, 2));
-//                   }}
-//                 >
-//                   <span className="btn-icon">📋</span>
-//                   Copy Results
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Quick Test Samples */}
-//         <div className="samples-section">
-//           <h3>🧪 Quick Test Samples</h3>
-//           <p>Try these pre-made samples to see how our AI detection works:</p>
-          
-//           <div className="samples-grid">
-//             <button 
-//               onClick={() => setText("In today's fast-paced world, it is important to note that leveraging cutting-edge AI technologies will ultimately transform business paradigms. With that being said, organizations must optimize their synergy to achieve unprecedented results.")}
-//               className="sample-btn high-ai"
-//             >
-//               <div className="sample-icon">🤖</div>
-//               <div className="sample-info">
-//                 <div className="sample-title">High AI Text</div>
-//                 <div className="sample-subtitle">Expected: ~100% AI</div>
-//               </div>
-//             </button>
-            
-//             <button 
-//               onClick={() => setText("The weather was nice today. However, it is important to note that climate change is a significant challenge. We should consider various solutions for this pressing issue.")}
-//               className="sample-btn medium-ai"
-//             >
-//               <div className="sample-icon">🟡</div>
-//               <div className="sample-info">
-//                 <div className="sample-title">Medium AI Text</div>
-//                 <div className="sample-subtitle">Expected: ~50% AI</div>
-//               </div>
-//             </button>
-            
-//             <button 
-//               onClick={() => setText("Grabbed coffee this morning and the barista had this amazing purple hair. She convinced me to try their lavender latte instead of my usual black coffee. Honestly wasn't terrible - might go back tomorrow if I'm not running late again.")}
-//               className="sample-btn human-text"
-//             >
-//               <div className="sample-icon">👤</div>
-//               <div className="sample-info">
-//                 <div className="sample-title">Human Text</div>
-//                 <div className="sample-subtitle">Expected: ~10% AI</div>
-//               </div>
-//             </button>
-            
-//             <button 
-//               onClick={() => setText("But here's the truth no one wants to say out loud: that's the catch with social media algorithms. Here's what nobody mentions - until something does break. Usually it's you who pays the price.")}
-//               className="sample-btn dramatic-ai"
-//             >
-//               <div className="sample-icon">🎭</div>
-//               <div className="sample-info">
-//                 <div className="sample-title">Dramatic AI</div>
-//                 <div className="sample-subtitle">Expected: ~95% AI</div>
-//               </div>
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Detector;
-
-
-
-//final 
-import React, { useState, useEffect } from 'react';
-import './Detector.css';
-
-const Detector = () => {
+const Detector = ({ sidebarOpen = false }) => {
   const [text, setText] = useState('');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [animateScore, setAnimateScore] = useState(false);
+  const [hoveredButton, setHoveredButton] = useState(null);
+  const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
+  const [showTips, setShowTips] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
-  const analyzeText = async () => {
-    if (!text.trim()) {
-      setError('Please enter some text to analyze');
-      return;
-    }
+  // Get styles
+  const styles = getDetectorStyles(sidebarOpen, showTips);
 
+  // Handle text analysis
+  const handleAnalyzeText = async () => {
     setLoading(true);
     setError(null);
     setResults(null);
     setAnimateScore(false);
 
     try {
-      const response = await fetch('http://localhost:8000/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ text: text.trim() })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Analysis failed: ${errorText}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data || typeof data.ai_score === 'undefined') {
-        throw new Error('Invalid response from server');
-      }
-
+      const data = await analyzeText(text);
       setResults(data);
       
       // Animate score after a short delay
       setTimeout(() => setAnimateScore(true), 300);
-
     } catch (err) {
       setError(err.message || 'Analysis failed');
     } finally {
@@ -445,328 +66,269 @@ const Detector = () => {
     }
   };
 
-  const getClassification = (score) => {
-    if (score >= 80) return 'HIGHLY LIKELY AI-GENERATED';
-    if (score >= 60) return 'LIKELY AI-GENERATED';
-    if (score >= 40) return 'POSSIBLY AI-GENERATED';
-    if (score >= 20) return 'LIKELY HUMAN-WRITTEN';
-    return 'HIGHLY LIKELY HUMAN-WRITTEN';
+  // Handle sample text selection
+  const handleSampleText = (sampleText) => {
+    setText(sampleText);
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#ef4444';
-    if (score >= 60) return '#f97316';
-    if (score >= 40) return '#eab308';
-    if (score >= 20) return '#22c55e';
-    return '#10b981';
+  // Handle paste text
+  const handlePaste = async () => {
+    try {
+      const clipboardText = await handlePasteText();
+      setText(clipboardText);
+    } catch (err) {
+      console.log('Failed to paste text:', err);
+    }
   };
 
-  const getConfidenceColor = (score) => {
-    if (score >= 80) return '#fef2f2';
-    if (score >= 60) return '#fff7ed';
-    if (score >= 40) return '#fefce8';
-    if (score >= 20) return '#f0fdf4';
-    return '#ecfdf5';
+  // Handle copy results
+  const handleCopy = async () => {
+    try {
+      await handleCopyResults(results);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy results:', err);
+    }
   };
 
-  const getScoreIcon = (score) => {
-    if (score >= 80) return '🤖';
-    if (score >= 60) return '⚠️';
-    if (score >= 40) return '🔍';
-    if (score >= 20) return '✅';
-    return '👤';
+  // Handle tips toggle
+  const handleToggleTips = () => {
+    setShowTips(!showTips);
+  };
+
+  // Clear results and start new analysis
+  const handleNewAnalysis = () => {
+    setText('');
+    setResults(null);
+    setError(null);
   };
 
   return (
-    <div className="detector-wrapper">
-      <div className="detector-container">
-        {/* Header */}
-        <div className="detector-header">
-          <div className="header-icon">🔍</div>
-          <h1 className="header-title">AI Content Detector</h1>
-          <p className="header-subtitle">Analyze text to detect AI-generated content with advanced pattern recognition</p>
-        </div>
+    <div style={styles.mainContentStyles}>
+      <style>{CSS_STYLES}</style>
 
-        {/* Input Section */}
-        <div className="input-section">
-          <div className="input-header">
-            <h2>📝 Text Analysis</h2>
-            <div className="input-stats">
-              <span className="stat-item">
-                <span className="stat-label">Characters:</span>
-                <span className="stat-value">{text.length}</span>
-              </span>
-              <span className="stat-item">
-                <span className="stat-label">Words:</span>
-                <span className="stat-value">{text.trim() ? text.trim().split(/\s+/).length : 0}</span>
-              </span>
+      {/* Header */}
+      <DetectorHeader />
+
+      {/* Main Content Card */}
+      <div className="card" style={styles.cardStyles}>
+        {/* Error Message */}
+        <ErrorMessage error={error} />
+
+        {/* Input and Results Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: results ? '1fr 1fr' : '1fr',
+          gap: '24px',
+          marginBottom: '24px'
+        }}>
+          {/* Input Section */}
+          <div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px'
+            }}>
+              <h3 style={{ 
+                color: '#f8fafc', 
+                fontSize: '18px', 
+                fontWeight: '600', 
+                margin: 0 
+              }}>
+                Text to Analyze
+              </h3>
+              <div style={{ display: 'flex', gap: '8px', color: '#94a3b8', fontSize: '14px' }}>
+                <span>Characters: {text.length}</span>
+                <span>Words: {text.trim() ? text.trim().split(/\s+/).length : 0}</span>
+              </div>
             </div>
-          </div>
-          
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Paste your text here for AI detection analysis...
+            <textarea
+              className="textarea"
+              style={styles.textareaStyles}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste your text here for AI detection analysis...
 
 ✨ Pro tip: Try different types of content to see how our advanced AI detection works!"
-            className="text-input"
-            rows={8}
-          />
-          
-          <div className="input-actions">
-            <button 
-              onClick={analyzeText}
-              disabled={loading || !text.trim()}
-              className={`analyze-btn ${loading ? 'loading' : ''}`}
-            >
-              {loading ? (
-                <>
-                  <div className="loading-spinner"></div>
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <span className="btn-icon">🔬</span>
-                  Analyze Text
-                </>
-              )}
-            </button>
-            
-            <button 
-              onClick={() => setText('')}
-              className="clear-btn"
-              disabled={!text.trim()}
-            >
-              <span className="btn-icon">🗑️</span>
-              Clear
-            </button>
+              onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)'}
+            />
           </div>
+
+          {/* Results Section - Only show when there are results */}
+          {results && (
+            <div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '12px'
+              }}>
+                <h3 style={{ 
+                  color: '#f8fafc', 
+                  fontSize: '18px', 
+                  fontWeight: '600', 
+                  margin: 0 
+                }}>
+                  Detection Results
+                </h3>
+              </div>
+
+              {/* Results Display */}
+              <div style={styles.resultsDisplayStyles}>
+                <ScoreCircle results={results} animateScore={animateScore} />
+                <CompactPatternAnalysis results={results} />
+              </div>
+              
+              {/* Copy button below the results box */}
+              <CopyButton 
+                onCopy={handleCopy} 
+                copySuccess={copySuccess} 
+                styles={styles} 
+              />
+            </div>
+          )}
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="error-section">
-            <div className="error-icon">⚠️</div>
-            <div className="error-content">
-              <h3>Analysis Error</h3>
-              <p>{error}</p>
-            </div>
+        {/* Action Buttons */}
+        <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          {[
+            { icon: UploadIcon, text: 'Upload File', id: 'upload', action: () => {} },
+            { icon: DocumentIcon, text: 'Try Sample Text', id: 'sample', action: () => handleSampleText(SAMPLE_TEXTS[0].text) },
+            { icon: PasteIcon, text: 'Paste Text', id: 'paste', action: handlePaste }
+          ].map((item) => (
+            <button
+              key={item.id}
+              className="action-button"
+              onClick={item.action}
+              style={{
+                ...styles.actionButtonStyles,
+                ...(hoveredButton === item.id ? styles.actionButtonHoverStyles : {}),
+              }}
+              onMouseEnter={() => setHoveredButton(item.id)}
+              onMouseLeave={() => setHoveredButton(null)}
+            >
+              <item.icon />
+              {item.text}
+            </button>
+          ))}
+        </div>
+
+        {/* Bottom Controls */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ color: '#a1a1aa', fontSize: '16px' }}>Advanced Detection Mode</span>
           </div>
-        )}
 
-        {/* Results Display - INLINE (Same Page) */}
+          <button
+            disabled={loading || !text.trim()}
+            style={{
+              ...styles.primaryButtonStyles,
+              ...(isPrimaryHovered && !loading && text.trim() ? styles.primaryButtonHoverStyles : {}),
+              opacity: (loading || !text.trim()) ? 0.6 : 1,
+              cursor: (loading || !text.trim()) ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={() => !loading && text.trim() && setIsPrimaryHovered(true)}
+            onMouseLeave={() => setIsPrimaryHovered(false)}
+            onClick={handleAnalyzeText}
+          >
+            {loading ? (
+              <>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid transparent',
+                  borderTop: '2px solid #fff',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <AnalyzeIcon />
+                Analyze Text
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Expanded Results Section - Shows below when results exist */}
         {results && (
-          <div className="results-section-inline">
-            <div className="results-header-inline">
-              <h2>
-                <span className="results-icon">{getScoreIcon(results.ai_score)}</span>
-                AI Detection Results
-              </h2>
-            </div>
+          <div style={{
+            marginTop: '24px',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.03) 100%)',
+            border: '1px solid rgba(99, 102, 241, 0.2)',
+            borderRadius: '12px',
+            padding: '20px'
+          }}>
+            <h3 style={{ color: '#f8fafc', fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+              📊 Detailed Analysis Results
+            </h3>
 
-            {/* Main Score Display */}
-            <div className="score-section-inline">
-              <div className="score-container">
-                <div 
-                  className={`score-circle ${animateScore ? 'animate' : ''}`}
-                  style={{ 
-                    '--score': results.ai_score,
-                    '--color': getScoreColor(results.ai_score)
-                  }}
-                >
-                  <div className="score-percentage">
-                    {results.ai_score?.toFixed(1) || 0}%
-                  </div>
-                  <div className="score-label">AI Score</div>
-                </div>
-              </div>
-
-              <div className="classification-section">
-                <div 
-                  className="classification-badge"
-                  style={{ 
-                    backgroundColor: getConfidenceColor(results.ai_score),
-                    color: getScoreColor(results.ai_score),
-                    border: `2px solid ${getScoreColor(results.ai_score)}20`
-                  }}
-                >
-                  <span className="classification-icon">{getScoreIcon(results.ai_score)}</span>
-                  <span className="classification-text">{getClassification(results.ai_score)}</span>
-                </div>
-                <div className="confidence-text">
-                  Confidence: <span style={{ color: getScoreColor(results.ai_score) }}>
-                    {results.confidence || 'High'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Pattern Analysis */}
-            {results.patterns && Object.keys(results.patterns).length > 0 && (
-              <div className="patterns-section-inline">
-                <h3>📊 Detected Patterns ({Object.keys(results.patterns).length} categories)</h3>
-                <div className="patterns-grid">
-                  {Object.entries(results.patterns).map(([category, data], index) => (
-                    <div 
-                      key={category} 
-                      className="pattern-card"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="pattern-header">
-                        <h4>{category.replace(/_/g, ' ').toUpperCase()}</h4>
-                        <div className="pattern-score">
-                          Score: <span style={{ color: getScoreColor(data.score || 0) }}>
-                            {data.score || 0}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {data.indicators && data.indicators.length > 0 && (
-                        <div className="pattern-indicators">
-                          <div className="indicators-header">
-                            Found {data.indicators.length} indicators:
-                          </div>
-                          <div className="indicators-list">
-                            {data.indicators.slice(0, 3).map((indicator, idx) => (
-                              <div key={idx} className="indicator-item">
-                                <span className="indicator-bullet">•</span>
-                                <span className="indicator-text">"{indicator}"</span>
-                              </div>
-                            ))}
-                            {data.indicators.length > 3 && (
-                              <div className="indicator-more">
-                                +{data.indicators.length - 3} more...
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Technical Analysis */}
-            {results.technical_details && (
-              <div className="technical-section-inline">
-                <h3>🔍 Technical Analysis</h3>
-                <div className="tech-grid">
-                  <div className="tech-card">
-                    <div className="tech-icon">📊</div>
-                    <div className="tech-info">
-                      <div className="tech-value">{results.technical_details.total_patterns || 0}</div>
-                      <div className="tech-label">Total Patterns</div>
-                    </div>
-                  </div>
-                  
-                  <div className="tech-card">
-                    <div className="tech-icon">📝</div>
-                    <div className="tech-info">
-                      <div className="tech-value">{results.technical_details.word_count || 0}</div>
-                      <div className="tech-label">Words Analyzed</div>
-                    </div>
-                  </div>
-                  
-                  <div className="tech-card">
-                    <div className="tech-icon">📈</div>
-                    <div className="tech-info">
-                      <div className="tech-value">
-                        {results.technical_details.pattern_density?.toFixed(1) || 0}%
-                      </div>
-                      <div className="tech-label">Pattern Density</div>
-                    </div>
-                  </div>
-                  
-                  <div className="tech-card">
-                    <div className="tech-icon">🎯</div>
-                    <div className="tech-info">
-                      <div className="tech-value">{Object.keys(results.patterns || {}).length}</div>
-                      <div className="tech-label">Categories</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <FullPatternAnalysis results={results} />
+            <TechnicalAnalysis results={results} />
 
             {/* Quick Actions */}
-            <div className="results-actions-inline">
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button 
-                className="action-btn primary"
-                onClick={() => {
-                  setText('');
-                  setResults(null);
-                  setError(null);
+                onClick={handleNewAnalysis}
+                style={{
+                  ...styles.primaryButtonStyles,
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                  e.target.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                  e.target.style.transform = 'translateY(0)';
                 }}
               >
-                <span className="btn-icon">✨</span>
-                Analyze New Text
+                ✨ Analyze New Text
               </button>
               
               <button 
-                className="action-btn secondary"
-                onClick={() => {
-                  navigator.clipboard.writeText(JSON.stringify(results, null, 2));
+                onClick={handleCopy}
+                style={{
+                  ...styles.primaryButtonStyles,
+                  background: 'transparent',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  color: '#a1a1aa'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#6366f1';
+                  e.target.style.color = '#fff';
+                  e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+                  e.target.style.color = '#a1a1aa';
+                  e.target.style.backgroundColor = 'transparent';
                 }}
               >
-                <span className="btn-icon">📋</span>
-                Copy Results
+                📋 Copy Results
               </button>
             </div>
           </div>
         )}
 
         {/* Quick Test Samples */}
-        <div className="samples-section">
-          <h3>🧪 Quick Test Samples</h3>
-          <p>Try these pre-made samples to see how our AI detection works:</p>
-          
-          <div className="samples-grid">
-            <button 
-              onClick={() => setText("In today's fast-paced world, it is important to note that leveraging cutting-edge AI technologies will ultimately transform business paradigms. With that being said, organizations must optimize their synergy to achieve unprecedented results.")}
-              className="sample-btn high-ai"
-            >
-              <div className="sample-icon">🤖</div>
-              <div className="sample-info">
-                <div className="sample-title">High AI Text</div>
-                <div className="sample-subtitle">Expected: ~100% AI</div>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => setText("The weather was nice today. However, it is important to note that climate change is a significant challenge. We should consider various solutions for this pressing issue.")}
-              className="sample-btn medium-ai"
-            >
-              <div className="sample-icon">🟡</div>
-              <div className="sample-info">
-                <div className="sample-title">Medium AI Text</div>
-                <div className="sample-subtitle">Expected: ~50% AI</div>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => setText("Grabbed coffee this morning and the barista had this amazing purple hair. She convinced me to try their lavender latte instead of my usual black coffee. Honestly wasn't terrible - might go back tomorrow if I'm not running late again.")}
-              className="sample-btn human-text"
-            >
-              <div className="sample-icon">👤</div>
-              <div className="sample-info">
-                <div className="sample-title">Human Text</div>
-                <div className="sample-subtitle">Expected: ~10% AI</div>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => setText("But here's the truth no one wants to say out loud: that's the catch with social media algorithms. Here's what nobody mentions - until something does break. Usually it's you who pays the price.")}
-              className="sample-btn dramatic-ai"
-            >
-              <div className="sample-icon">🎭</div>
-              <div className="sample-info">
-                <div className="sample-title">Dramatic AI</div>
-                <div className="sample-subtitle">Expected: ~95% AI</div>
-              </div>
-            </button>
-          </div>
-        </div>
+        <QuickTestSamples 
+          samples={SAMPLE_TEXTS} 
+          onSampleClick={setText} 
+        />
+
+        {/* Enhanced Tips Section */}
+        <TipsSection 
+          tips={TIPS_DATA}
+          showTips={showTips}
+          onToggleTips={handleToggleTips}
+          styles={styles}
+        />
       </div>
     </div>
   );
