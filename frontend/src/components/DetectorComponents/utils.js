@@ -39,7 +39,7 @@ export const analyzeText = async (text) => {
     throw new Error('Please enter some text to analyze');
   }
 
-  const response = await fetch('http://localhost:8000/analyze', {
+  const response = await fetch('https://text-humanizer-g2y3.onrender.com/analyze', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
