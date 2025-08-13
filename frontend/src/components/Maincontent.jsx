@@ -28,9 +28,24 @@ import {
 } from './MainContentComponents/style';
 
 // Import utilities
+// import {
+//   processFile,
+//   humanizeText,
+//   copyToClipboard,
+//   pasteFromClipboard,
+//   downloadText,
+//   tips,
+//   SAMPLE_TEXT,
+//   MODES,
+//   getWordCount,
+//   getCharacterCount
+// } from './MainContentComponents/utils';
+
 import {
   processFile,
   humanizeText,
+  analyzeText,        // ADD THIS
+  checkPlagiarism,    // ADD THIS  
   copyToClipboard,
   pasteFromClipboard,
   downloadText,
@@ -114,6 +129,43 @@ const MainContent = ({ sidebarOpen = false }) => {
     }
   };
 
+const handleAnalyze = async () => {
+  if (!inputText.trim()) return;
+  
+  setLoading(true);
+  setError('');
+  
+  try {
+    const data = await analyzeText(inputText);
+    setOutputText(JSON.stringify(data, null, 2)); // Display analysis results
+    console.log('Analysis result:', data);
+  } catch (err) {
+    console.error('Error calling API:', err);
+    setError(`Failed to analyze text: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleCheckPlagiarism = async () => {
+  if (!inputText.trim()) return;
+  
+  setLoading(true);
+  setError('');
+  
+  try {
+    const data = await checkPlagiarism(inputText);
+    setOutputText(JSON.stringify(data, null, 2)); // Display plagiarism results
+    console.log('Plagiarism check result:', data);
+  } catch (err) {
+    console.error('Error calling API:', err);
+    setError(`Failed to check plagiarism: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  
   const handleCopy = async () => {
     const success = await copyToClipboard(outputText);
     if (success) {
