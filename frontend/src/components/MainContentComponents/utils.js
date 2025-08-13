@@ -181,7 +181,7 @@ export const processFile = async (file) => {
 };
 
 // API utilities
-export const API_BASE_URL = "http://localhost:8000";
+export const API_BASE_URL = "https://text-humanizer-g2y3.onrender.com";
 
 export const humanizeText = async (text) => {
   const response = await fetch(`${API_BASE_URL}/humanize`, {
