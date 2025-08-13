@@ -108,7 +108,7 @@ const MainContent = ({ sidebarOpen = false }) => {
       console.log('Humanization result:', data);
     } catch (err) {
       console.error('Error calling API:', err);
-      setError('Failed to humanize text. Please check if the backend is running on http://text-humanizer-g2y3.onrender.com');
+      setError(`Failed to humanize text: ${err.message}`);
     } finally {
       setLoading(false);
     }
