@@ -1,6 +1,524 @@
-// PlagiarismRemover.jsx - Main component file
+// // PlagiarismRemover.jsx - Main component file
+// import React, { useState } from 'react';
+// import { CheckIcon, ChevronDownIcon, CompareIcon, CopyIcon, DocumentIcon, MagicWandIcon, UploadIcon, PasteIcon } from './Icons';
+
+// // Import styles
+// import {
+//   getMainContentStyles,
+//   headerStyles,
+//   titleStyles,
+//   chipStyles,
+//   cardStyles,
+//   textareaStyles,
+//   actionButtonStyles,
+//   actionButtonHoverStyles,
+//   getPrimaryButtonStyles,
+//   primaryButtonHoverStyles,
+//   selectStyles,
+//   selectButtonStyles,
+//   dropdownStyles,
+//   tipsContainerStyles,
+//   getTipsHeaderStyles,
+//   getTipsContentStyles,
+//   tipItemStyles,
+//   resultCardStyles,
+//   comparisonStyles,
+//   spinnerStyles,
+//   getErrorStyles,
+//   fileInfoStyles,
+//   copyButtonStyles,
+//   statsContainerStyles,
+//   additionalStatsStyles,
+//   tipsFooterStyles,
+//   cssStyles
+// } from './PlagiarismComponents/style';
+
+// // Import utilities
+// import {
+//   MODES,
+//   SAMPLE_TEXT,
+//   tips,
+//   processFile,
+//   removePlagiarism,
+//   copyToClipboard,
+//   pasteFromClipboard,
+//   getUniquenessScore
+// } from './PlagiarismComponents/utils';
+
+// const PlagiarismRemover = ({ sidebarOpen }) => {
+//   // State management
+//   const [inputText, setInputText] = useState('');
+//   const [mode, setMode] = useState('Academic');
+//   const [showModeDropdown, setShowModeDropdown] = useState(false);
+//   const [hoveredButton, setHoveredButton] = useState(null);
+//   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
+//   const [showTips, setShowTips] = useState(false);
+//   const [processedText, setProcessedText] = useState('');
+//   const [showComparison, setShowComparison] = useState(false);
+//   const [isProcessing, setIsProcessing] = useState(false);
+//   const [apiResult, setApiResult] = useState(null);
+//   const [error, setError] = useState('');
+//   const [isUploading, setIsUploading] = useState(false);
+//   const [uploadedFile, setUploadedFile] = useState(null);
+
+//   // Event handlers
+//   const handleSampleText = () => {
+//     setInputText(SAMPLE_TEXT);
+//   };
+
+//   const handlePasteText = async () => {
+//     try {
+//       const text = await pasteFromClipboard();
+//       if (text) {
+//         setInputText(text);
+//       }
+//     } catch (err) {
+//       setError('Failed to read clipboard contents. Please paste manually.');
+//     }
+//   };
+
+//   const handleFileUpload = () => {
+//     const fileInput = document.createElement('input');
+//     fileInput.type = 'file';
+//     fileInput.accept = '.txt,.docx,.pdf,.rtf';
+//     fileInput.style.display = 'none';
+    
+//     fileInput.onchange = async (e) => {
+//       const file = e.target.files[0];
+//       if (!file) return;
+
+//       setIsUploading(true);
+//       setError('');
+//       setUploadedFile(file);
+
+//       try {
+//         const result = await processFile(file);
+//         setInputText(result.text);
+        
+//         const successMsg = `✅ Successfully extracted ${result.wordCount} words from ${result.fileName}`;
+//         setError(successMsg);
+//         setTimeout(() => setError(''), 4000);
+
+//       } catch (err) {
+//         console.error('File processing error:', err);
+//         setError(`Failed to process file: ${err.message}`);
+//       } finally {
+//         setIsUploading(false);
+//         document.body.removeChild(fileInput);
+//       }
+//     };
+
+//     document.body.appendChild(fileInput);
+//     fileInput.click();
+//   };
+
+//   const handleProcessText = async () => {
+//     if (!inputText.trim()) {
+//       setError('Please enter some text to process.');
+//       return;
+//     }
+
+//     setIsProcessing(true);
+//     setError('');
+//     setShowComparison(false);
+
+//     try {
+//       const result = await removePlagiarism(inputText, mode);
+//       setProcessedText(result.rewritten_text);
+//       setApiResult(result);
+//       setShowComparison(true);
+
+//     } catch (err) {
+//       console.error('API Error:', err);
+//       setError(`Failed to process text: ${err.message}. Please ensure the backend server is running on http://localhost:8000`);
+//     } finally {
+//       setIsProcessing(false);
+//     }
+//   };
+
+//   const handleCopyResult = async () => {
+//     const success = await copyToClipboard(processedText);
+//     if (success) {
+//       alert('Text copied to clipboard!');
+//     } else {
+//       setError('Failed to copy text to clipboard.');
+//     }
+//   };
+
+//   // Get dynamic styles
+//   const mainContentStyles = getMainContentStyles(sidebarOpen);
+//   const primaryButtonStyles = getPrimaryButtonStyles(isProcessing);
+//   const errorStyles = getErrorStyles(error);
+//   const tipsHeaderStyles = getTipsHeaderStyles(showTips);
+//   const tipsContentStyles = getTipsContentStyles(showTips);
+
+//   return (
+//     <div style={mainContentStyles}>
+//       <style>{cssStyles}</style>
+
+//       {/* Header */}
+//       <div style={headerStyles}>
+//         <h1 style={titleStyles}>
+//           Remove Plagiarism Instantly
+//         </h1>
+        
+//         <div 
+//           style={chipStyles}
+//           onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+//           onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+//         >
+//           ✨ Advanced AI Paraphrasing + Local File Processing 🔒
+//         </div>
+//       </div>
+
+//       {/* Main Content Card */}
+//       <div style={cardStyles}>
+//         {/* Text Input Area */}
+//         <textarea
+//           value={inputText}
+//           onChange={(e) => setInputText(e.target.value)}
+//           placeholder="Paste the text you want to remove plagiarism from here, or upload a file (.txt, .docx, .pdf, .rtf) - processed locally in your browser..."
+//           style={textareaStyles}
+//           onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
+//           onBlur={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'}
+//         />
+
+//         {/* Error Display */}
+//         {error && (
+//           <div style={errorStyles}>
+//             {error}
+//           </div>
+//         )}
+
+//         {/* File Info Display */}
+//         {uploadedFile && !error.startsWith('Failed') && (
+//           <div style={fileInfoStyles}>
+//             <DocumentIcon />
+//             <span>
+//               <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB) - 
+//               Text extracted locally in your browser 🔒
+//             </span>
+//           </div>
+//         )}
+
+//         {/* Action Buttons */}
+//         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+//           {[
+//             { 
+//               icon: UploadIcon, 
+//               text: isUploading ? 'Uploading...' : 'Upload File', 
+//               id: 'upload', 
+//               action: handleFileUpload,
+//               disabled: isUploading
+//             },
+//             { icon: DocumentIcon, text: 'Try A Sample', id: 'sample', action: handleSampleText },
+//             { icon: PasteIcon, text: 'Paste Text', id: 'paste', action: handlePasteText }
+//           ].map((item) => (
+//             <button
+//               key={item.id}
+//               onClick={item.disabled ? undefined : item.action}
+//               style={{
+//                 ...actionButtonStyles,
+//                 ...(hoveredButton === item.id && !item.disabled ? actionButtonHoverStyles : {}),
+//                 opacity: item.disabled ? 0.6 : 1,
+//                 cursor: item.disabled ? 'not-allowed' : 'pointer',
+//               }}
+//               onMouseEnter={() => !item.disabled && setHoveredButton(item.id)}
+//               onMouseLeave={() => setHoveredButton(null)}
+//               disabled={item.disabled}
+//             >
+//               {item.id === 'upload' && isUploading ? (
+//                 <div style={spinnerStyles} />
+//               ) : (
+//                 <item.icon />
+//               )}
+//               {item.text}
+//             </button>
+//           ))}
+//         </div>
+
+//         {/* Bottom Controls */}
+//         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+//           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+//             <span style={{ color: '#a1a1aa', fontSize: '16px' }}>Mode:</span>
+            
+//             <div style={selectStyles}>
+//               <button
+//                 onClick={() => setShowModeDropdown(!showModeDropdown)}
+//                 style={{
+//                   ...selectButtonStyles,
+//                   borderColor: showModeDropdown ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)',
+//                 }}
+//               >
+//                 {mode}
+//                 <ChevronDownIcon />
+//               </button>
+              
+//               {showModeDropdown && (
+//                 <div style={dropdownStyles}>
+//                   {MODES.map((modeOption) => (
+//                     <button
+//                       key={modeOption}
+//                       onClick={() => {
+//                         setMode(modeOption);
+//                         setShowModeDropdown(false);
+//                       }}
+//                       style={{
+//                         width: '100%',
+//                         padding: '12px 16px',
+//                         backgroundColor: 'transparent',
+//                         border: 'none',
+//                         color: '#fff',
+//                         cursor: 'pointer',
+//                         textAlign: 'left',
+//                         fontSize: '16px',
+//                         borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
+//                         transition: 'background-color 0.2s ease-in-out',
+//                       }}
+//                       onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.2)'}
+//                       onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+//                     >
+//                       {modeOption}
+//                     </button>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//           <button
+//             style={{
+//               ...primaryButtonStyles,
+//               ...(isPrimaryHovered && !isProcessing ? primaryButtonHoverStyles : {}),
+//             }}
+//             onMouseEnter={() => !isProcessing && setIsPrimaryHovered(true)}
+//             onMouseLeave={() => setIsPrimaryHovered(false)}
+//             onClick={handleProcessText}
+//             disabled={isProcessing}
+//           >
+//             {isProcessing ? (
+//               <>
+//                 <div style={spinnerStyles} />
+//                 Processing...
+//               </>
+//             ) : (
+//               <>
+//                 <MagicWandIcon />
+//                 Remove Plagiarism
+//               </>
+//             )}
+//           </button>
+//         </div>
+
+//         {/* Results Section */}
+//         {showComparison && processedText && (
+//           <div style={resultCardStyles}>
+//             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+//               <h3 style={{ color: '#8b5cf6', fontSize: '20px', fontWeight: '600', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+//                 <CompareIcon />
+//                 Before & After Comparison
+//               </h3>
+              
+//               <button
+//                 onClick={handleCopyResult}
+//                 style={copyButtonStyles}
+//                 onMouseEnter={(e) => {
+//                   e.target.style.transform = 'translateY(-1px)';
+//                   e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+//                 }}
+//                 onMouseLeave={(e) => {
+//                   e.target.style.transform = 'translateY(0)';
+//                   e.target.style.boxShadow = 'none';
+//                 }}
+//               >
+//                 <CopyIcon/>
+//                 Copy Result
+//               </button>
+//             </div>
+            
+//             <div style={comparisonStyles}>
+//               <div>
+//                 <h4 style={{ color: '#ef4444', fontSize: '16px', marginBottom: '12px', fontWeight: '600' }}>
+//                   Original Text
+//                 </h4>
+//                 <div className="comparison-text">
+//                   {inputText}
+//                 </div>
+//               </div>
+              
+//               <div>
+//                 <h4 style={{ color: '#10b981', fontSize: '16px', marginBottom: '12px', fontWeight: '600' }}>
+//                   Plagiarism-Free Text
+//                 </h4>
+//                 <div className="comparison-text">
+//                   {processedText}
+//                 </div>
+//               </div>
+//             </div>
+            
+//             <div style={statsContainerStyles}>
+//               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', textAlign: 'center' }}>
+//                 <div>
+//                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
+//                     {getUniquenessScore(apiResult, inputText)}%
+//                   </div>
+//                   <div style={{ fontSize: '14px', color: '#94a3b8' }}>Uniqueness</div>
+//                 </div>
+//                 <div>
+//                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6' }}>
+//                     {apiResult?.new_word_count || inputText.trim().split(' ').length}
+//                   </div>
+//                   <div style={{ fontSize: '14px', color: '#94a3b8' }}>Words Processed</div>
+//                 </div>
+//                 <div>
+//                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
+//                     {mode}
+//                   </div>
+//                   <div style={{ fontSize: '14px', color: '#94a3b8' }}>Mode Used</div>
+//                 </div>
+//               </div>
+              
+//               {/* Additional API Stats */}
+//               {apiResult && (
+//                 <div style={additionalStatsStyles}>
+//                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
+//                     {apiResult.improvement !== undefined && (
+//                       <div>Plagiarism Reduction: <span style={{ color: '#10b981' }}>-{apiResult.improvement.toFixed(1)}%</span></div>
+//                     )}
+//                     {apiResult.ai_improvement !== undefined && (
+//                       <div>AI Score Reduction: <span style={{ color: '#10b981' }}>-{apiResult.ai_improvement.toFixed(1)}%</span></div>
+//                     )}
+//                     {apiResult.length_change !== undefined && (
+//                       <div>Length Change: <span style={{ color: apiResult.length_change > 0 ? '#8b5cf6' : '#f59e0b' }}>
+//                         {apiResult.length_change > 0 ? '+' : ''}{apiResult.length_change.toFixed(1)}%
+//                       </span></div>
+//                     )}
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         )}
+
+//         {/* Enhanced Tips Section */}
+//         <div style={tipsContainerStyles}>
+//           <div 
+//             className="tips-header"
+//             style={tipsHeaderStyles}
+//             onClick={() => setShowTips(!showTips)}
+//           >
+//             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+//               <div style={{
+//                 display: 'flex',
+//                 alignItems: 'center',
+//                 justifyContent: 'center',
+//                 width: '32px',
+//                 height: '32px',
+//                 background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+//                 borderRadius: '8px',
+//                 color: '#fff'
+//               }}>
+//                 <CompareIcon />
+//               </div>
+//               <div>
+//                 <h3 style={{
+//                   color: '#f8fafc',
+//                   fontSize: '16px',
+//                   fontWeight: '600',
+//                   margin: 0,
+//                   marginBottom: '2px'
+//                 }}>
+//                   Plagiarism Removal Tips
+//                 </h3>
+//                 <p style={{
+//                   color: '#94a3b8',
+//                   fontSize: '14px',
+//                   margin: 0
+//                 }}>
+//                   {showTips ? 'Click to hide paraphrasing tips' : 'Click to view effective paraphrasing tips'}
+//                 </p>
+//               </div>
+//             </div>
+            
+//             <div style={{
+//               color: '#94a3b8',
+//               transition: 'transform 0.3s ease-in-out',
+//               transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
+//             }}>
+//               <ChevronDownIcon />
+//             </div>
+//           </div>
+
+//           <div style={tipsContentStyles}>
+//             <div style={{ display: 'grid', gap: '12px' }}>
+//               {tips.map((tip, index) => (
+//                 <div
+//                   key={index}
+//                   className="tip-item"
+//                   style={tipItemStyles}
+//                 >
+//                   <div className="icon-emoji">
+//                     {tip.icon}
+//                   </div>
+//                   <div style={{ flex: 1 }}>
+//                     <h4 style={{
+//                       color: '#f8fafc',
+//                       fontSize: '15px',
+//                       fontWeight: '600',
+//                       margin: 0,
+//                       marginBottom: '6px'
+//                     }}>
+//                       {tip.title}
+//                     </h4>
+//                     <p style={{
+//                       color: '#94a3b8',
+//                       fontSize: '14px',
+//                       margin: 0,
+//                       lineHeight: '1.5'
+//                     }}>
+//                       {tip.description}
+//                     </p>
+//                   </div>
+//                   <div style={{
+//                     color: '#8b5cf6',
+//                     opacity: 0.7
+//                   }}>
+//                     <CheckIcon />
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+
+//             <div style={tipsFooterStyles}>
+//               <p style={{
+//                 color: '#8b5cf6',
+//                 fontSize: '14px',
+//                 fontWeight: '500',
+//                 margin: 0,
+//                 display: 'flex',
+//                 alignItems: 'center',
+//                 justifyContent: 'center',
+//                 gap: '8px'
+//               }}>
+//                 <CheckIcon />
+//                 Always review the paraphrased content to ensure accuracy and proper citation
+//               </p>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default PlagiarismRemover;
+
+
+
+
+// MainContent.jsx - Main component file
 import React, { useState } from 'react';
-import { CheckIcon, ChevronDownIcon, CompareIcon, CopyIcon, DocumentIcon, MagicWandIcon, UploadIcon, PasteIcon } from './Icons';
+import { CheckIcon, ChevronDownIcon, CopyIcon, DocumentIcon, DownloadIcon, ExpandIcon, LightBulbIcon, PasteIcon, UploadIcon } from './Icons';
 
 // Import styles
 import {
@@ -12,7 +530,7 @@ import {
   textareaStyles,
   actionButtonStyles,
   actionButtonHoverStyles,
-  getPrimaryButtonStyles,
+  primaryButtonStyles,
   primaryButtonHoverStyles,
   selectStyles,
   selectButtonStyles,
@@ -21,62 +539,46 @@ import {
   getTipsHeaderStyles,
   getTipsContentStyles,
   tipItemStyles,
-  resultCardStyles,
-  comparisonStyles,
+  outputButtonStyles,
+  outputButtonHoverStyles,
   spinnerStyles,
-  getErrorStyles,
-  fileInfoStyles,
-  copyButtonStyles,
-  statsContainerStyles,
-  additionalStatsStyles,
-  tipsFooterStyles,
   cssStyles
-} from './PlagiarismComponents/style';
+} from './MainContentComponents/style';
 
 // Import utilities
 import {
-  MODES,
-  SAMPLE_TEXT,
-  tips,
   processFile,
-  removePlagiarism,
+  humanizeText,
   copyToClipboard,
   pasteFromClipboard,
-  getUniquenessScore
-} from './PlagiarismComponents/utils';
+  downloadText,
+  tips,
+  SAMPLE_TEXT,
+  MODES,
+  getWordCount,
+  getCharacterCount
+} from './MainContentComponents/utils';
 
-const PlagiarismRemover = ({ sidebarOpen }) => {
+const MainContent = ({ sidebarOpen = false }) => {
   // State management
   const [inputText, setInputText] = useState('');
-  const [mode, setMode] = useState('Academic');
+  const [mode, setMode] = useState('Enhanced');
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [hoveredButton, setHoveredButton] = useState(null);
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
   const [showTips, setShowTips] = useState(false);
-  const [processedText, setProcessedText] = useState('');
-  const [showComparison, setShowComparison] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [apiResult, setApiResult] = useState(null);
+  
+  // Backend integration state
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [outputText, setOutputText] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // File upload state
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
 
   // Event handlers
-  const handleSampleText = () => {
-    setInputText(SAMPLE_TEXT);
-  };
-
-  const handlePasteText = async () => {
-    try {
-      const text = await pasteFromClipboard();
-      if (text) {
-        setInputText(text);
-      }
-    } catch (err) {
-      setError('Failed to read clipboard contents. Please paste manually.');
-    }
-  };
-
   const handleFileUpload = () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -112,43 +614,53 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
     fileInput.click();
   };
 
-  const handleProcessText = async () => {
-    if (!inputText.trim()) {
-      setError('Please enter some text to process.');
-      return;
-    }
-
-    setIsProcessing(true);
+  const handleHumanize = async () => {
+    if (!inputText.trim()) return;
+    
+    setLoading(true);
     setError('');
-    setShowComparison(false);
-
+    
     try {
-      const result = await removePlagiarism(inputText, mode);
-      setProcessedText(result.rewritten_text);
-      setApiResult(result);
-      setShowComparison(true);
-
+      const data = await humanizeText(inputText);
+      setOutputText(data.humanized_text);
+      console.log('Humanization result:', data);
     } catch (err) {
-      console.error('API Error:', err);
-      setError(`Failed to process text: ${err.message}. Please ensure the backend server is running on http://localhost:8000`);
+      console.error('Error calling API:', err);
+      setError(`Failed to humanize text: ${err.message}`);
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
-  const handleCopyResult = async () => {
-    const success = await copyToClipboard(processedText);
+  const handleCopy = async () => {
+    const success = await copyToClipboard(outputText);
     if (success) {
-      alert('Text copied to clipboard!');
-    } else {
-      setError('Failed to copy text to clipboard.');
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
     }
+  };
+
+  const handleDownload = () => {
+    downloadText(outputText);
+  };
+
+  const handleSampleText = () => {
+    setInputText(SAMPLE_TEXT);
+  };
+
+  const handlePasteText = async () => {
+    const text = await pasteFromClipboard();
+    if (text) {
+      setInputText(text);
+    }
+  };
+
+  const renderAnalysisResults = () => {
+    return null;
   };
 
   // Get dynamic styles
   const mainContentStyles = getMainContentStyles(sidebarOpen);
-  const primaryButtonStyles = getPrimaryButtonStyles(isProcessing);
-  const errorStyles = getErrorStyles(error);
   const tipsHeaderStyles = getTipsHeaderStyles(showTips);
   const tipsContentStyles = getTipsContentStyles(showTips);
 
@@ -157,42 +669,52 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
       <style>{cssStyles}</style>
 
       {/* Header */}
-      <div style={headerStyles}>
-        <h1 style={titleStyles}>
-          Remove Plagiarism Instantly
+      <div className="header" style={headerStyles}>
+        <h1 className="title" style={titleStyles}>
+          Convert AI Text to Authentic Content
         </h1>
         
         <div 
+          className="chip"
           style={chipStyles}
           onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
           onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
         >
-          ✨ Advanced AI Paraphrasing + Local File Processing 🔒
+          🎁 Advanced Text Humanization + Local File Processing 🔒
         </div>
       </div>
 
       {/* Main Content Card */}
-      <div style={cardStyles}>
-        {/* Text Input Area */}
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Paste the text you want to remove plagiarism from here, or upload a file (.txt, .docx, .pdf, .rtf) - processed locally in your browser..."
-          style={textareaStyles}
-          onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
-          onBlur={(e) => e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'}
-        />
-
-        {/* Error Display */}
+      <div className="card" style={cardStyles}>
+        {/* Error Message */}
         {error && (
-          <div style={errorStyles}>
+          <div style={{
+            background: error.startsWith('✅') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            border: error.startsWith('✅') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+            color: error.startsWith('✅') ? '#34d399' : '#fca5a5',
+            padding: '12px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '14px'
+          }}>
             {error}
           </div>
         )}
 
         {/* File Info Display */}
-        {uploadedFile && !error.startsWith('Failed') && (
-          <div style={fileInfoStyles}>
+        {uploadedFile && !error?.startsWith('Failed') && (
+          <div style={{
+            marginBottom: '16px',
+            padding: '12px 16px',
+            background: 'rgba(99, 102, 241, 0.1)',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            borderRadius: '8px',
+            color: '#a78bfa',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
             <DocumentIcon />
             <span>
               <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB) - 
@@ -201,8 +723,117 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
           </div>
         )}
 
+        {/* Analysis Results */}
+        {renderAnalysisResults()}
+
+        {/* Input and Output Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: outputText ? '1fr 1fr' : '1fr',
+          gap: '24px',
+          marginBottom: '24px'
+        }}>
+          {/* Input Section */}
+          <div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '12px'
+            }}>
+              <h3 style={{ 
+                color: '#f8fafc', 
+                fontSize: '18px', 
+                fontWeight: '600', 
+                margin: 0 
+              }}>
+                Original Text
+              </h3>
+              <div style={{ display: 'flex', gap: '8px', color: '#94a3b8', fontSize: '14px' }}>
+                <span>Characters: {getCharacterCount(inputText)}</span>
+                <span>Words: {getWordCount(inputText)}</span>
+              </div>
+            </div>
+            <textarea
+              className="textarea"
+              style={textareaStyles}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Enter the text you want to humanize here, or upload a file (.txt, .docx, .pdf, .rtf) - processed locally in your browser..."
+              onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)'}
+            />
+          </div>
+
+          {/* Output Section - Only show when there's output */}
+          {outputText && (
+            <div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '12px'
+              }}>
+                <h3 style={{ 
+                  color: '#f8fafc', 
+                  fontSize: '18px', 
+                  fontWeight: '600', 
+                  margin: 0 
+                }}>
+                  Humanized Text
+                </h3>
+              </div>
+              <textarea
+                style={textareaStyles}
+                value={outputText}
+                onChange={(e) => setOutputText(e.target.value)}
+                placeholder="Your humanized text will appear here..."
+                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)'}
+              />
+              {/* Copy and Download buttons below the output box */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '8px', 
+                marginTop: '12px',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={handleCopy}
+                  style={{
+                    ...outputButtonStyles,
+                    ...(copySuccess ? { color: '#10b981', borderColor: '#10b981' } : {})
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!copySuccess) {
+                      Object.assign(e.target.style, outputButtonHoverStyles);
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!copySuccess) {
+                      Object.assign(e.target.style, outputButtonStyles);
+                    }
+                  }}
+                >
+                  <CopyIcon/>
+                  {copySuccess ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={handleDownload}
+                  style={outputButtonStyles}
+                  onMouseEnter={(e) => Object.assign(e.target.style, outputButtonHoverStyles)}
+                  onMouseLeave={(e) => Object.assign(e.target.style, outputButtonStyles)}
+                >
+                  <DownloadIcon />
+                  Download
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Action Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[
             { 
               icon: UploadIcon, 
@@ -211,24 +842,35 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
               action: handleFileUpload,
               disabled: isUploading
             },
-            { icon: DocumentIcon, text: 'Try A Sample', id: 'sample', action: handleSampleText },
-            { icon: PasteIcon, text: 'Paste Text', id: 'paste', action: handlePasteText }
+            { 
+              icon: DocumentIcon, 
+              text: 'Try A Sample', 
+              id: 'sample', 
+              action: handleSampleText 
+            },
+            { 
+              icon: PasteIcon, 
+              text: 'Paste Text', 
+              id: 'paste', 
+              action: handlePasteText 
+            }
           ].map((item) => (
             <button
               key={item.id}
+              className="action-button"
               onClick={item.disabled ? undefined : item.action}
+              disabled={item.disabled}
               style={{
                 ...actionButtonStyles,
                 ...(hoveredButton === item.id && !item.disabled ? actionButtonHoverStyles : {}),
                 opacity: item.disabled ? 0.6 : 1,
-                cursor: item.disabled ? 'not-allowed' : 'pointer',
+                cursor: item.disabled ? 'not-allowed' : 'pointer'
               }}
               onMouseEnter={() => !item.disabled && setHoveredButton(item.id)}
               onMouseLeave={() => setHoveredButton(null)}
-              disabled={item.disabled}
             >
               {item.id === 'upload' && isUploading ? (
-                <div style={spinnerStyles} />
+                <div style={spinnerStyles}></div>
               ) : (
                 <item.icon />
               )}
@@ -238,20 +880,21 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
         </div>
 
         {/* Bottom Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div className="bottom-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ color: '#a1a1aa', fontSize: '16px' }}>Mode:</span>
             
             <div style={selectStyles}>
               <button
+                className="select-button"
                 onClick={() => setShowModeDropdown(!showModeDropdown)}
                 style={{
                   ...selectButtonStyles,
-                  borderColor: showModeDropdown ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)',
+                  borderColor: showModeDropdown ? '#6366f1' : 'rgba(99, 102, 241, 0.3)',
                 }}
               >
                 {mode}
-                <ChevronDownIcon />
+                <ExpandIcon />
               </button>
               
               {showModeDropdown && (
@@ -275,7 +918,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                         borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
                         transition: 'background-color 0.2s ease-in-out',
                       }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.2)'}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.2)'}
                       onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                     >
                       {modeOption}
@@ -287,118 +930,21 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
           </div>
 
           <button
+            className="primary-button"
+            disabled={loading || !inputText.trim()}
             style={{
               ...primaryButtonStyles,
-              ...(isPrimaryHovered && !isProcessing ? primaryButtonHoverStyles : {}),
+              ...(isPrimaryHovered && !loading && inputText.trim() ? primaryButtonHoverStyles : {}),
+              opacity: (loading || !inputText.trim()) ? 0.6 : 1,
+              cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer'
             }}
-            onMouseEnter={() => !isProcessing && setIsPrimaryHovered(true)}
+            onMouseEnter={() => !loading && inputText.trim() && setIsPrimaryHovered(true)}
             onMouseLeave={() => setIsPrimaryHovered(false)}
-            onClick={handleProcessText}
-            disabled={isProcessing}
+            onClick={handleHumanize}
           >
-            {isProcessing ? (
-              <>
-                <div style={spinnerStyles} />
-                Processing...
-              </>
-            ) : (
-              <>
-                <MagicWandIcon />
-                Remove Plagiarism
-              </>
-            )}
+            {loading ? 'Humanizing...' : 'Humanize'}
           </button>
         </div>
-
-        {/* Results Section */}
-        {showComparison && processedText && (
-          <div style={resultCardStyles}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#8b5cf6', fontSize: '20px', fontWeight: '600', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CompareIcon />
-                Before & After Comparison
-              </h3>
-              
-              <button
-                onClick={handleCopyResult}
-                style={copyButtonStyles}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = 'none';
-                }}
-              >
-                <CopyIcon/>
-                Copy Result
-              </button>
-            </div>
-            
-            <div style={comparisonStyles}>
-              <div>
-                <h4 style={{ color: '#ef4444', fontSize: '16px', marginBottom: '12px', fontWeight: '600' }}>
-                  Original Text
-                </h4>
-                <div className="comparison-text">
-                  {inputText}
-                </div>
-              </div>
-              
-              <div>
-                <h4 style={{ color: '#10b981', fontSize: '16px', marginBottom: '12px', fontWeight: '600' }}>
-                  Plagiarism-Free Text
-                </h4>
-                <div className="comparison-text">
-                  {processedText}
-                </div>
-              </div>
-            </div>
-            
-            <div style={statsContainerStyles}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', textAlign: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
-                    {getUniquenessScore(apiResult, inputText)}%
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Uniqueness</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6' }}>
-                    {apiResult?.new_word_count || inputText.trim().split(' ').length}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Words Processed</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
-                    {mode}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Mode Used</div>
-                </div>
-              </div>
-              
-              {/* Additional API Stats */}
-              {apiResult && (
-                <div style={additionalStatsStyles}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
-                    {apiResult.improvement !== undefined && (
-                      <div>Plagiarism Reduction: <span style={{ color: '#10b981' }}>-{apiResult.improvement.toFixed(1)}%</span></div>
-                    )}
-                    {apiResult.ai_improvement !== undefined && (
-                      <div>AI Score Reduction: <span style={{ color: '#10b981' }}>-{apiResult.ai_improvement.toFixed(1)}%</span></div>
-                    )}
-                    {apiResult.length_change !== undefined && (
-                      <div>Length Change: <span style={{ color: apiResult.length_change > 0 ? '#8b5cf6' : '#f59e0b' }}>
-                        {apiResult.length_change > 0 ? '+' : ''}{apiResult.length_change.toFixed(1)}%
-                      </span></div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Enhanced Tips Section */}
         <div style={tipsContainerStyles}>
@@ -414,11 +960,11 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                 justifyContent: 'center',
                 width: '32px',
                 height: '32px',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                 borderRadius: '8px',
                 color: '#fff'
               }}>
-                <CompareIcon />
+                <LightBulbIcon />
               </div>
               <div>
                 <h3 style={{
@@ -428,14 +974,14 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                   margin: 0,
                   marginBottom: '2px'
                 }}>
-                  Plagiarism Removal Tips
+                  Pro Tips for Best Results
                 </h3>
                 <p style={{
                   color: '#94a3b8',
                   fontSize: '14px',
                   margin: 0
                 }}>
-                  {showTips ? 'Click to hide paraphrasing tips' : 'Click to view effective paraphrasing tips'}
+                  {showTips ? 'Click to hide tips' : 'Click to view optimization tips'}
                 </p>
               </div>
             </div>
@@ -445,7 +991,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
               transition: 'transform 0.3s ease-in-out',
               transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
             }}>
-              <ChevronDownIcon />
+              <ChevronDownIcon/>
             </div>
           </div>
 
@@ -480,7 +1026,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                     </p>
                   </div>
                   <div style={{
-                    color: '#8b5cf6',
+                    color: '#10b981',
                     opacity: 0.7
                   }}>
                     <CheckIcon />
@@ -489,9 +1035,16 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
               ))}
             </div>
 
-            <div style={tipsFooterStyles}>
+            <div style={{
+              marginTop: '20px',
+              padding: '16px',
+              background: 'rgba(16, 185, 129, 0.05)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
               <p style={{
-                color: '#8b5cf6',
+                color: '#10b981',
                 fontSize: '14px',
                 fontWeight: '500',
                 margin: 0,
@@ -501,7 +1054,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                 gap: '8px'
               }}>
                 <CheckIcon />
-                Always review the paraphrased content to ensure accuracy and proper citation
+                Advanced text humanization with local file processing and complete privacy
               </p>
             </div>
           </div>
@@ -511,4 +1064,4 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
   );
 };
 
-export default PlagiarismRemover;
+export default MainContent;
