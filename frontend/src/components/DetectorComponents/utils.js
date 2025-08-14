@@ -7,7 +7,7 @@ export const getClassification = (score) => {
   if (score >= 40) return 'POSSIBLY AI-GENERATED';
   if (score >= 20) return 'LIKELY HUMAN-WRITTEN';
   return 'HIGHLY LIKELY HUMAN-WRITTEN';
-};
+}; 
 
 export const getScoreColor = (score) => {
   if (score >= 80) return '#ef4444';
