@@ -1,570 +1,13 @@
-// // MainContent.jsx - Main component file
-// import React, { useState } from 'react';
-// import { CheckIcon, ChevronDownIcon, CopyIcon, DocumentIcon, DownloadIcon, ExpandIcon, LightBulbIcon, PasteIcon, UploadIcon } from './Icons';
-
-// // Import styles
-
-// Import utilities
-// import {
-//   processFile,
-//   humanizeText,
-//   copyToClipboard,
-//   pasteFromClipboard,
-//   downloadText,
-//   tips,
-//   SAMPLE_TEXT,
-//   MODES,
-//   getWordCount,
-//   getCharacterCount
-// } from './MainContentComponents/utils';
-
-// import {
-//   processFile,
-//   humanizeText,
-//   analyzeText,        // ADD THIS
-//   checkPlagiarism,    // ADD THIS  
-//   copyToClipboard,
-//   pasteFromClipboard,
-//   downloadText,
-//   tips,
-//   SAMPLE_TEXT,
-//   MODES,
-//   getWordCount,
-//   getCharacterCount
-// } from './MainContentComponents/utils';
-
-// const MainContent = ({ sidebarOpen = false }) => {
-//   // State management
-//   const [inputText, setInputText] = useState('');
-//   const [mode, setMode] = useState('Enhanced');
-//   const [showModeDropdown, setShowModeDropdown] = useState(false);
-//   const [hoveredButton, setHoveredButton] = useState(null);
-//   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
-//   const [showTips, setShowTips] = useState(false);
-  
-//   // Backend integration state
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState('');
-//   const [outputText, setOutputText] = useState('');
-//   const [copySuccess, setCopySuccess] = useState(false);
-
-//   // File upload state
-//   const [isUploading, setIsUploading] = useState(false);
-//   const [uploadedFile, setUploadedFile] = useState(null);
-
-//   // Event handlers
-//   const handleFileUpload = () => {
-//     const fileInput = document.createElement('input');
-//     fileInput.type = 'file';
-//     fileInput.accept = '.txt,.docx,.pdf,.rtf';
-//     fileInput.style.display = 'none';
-    
-//     fileInput.onchange = async (e) => {
-//       const file = e.target.files[0];
-//       if (!file) return;
-
-//       setIsUploading(true);
-//       setError('');
-//       setUploadedFile(file);
-
-//       try {
-//         const result = await processFile(file);
-//         setInputText(result.text);
-        
-//         const successMsg = `✅ Successfully extracted ${result.wordCount} words from ${result.fileName}`;
-//         setError(successMsg);
-//         setTimeout(() => setError(''), 4000);
-
-//       } catch (err) {
-//         console.error('File processing error:', err);
-//         setError(`Failed to process file: ${err.message}`);
-//       } finally {
-//         setIsUploading(false);
-//         document.body.removeChild(fileInput);
-//       }
-//     };
-
-//     document.body.appendChild(fileInput);
-//     fileInput.click();
-//   };
-
-//   const handleHumanize = async () => {
-//     if (!inputText.trim()) return;
-    
-//     setLoading(true);
-//     setError('');
-    
-//     try {
-//       const data = await humanizeText(inputText);
-//       setOutputText(data.humanized_text);
-//       console.log('Humanization result:', data);
-//     } catch (err) {
-//       console.error('Error calling API:', err);
-//       setError(`Failed to humanize text: ${err.message}`);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   try {
-//     const data = await checkPlagiarism(inputText);
-//     setOutputText(JSON.stringify(data, null, 2)); // Display plagiarism results
-//     console.log('Plagiarism check result:', data);
-//   } catch (err) {
-//     console.error('Error calling API:', err);
-//     setError(`Failed to check plagiarism: ${err.message}`);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-
-  
-//   const handleCopy = async () => {
-//     const success = await copyToClipboard(outputText);
-//     if (success) {
-//       setCopySuccess(true);
-//       setTimeout(() => setCopySuccess(false), 2000);
-//     }
-//   };
-
-//   const handleDownload = () => {
-//     downloadText(outputText);
-//   };
-
-//   const handleSampleText = () => {
-//     setInputText(SAMPLE_TEXT);
-//   };
-
-//   const handlePasteText = async () => {
-//     const text = await pasteFromClipboard();
-//     if (text) {
-//       setInputText(text);
-//     }
-//   };
-
-//   const renderAnalysisResults = () => {
-//     return null;
-//   };
-
-//   // Get dynamic styles
-//   const mainContentStyles = getMainContentStyles(sidebarOpen);
-//   const tipsHeaderStyles = getTipsHeaderStyles(showTips);
-//   const tipsContentStyles = getTipsContentStyles(showTips);
-
-//   return (
-//     <div style={mainContentStyles}>
-//       <style>{cssStyles}</style>
-
-//       {/* Header */}
-//       <div className="header" style={headerStyles}>
-//         <h1 className="title" style={titleStyles}>
-//           Convert AI Text to Authentic Content
-//         </h1>
-        
-//         <div 
-//           className="chip"
-//           style={chipStyles}
-//           onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-//           onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-//         >
-//           🎁 Advanced Text Humanization + Local File Processing 🔒
-//         </div>
-//       </div>
-
-//       {/* Main Content Card */}
-//       <div className="card" style={cardStyles}>
-//         {/* Error Message */}
-//         {error && (
-//           <div style={{
-//             background: error.startsWith('✅') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-//             border: error.startsWith('✅') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-//             color: error.startsWith('✅') ? '#34d399' : '#fca5a5',
-//             padding: '12px',
-//             borderRadius: '8px',
-//             marginBottom: '16px',
-//             fontSize: '14px'
-//           }}>
-//             {error}
-//           </div>
-//         )}
-
-//         {/* File Info Display */}
-//         {uploadedFile && !error?.startsWith('Failed') && (
-//           <div style={{
-//             marginBottom: '16px',
-//             padding: '12px 16px',
-//             background: 'rgba(99, 102, 241, 0.1)',
-//             border: '1px solid rgba(99, 102, 241, 0.3)',
-//             borderRadius: '8px',
-//             color: '#a78bfa',
-//             fontSize: '14px',
-//             display: 'flex',
-//             alignItems: 'center',
-//             gap: '8px'
-//           }}>
-//             <DocumentIcon />
-//             <span>
-//               <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB) - 
-//               Text extracted locally in your browser 🔒
-//             </span>
-//           </div>
-//         )}
-
-//         {/* Analysis Results */}
-//         {renderAnalysisResults()}
-
-//         {/* Input and Output Grid */}
-//         <div style={{
-//           display: 'grid',
-//           gridTemplateColumns: outputText ? '1fr 1fr' : '1fr',
-//           gap: '24px',
-//           marginBottom: '24px'
-//         }}>
-//           {/* Input Section */}
-//           <div>
-//             <div style={{
-//               display: 'flex',
-//               alignItems: 'center',
-//               justifyContent: 'space-between',
-//               marginBottom: '12px'
-//             }}>
-//               <h3 style={{ 
-//                 color: '#f8fafc', 
-//                 fontSize: '18px', 
-//                 fontWeight: '600', 
-//                 margin: 0 
-//               }}>
-//                 Original Text
-//               </h3>
-//               <div style={{ display: 'flex', gap: '8px', color: '#94a3b8', fontSize: '14px' }}>
-//                 <span>Characters: {getCharacterCount(inputText)}</span>
-//                 <span>Words: {getWordCount(inputText)}</span>
-//               </div>
-//             </div>
-//             <textarea
-//               className="textarea"
-//               style={textareaStyles}
-//               value={inputText}
-//               onChange={(e) => setInputText(e.target.value)}
-//               placeholder="Enter the text you want to humanize here, or upload a file (.txt, .docx, .pdf, .rtf) - processed locally in your browser..."
-//               onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-//               onBlur={(e) => e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)'}
-//             />
-//           </div>
-
-//           {/* Output Section - Only show when there's output */}
-//           {outputText && (
-//             <div>
-//               <div style={{
-//                 display: 'flex',
-//                 alignItems: 'center',
-//                 justifyContent: 'space-between',
-//                 marginBottom: '12px'
-//               }}>
-//                 <h3 style={{ 
-//                   color: '#f8fafc', 
-//                   fontSize: '18px', 
-//                   fontWeight: '600', 
-//                   margin: 0 
-//                 }}>
-//                   Humanized Text
-//                 </h3>
-//               </div>
-//               <textarea
-//                 style={textareaStyles}
-//                 value={outputText}
-//                 onChange={(e) => setOutputText(e.target.value)}
-//                 placeholder="Your humanized text will appear here..."
-//                 onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-//                 onBlur={(e) => e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)'}
-//               />
-//               {/* Copy and Download buttons below the output box */}
-//               <div style={{ 
-//                 display: 'flex', 
-//                 gap: '8px', 
-//                 marginTop: '12px',
-//                 justifyContent: 'flex-end'
-//               }}>
-//                 <button
-//                   onClick={handleCopy}
-//                   style={{
-//                     ...outputButtonStyles,
-//                     ...(copySuccess ? { color: '#10b981', borderColor: '#10b981' } : {})
-//                   }}
-//                   onMouseEnter={(e) => {
-//                     if (!copySuccess) {
-//                       Object.assign(e.target.style, outputButtonHoverStyles);
-//                     }
-//                   }}
-//                   onMouseLeave={(e) => {
-//                     if (!copySuccess) {
-//                       Object.assign(e.target.style, outputButtonStyles);
-//                     }
-//                   }}
-//                 >
-//                   <CopyIcon/>
-//                   {copySuccess ? 'Copied!' : 'Copy'}
-//                 </button>
-//                 <button
-//                   onClick={handleDownload}
-//                   style={outputButtonStyles}
-//                   onMouseEnter={(e) => Object.assign(e.target.style, outputButtonHoverStyles)}
-//                   onMouseLeave={(e) => Object.assign(e.target.style, outputButtonStyles)}
-//                 >
-//                   <DownloadIcon />
-//                   Download
-//                 </button>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-
-//         {/* Action Buttons */}
-//         <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-//           {[
-//             { 
-//               icon: UploadIcon, 
-//               text: isUploading ? 'Uploading...' : 'Upload File', 
-//               id: 'upload', 
-//               action: handleFileUpload,
-//               disabled: isUploading
-//             },
-//             { 
-//               icon: DocumentIcon, 
-//               text: 'Try A Sample', 
-//               id: 'sample', 
-//               action: handleSampleText 
-//             },
-//             { 
-//               icon: PasteIcon, 
-//               text: 'Paste Text', 
-//               id: 'paste', 
-//               action: handlePasteText 
-//             }
-//           ].map((item) => (
-//             <button
-//               key={item.id}
-//               className="action-button"
-//               onClick={item.disabled ? undefined : item.action}
-//               disabled={item.disabled}
-//               style={{
-//                 ...actionButtonStyles,
-//                 ...(hoveredButton === item.id && !item.disabled ? actionButtonHoverStyles : {}),
-//                 opacity: item.disabled ? 0.6 : 1,
-//                 cursor: item.disabled ? 'not-allowed' : 'pointer'
-//               }}
-//               onMouseEnter={() => !item.disabled && setHoveredButton(item.id)}
-//               onMouseLeave={() => setHoveredButton(null)}
-//             >
-//               {item.id === 'upload' && isUploading ? (
-//                 <div style={spinnerStyles}></div>
-//               ) : (
-//                 <item.icon />
-//               )}
-//               {item.text}
-//             </button>
-//           ))}
-//         </div>
-
-//         {/* Bottom Controls */}
-//         <div className="bottom-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-//           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-//             <span style={{ color: '#a1a1aa', fontSize: '16px' }}>Mode:</span>
-            
-//             <div style={selectStyles}>
-//               <button
-//                 className="select-button"
-//                 onClick={() => setShowModeDropdown(!showModeDropdown)}
-//                 style={{
-//                   ...selectButtonStyles,
-//                   borderColor: showModeDropdown ? '#6366f1' : 'rgba(99, 102, 241, 0.3)',
-//                 }}
-//               >
-//                 {mode}
-//                 <ExpandIcon />
-//               </button>
-              
-//               {showModeDropdown && (
-//                 <div style={dropdownStyles}>
-//                   {MODES.map((modeOption) => (
-//                     <button
-//                       key={modeOption}
-//                       onClick={() => {
-//                         setMode(modeOption);
-//                         setShowModeDropdown(false);
-//                       }}
-//                       style={{
-//                         width: '100%',
-//                         padding: '12px 16px',
-//                         backgroundColor: 'transparent',
-//                         border: 'none',
-//                         color: '#fff',
-//                         cursor: 'pointer',
-//                         textAlign: 'left',
-//                         fontSize: '16px',
-//                         borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
-//                         transition: 'background-color 0.2s ease-in-out',
-//                       }}
-//                       onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.2)'}
-//                       onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-//                     >
-//                       {modeOption}
-//                     </button>
-//                   ))}
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-
-//           <button
-//             className="primary-button"
-//             disabled={loading || !inputText.trim()}
-//             style={{
-//               ...primaryButtonStyles,
-//               ...(isPrimaryHovered && !loading && inputText.trim() ? primaryButtonHoverStyles : {}),
-//               opacity: (loading || !inputText.trim()) ? 0.6 : 1,
-//               cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer'
-//             }}
-//             onMouseEnter={() => !loading && inputText.trim() && setIsPrimaryHovered(true)}
-//             onMouseLeave={() => setIsPrimaryHovered(false)}
-//             onClick={handleHumanize}
-//           >
-//             {loading ? 'Humanizing...' : 'Humanize'}
-//           </button>
-//         </div>
-
-//         {/* Enhanced Tips Section */}
-//         <div style={tipsContainerStyles}>
-//           <div 
-//             className="tips-header"
-//             style={tipsHeaderStyles}
-//             onClick={() => setShowTips(!showTips)}
-//           >
-//             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-//               <div style={{
-//                 display: 'flex',
-//                 alignItems: 'center',
-//                 justifyContent: 'center',
-//                 width: '32px',
-//                 height: '32px',
-//                 background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-//                 borderRadius: '8px',
-//                 color: '#fff'
-//               }}>
-//                 <LightBulbIcon />
-//               </div>
-//               <div>
-//                 <h3 style={{
-//                   color: '#f8fafc',
-//                   fontSize: '16px',
-//                   fontWeight: '600',
-//                   margin: 0,
-//                   marginBottom: '2px'
-//                 }}>
-//                   Pro Tips for Best Results
-//                 </h3>
-//                 <p style={{
-//                   color: '#94a3b8',
-//                   fontSize: '14px',
-//                   margin: 0
-//                 }}>
-//                   {showTips ? 'Click to hide tips' : 'Click to view optimization tips'}
-//                 </p>
-//               </div>
-//             </div>
-            
-//             <div style={{
-//               color: '#94a3b8',
-//               transition: 'transform 0.3s ease-in-out',
-//               transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
-//             }}>
-//               <ChevronDownIcon/>
-//             </div>
-//           </div>
-
-//           <div style={tipsContentStyles}>
-//             <div style={{ display: 'grid', gap: '12px' }}>
-//               {tips.map((tip, index) => (
-//                 <div
-//                   key={index}
-//                   className="tip-item"
-//                   style={tipItemStyles}
-//                 >
-//                   <div className="icon-emoji">
-//                     {tip.icon}
-//                   </div>
-//                   <div style={{ flex: 1 }}>
-//                     <h4 style={{
-//                       color: '#f8fafc',
-//                       fontSize: '15px',
-//                       fontWeight: '600',
-//                       margin: 0,
-//                       marginBottom: '6px'
-//                     }}>
-//                       {tip.title}
-//                     </h4>
-//                     <p style={{
-//                       color: '#94a3b8',
-//                       fontSize: '14px',
-//                       margin: 0,
-//                       lineHeight: '1.5'
-//                     }}>
-//                       {tip.description}
-//                     </p>
-//                   </div>
-//                   <div style={{
-//                     color: '#10b981',
-//                     opacity: 0.7
-//                   }}>
-//                     <CheckIcon />
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-
-//             <div style={{
-//               marginTop: '20px',
-//               padding: '16px',
-//               background: 'rgba(16, 185, 129, 0.05)',
-//               border: '1px solid rgba(16, 185, 129, 0.2)',
-//               borderRadius: '8px',
-//               textAlign: 'center'
-//             }}>
-//               <p style={{
-//                 color: '#10b981',
-//                 fontSize: '14px',
-//                 fontWeight: '500',
-//                 margin: 0,
-//                 display: 'flex',
-//                 alignItems: 'center',
-//                 justifyContent: 'center',
-//                 gap: '8px'
-//               }}>
-//                 <CheckIcon />
-//                 Advanced text humanization with local file processing and complete privacy
-//               </p>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MainContent;
-
-
-
 // MainContent.jsx - Main component file
 import React, { useState } from 'react';
 import { CheckIcon, ChevronDownIcon, CopyIcon, DocumentIcon, DownloadIcon, ExpandIcon, LightBulbIcon, PasteIcon, UploadIcon } from './Icons';
 
-// Import utilities (fixed capitalization)
+// Import styles
+
+Import utilities
 import {
   processFile,
   humanizeText,
-  analyzeText,
-  checkPlagiarism,
   copyToClipboard,
   pasteFromClipboard,
   downloadText,
@@ -575,30 +18,20 @@ import {
   getCharacterCount
 } from './MainContentComponents/utils';
 
-// Import styles (you'll need to create this file or define these styles)
 import {
-  getMainContentStyles,
-  getTipsHeaderStyles,
-  getTipsContentStyles,
-  cssStyles,
-  headerStyles,
-  titleStyles,
-  chipStyles,
-  cardStyles,
-  textareaStyles,
-  outputButtonStyles,
-  outputButtonHoverStyles,
-  actionButtonStyles,
-  actionButtonHoverStyles,
-  spinnerStyles,
-  selectStyles,
-  selectButtonStyles,
-  dropdownStyles,
-  primaryButtonStyles,
-  primaryButtonHoverStyles,
-  tipsContainerStyles,
-  tipItemStyles
-} from './MainContentComponents/styles';
+  processFile,
+  humanizeText,
+  analyzeText,        // ADD THIS
+  checkPlagiarism,    // ADD THIS  
+  copyToClipboard,
+  pasteFromClipboard,
+  downloadText,
+  tips,
+  SAMPLE_TEXT,
+  MODES,
+  getWordCount,
+  getCharacterCount
+} from './MainContentComponents/utils';
 
 const MainContent = ({ sidebarOpen = false }) => {
   // State management
@@ -673,23 +106,18 @@ const MainContent = ({ sidebarOpen = false }) => {
     }
   };
 
-  const handleCheckPlagiarism = async () => {
-    if (!inputText.trim()) return;
-    
-    setLoading(true);
-    setError('');
-    
-    try {
-      const data = await checkPlagiarism(inputText);
-      setOutputText(JSON.stringify(data, null, 2)); // Display plagiarism results
-      console.log('Plagiarism check result:', data);
-    } catch (err) {
-      console.error('Error calling API:', err);
-      setError(`Failed to check plagiarism: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const data = await checkPlagiarism(inputText);
+    setOutputText(JSON.stringify(data, null, 2)); // Display plagiarism results
+    console.log('Plagiarism check result:', data);
+  } catch (err) {
+    console.error('Error calling API:', err);
+    setError(`Failed to check plagiarism: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
   
   const handleCopy = async () => {
     const success = await copyToClipboard(outputText);
@@ -988,39 +416,21 @@ const MainContent = ({ sidebarOpen = false }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              className="secondary-button"
-              disabled={loading || !inputText.trim()}
-              style={{
-                ...primaryButtonStyles,
-                background: 'rgba(168, 85, 247, 0.1)',
-                borderColor: 'rgba(168, 85, 247, 0.3)',
-                color: '#a855f7',
-                opacity: (loading || !inputText.trim()) ? 0.6 : 1,
-                cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer'
-              }}
-              onClick={handleCheckPlagiarism}
-            >
-              Check Plagiarism
-            </button>
-            
-            <button
-              className="primary-button"
-              disabled={loading || !inputText.trim()}
-              style={{
-                ...primaryButtonStyles,
-                ...(isPrimaryHovered && !loading && inputText.trim() ? primaryButtonHoverStyles : {}),
-                opacity: (loading || !inputText.trim()) ? 0.6 : 1,
-                cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer'
-              }}
-              onMouseEnter={() => !loading && inputText.trim() && setIsPrimaryHovered(true)}
-              onMouseLeave={() => setIsPrimaryHovered(false)}
-              onClick={handleHumanize}
-            >
-              {loading ? 'Humanizing...' : 'Humanize'}
-            </button>
-          </div>
+          <button
+            className="primary-button"
+            disabled={loading || !inputText.trim()}
+            style={{
+              ...primaryButtonStyles,
+              ...(isPrimaryHovered && !loading && inputText.trim() ? primaryButtonHoverStyles : {}),
+              opacity: (loading || !inputText.trim()) ? 0.6 : 1,
+              cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={() => !loading && inputText.trim() && setIsPrimaryHovered(true)}
+            onMouseLeave={() => setIsPrimaryHovered(false)}
+            onClick={handleHumanize}
+          >
+            {loading ? 'Humanizing...' : 'Humanize'}
+          </button>
         </div>
 
         {/* Enhanced Tips Section */}
@@ -1142,3 +552,6 @@ const MainContent = ({ sidebarOpen = false }) => {
 };
 
 export default MainContent;
+
+
+
