@@ -8,7 +8,6 @@ export const SAMPLE_TEXT = "Climate change represents one of the most significan
 // export const API_BASE_URL = "http://localhost:8000";
 export const API_BASE_URL = "https://text-humanizer-g2y3.onrender.com";
 
-
 // Tips data
 export const tips = [
   {
