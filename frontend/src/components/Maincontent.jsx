@@ -4,7 +4,6 @@ import { CheckIcon, ChevronDownIcon, CopyIcon, DocumentIcon, DownloadIcon, Expan
 
 // Import styles
 
-Import utilities
 import {
   processFile,
   humanizeText,
@@ -18,20 +17,6 @@ import {
   getCharacterCount
 } from './MainContentComponents/utils';
 
-import {
-  processFile,
-  humanizeText,
-  analyzeText,        // ADD THIS
-  checkPlagiarism,    // ADD THIS  
-  copyToClipboard,
-  pasteFromClipboard,
-  downloadText,
-  tips,
-  SAMPLE_TEXT,
-  MODES,
-  getWordCount,
-  getCharacterCount
-} from './MainContentComponents/utils';
 
 const MainContent = ({ sidebarOpen = false }) => {
   // State management
@@ -53,7 +38,7 @@ const MainContent = ({ sidebarOpen = false }) => {
   const [uploadedFile, setUploadedFile] = useState(null);
 
   // Event handlers
-  const handleFileUpload = () => {
+  const handleFileUpload = async() => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.txt,.docx,.pdf,.rtf';
@@ -106,17 +91,17 @@ const MainContent = ({ sidebarOpen = false }) => {
     }
   };
 
-  try {
-    const data = await checkPlagiarism(inputText);
-    setOutputText(JSON.stringify(data, null, 2)); // Display plagiarism results
-    console.log('Plagiarism check result:', data);
-  } catch (err) {
-    console.error('Error calling API:', err);
-    setError(`Failed to check plagiarism: ${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+//   try {
+//     const data = await checkPlagiarism(inputText);
+//     setOutputText(JSON.stringify(data, null, 2)); // Display plagiarism results
+//     console.log('Plagiarism check result:', data);
+//   } catch (err) {
+//     console.error('Error calling API:', err);
+//     setError(`Failed to check plagiarism: ${err.message}`);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
 
   
   const handleCopy = async () => {
