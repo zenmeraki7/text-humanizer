@@ -27,7 +27,6 @@ import {
   cssStyles
 } from './MainContentComponents/style';
 
-// Import utilities
 import {
   processFile,
   humanizeText,
@@ -40,6 +39,7 @@ import {
   getWordCount,
   getCharacterCount
 } from './MainContentComponents/utils';
+
 
 const MainContent = ({ sidebarOpen = false }) => {
   // State management
@@ -61,7 +61,7 @@ const MainContent = ({ sidebarOpen = false }) => {
   const [uploadedFile, setUploadedFile] = useState(null);
 
   // Event handlers
-  const handleFileUpload = () => {
+  const handleFileUpload = async() => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.txt,.docx,.pdf,.rtf';
@@ -108,12 +108,25 @@ const MainContent = ({ sidebarOpen = false }) => {
       console.log('Humanization result:', data);
     } catch (err) {
       console.error('Error calling API:', err);
-      setError('Failed to humanize text. Please check if the backend is running on http://localhost:8000');
+      setError(`Failed to humanize text: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
+//   try {
+//     const data = await checkPlagiarism(inputText);
+//     setOutputText(JSON.stringify(data, null, 2)); // Display plagiarism results
+//     console.log('Plagiarism check result:', data);
+//   } catch (err) {
+//     console.error('Error calling API:', err);
+//     setError(`Failed to check plagiarism: ${err.message}`);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+  
   const handleCopy = async () => {
     const success = await copyToClipboard(outputText);
     if (success) {
@@ -547,3 +560,6 @@ const MainContent = ({ sidebarOpen = false }) => {
 };
 
 export default MainContent;
+
+
+

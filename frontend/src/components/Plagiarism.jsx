@@ -512,3 +512,6 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
 };
 
 export default PlagiarismRemover;
+
+
+
