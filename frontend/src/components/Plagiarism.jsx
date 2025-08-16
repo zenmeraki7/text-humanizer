@@ -4,7 +4,7 @@ import { CheckIcon, ChevronDownIcon, CompareIcon, CopyIcon, DocumentIcon, MagicW
 
 // Import styles
 import {
-  getMainContentStyles,
+  getMainContentStyle,
   headerStyles,
   titleStyles,
   chipStyles,
@@ -146,7 +146,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
   };
 
   // Get dynamic styles
-  const mainContentStyles = getMainContentStyles(sidebarOpen);
+  const mainContentStyles = getMainContentStyle(sidebarOpen);
   const primaryButtonStyles = getPrimaryButtonStyles(isProcessing);
   const errorStyles = getErrorStyles(error);
   const tipsHeaderStyles = getTipsHeaderStyles(showTips);

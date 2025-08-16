@@ -4,7 +4,7 @@ import { CheckIcon, ChevronDownIcon, CopyIcon, DocumentIcon, DownloadIcon, Expan
 
 // Import styles
 import {
-  getMainContentStyles,
+  getMainContentStyle,
   headerStyles,
   titleStyles,
   chipStyles,
@@ -142,7 +142,7 @@ const MainContent = ({ sidebarOpen = false }) => {
   };
 
   // Get dynamic styles
-  const mainContentStyles = getMainContentStyles(sidebarOpen);
+  const mainContentStyles = getMainContentStyle(sidebarOpen);
   const tipsHeaderStyles = getTipsHeaderStyles(showTips);
   const tipsContentStyles = getTipsContentStyles(showTips);
 

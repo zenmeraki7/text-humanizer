@@ -3,7 +3,7 @@
 const drawerWidth = 280;
 const collapsedDrawerWidth = 64;
 
-export const getMainContentStyles = (sidebarOpen) => ({
+export const getMainContentStyle = (sidebarOpen) => ({
   marginLeft: sidebarOpen ? drawerWidth : collapsedDrawerWidth,
   transition: 'margin-left 0.3s ease-in-out',
   minHeight: '100vh',
