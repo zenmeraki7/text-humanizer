@@ -27,6 +27,7 @@ MANIFEST
 # Virtual Environment
 venv/
 env/
+
 ENV/
 env.bak/
 venv.bak/
@@ -64,3 +65,7 @@ htmlcov/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+#excel file
+*.xlsx   
+*.xls     
