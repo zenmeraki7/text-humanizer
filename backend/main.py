@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import anthropic
 import re
 import os
+import pandas
 import logging
 import random
 import math
