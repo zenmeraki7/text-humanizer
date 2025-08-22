@@ -4,6 +4,6 @@ uvicorn[standard]
 anthropic
 python-dotenv
 pydantic
-
+pandas
 # Required by your code
 python-multipart
