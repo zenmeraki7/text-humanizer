@@ -1,13 +1,9 @@
-pip>=25.2
-setuptools>=70.0.0
-wheel
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.5.3
-pydantic-core==2.14.6
-anthropic==0.7.8
-pandas>=2.2.0
-openpyxl==3.1.2
-python-dotenv==1.0.0
-python-multipart==0.0.6
-typing-extensions==4.8.0
+# Core dependencies for your main.py
+fastapi
+uvicorn[standard]
+anthropic
+python-dotenv
+pydantic
+pandas
+# Required by your code
+python-multipart
