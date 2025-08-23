@@ -19,3 +19,6 @@ python-multipart==0.0.6
 
 # Keep typing extensions for compatibility
 typing-extensions==4.8.0
+
+pydantic==2.5.3
+pydantic-core==2.14.6
