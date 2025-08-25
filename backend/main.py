@@ -172,7 +172,7 @@ async def humanize_text(request: HumanizeRequest):
     try:
         humanized_text, status, analysis = text_humanizer.humanize(request.text)
         logger.info("✅ Humanization successful")
-                return {
+        return {
             "humanized_text": humanized_text,
             "status": status,
             "analysis": analysis
