@@ -172,6 +172,49 @@ async def humanize_text(request: HumanizeRequest):
     try:
         humanized_text, status, analysis = text_humanizer.humanize(request.text)
         logger.info("✅ Humanization successful")
-        return {
+                return {
             "humanized_text": humanized_text,
             "status": status,
+            "analysis": analysis
+        }
+    except Exception as e:
+        logger.error(f"❌ Humanization error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/plagiarism/check")
+async def plagiarism_check(request: PlagiarismCheckRequest):
+    """Check plagiarism between two texts"""
+    logger.info("📚 Plagiarism check request received")
+
+    try:
+        score, matches = plagiarism_detector.check(request.text1, request.text2)
+        logger.info(f"✅ Plagiarism check complete: {score:.1f}% similarity")
+        return {
+            "similarity_score": score,
+            "matches": matches
+        }
+    except Exception as e:
+        logger.error(f"❌ Plagiarism check error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/plagiarism/remove")
+async def plagiarism_remove(request: PlagiarismRemoveRequest):
+    """Remove plagiarism from text"""
+    logger.info("🧹 Plagiarism removal request received")
+
+    try:
+        cleaned_text, report = plagiarism_detector.remove(
+            text=request.text,
+            rewrite_mode=request.rewrite_mode,
+            reference_text=request.reference_text
+        )
+        logger.info("✅ Plagiarism removal successful")
+        return {
+            "cleaned_text": cleaned_text,
+            "report": report
+        }
+    except Exception as e:
+        logger.error(f"❌ Plagiarism removal error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
