@@ -323,7 +323,7 @@ class PlagiarismRemoveRequest(BaseModel):
 @app.get("/debug")
 async def debug():
     """Debug endpoint to check API key status"""
-    api_key = os.getenv("ANTHROPIC_API_KEY", "dummy_key")
+    api_key = os.getenv("ANTHROPIC_API_KEY", "sk-ant-api03-IXFYMTcvHs36LamhrlOHq2iUjaiWK-1wezk0QOTf7inv_8RF1By7yxYsjzG7awd-6D_kxFF6sKH3Hl_GMVgGA-7BZytgAA")
     return {
         "api_key_status": "loaded" if api_key != "dummy_key" else "missing",
         "api_key_prefix": api_key[:10] + "..." if api_key != "dummy_key" else "dummy_key",
