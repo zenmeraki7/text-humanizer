@@ -130,7 +130,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
 
     } catch (err) {
       console.error('API Error:', err);
-      setError(`Failed to process text: ${err.message}. Please ensure the backend server is running on http://localhost:8000`);
+      setError('Failed to process text. Please try again.');
     } finally {
       setIsProcessing(false);
     }
