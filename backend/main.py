@@ -267,6 +267,9 @@ try:
 except:
     pass
 
+class TextAnalysisRequest(BaseModel):
+    text: str
+
 class HumanizeRequest(BaseModel):
     text: str
 
@@ -282,6 +285,54 @@ def root():
         "status": "running", 
         "modules_loaded": modules_loaded
     }
+
+@app.post("/analyze")
+def analyze_text(request: TextAnalysisRequest):
+    if not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    if modules_loaded:
+        try:
+            report, score, classification = ai_detector.get_detection_report(request.text)
+            detected_patterns = ai_detector.detect_ai_patterns(request.text)
+            return {
+                "ai_score": score,
+                "classification": classification,
+                "report": report,
+                "detected_patterns": detected_patterns
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    else:
+        # Basic analysis fallback
+        word_count = len(request.text.split())
+        ai_indicators = 0
+        
+        text_lower = request.text.lower()
+        if "furthermore" in text_lower:
+            ai_indicators += 1
+        if "moreover" in text_lower:
+            ai_indicators += 1
+        if "it's important to note" in text_lower:
+            ai_indicators += 2
+        if "significant" in text_lower:
+            ai_indicators += 1
+        if "utilize" in text_lower:
+            ai_indicators += 1
+            
+        score = min(90, 20 + (ai_indicators * 15))
+        classification = "Likely AI" if score > 60 else "Likely Human"
+        
+        return {
+            "ai_score": score,
+            "classification": classification,
+            "report": {
+                "word_count": word_count,
+                "ai_indicators_found": ai_indicators,
+                "note": "Basic analysis mode"
+            },
+            "detected_patterns": {}
+        }
 
 @app.post("/humanize")
 def humanize_text(request: HumanizeRequest):
@@ -304,6 +355,8 @@ def humanize_text(request: HumanizeRequest):
         text = text.replace("furthermore", "also")
         text = text.replace("moreover", "plus")
         text = text.replace("utilize", "use")
+        text = text.replace("it's important to note that", "")
+        text = text.replace("significant", "important")
         return {
             "humanized_text": text,
             "status": "Basic mode"
@@ -332,6 +385,9 @@ def remove_plagiarism(request: PlagiarismRemoveRequest):
         text = request.text
         text = text.replace("significant", "important")
         text = text.replace("demonstrate", "show")
+        text = text.replace("utilize", "use")
+        text = text.replace("furthermore", "also")
+        text = text.replace("moreover", "plus")
         return {
             "cleaned_text": text,
             "report": {"status": "Basic mode"}
