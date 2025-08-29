@@ -109,7 +109,6 @@ const MainContent = ({ sidebarOpen = false }) => {
     } catch (err) {
       console.error('Error calling API:', err);
       setError('Failed to humanize text. Please try again.');
-      #setError('Failed to humanize text. Please check if the backend is running on http://localhost:8000');
     } finally {
       setLoading(false);
     }
