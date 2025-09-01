@@ -301,6 +301,31 @@ export const SAMPLE_TEXT = "Climate change represents one of the most significan
 // ✅ FIXED: Updated API base URL to use your production backend
 export const API_BASE_URL = "https://test-3p0b.onrender.com";
 
+const API_BASE = "https://test-3p0b.onrender.com"; // your FastAPI backend
+
+export async function removePlagiarism(text, rewriteMode = "balanced", referenceText = "") {
+  try {
+    const response = await fetch(`${API_BASE}/remove-plagiarism`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        rewrite_mode: rewriteMode,
+        reference_text: referenceText,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Backend error: " + response.status);
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error("❌ Plagiarism remover failed:", err);
+    throw new Error("Failed to process text. Please try again.");
+  }
+}
+
 // Tips data
 export const tips = [
   {
