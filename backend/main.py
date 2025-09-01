@@ -250,13 +250,24 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Text Detector & Humanizer API")
 
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["https://your-frontend-domain.com"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-frontend-domain.com"],
+    allow_origins=[
+        "https://test-finam.onrender.com",  # your frontend
+        "http://localhost:3000",            # local dev
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 def handle_api_retry(func, max_retries=3):
     """
