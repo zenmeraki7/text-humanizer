@@ -523,19 +523,17 @@ import {
   SAMPLE_TEXT,
   tips,
   processFile,
-  removePlagiarism,   // ✅ only this one kept (backend version)
+  removePlagiarism,
   copyToClipboard,
   pasteFromClipboard,
   getUniquenessScore,
 } from "./PlagiarismComponents/utils";
 
-import "./PlagiarismComponents/style.css";
-
 const PlagiarismRemover = () => {
   const [inputText, setInputText] = useState("");
   const [outputText, setOutputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState("balanced");
+  const [mode, setMode] = useState("Academic");
   const [copied, setCopied] = useState(false);
   const [uniqueness, setUniqueness] = useState(null);
   const fileInputRef = useRef(null);
@@ -557,36 +555,63 @@ const PlagiarismRemover = () => {
   };
 
   // ✅ Copy output text
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!outputText) return;
-    copyToClipboard(outputText, setCopied);
+    const success = await copyToClipboard(outputText);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   // ✅ Handle file upload
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const text = await processFile(file);
-      setInputText(text);
+      try {
+        const { text } = await processFile(file);
+        setInputText(text);
+      } catch (err) {
+        alert(err.message);
+      }
     }
   };
 
   return (
-    <div className="plagiarism-remover">
-      <h2>Plagiarism Remover</h2>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4">Plagiarism Remover</h2>
 
       {/* Input Area */}
       <textarea
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
         placeholder="Paste your text here..."
+        className="w-full h-40 border rounded-lg p-3 mb-4"
       />
 
       {/* Controls */}
-      <div className="controls">
-        <button onClick={pasteFromClipboard}>Paste</button>
-        <button onClick={() => setInputText(SAMPLE_TEXT)}>Use Sample</button>
-        <button onClick={() => fileInputRef.current.click()}>Upload File</button>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button
+          onClick={async () => {
+            const clip = await pasteFromClipboard();
+            setInputText(clip);
+          }}
+          className="px-4 py-2 bg-gray-200 rounded-lg"
+        >
+          Paste
+        </button>
+        <button
+          onClick={() => setInputText(SAMPLE_TEXT)}
+          className="px-4 py-2 bg-gray-200 rounded-lg"
+        >
+          Use Sample
+        </button>
+        <button
+          onClick={() => fileInputRef.current.click()}
+          className="px-4 py-2 bg-gray-200 rounded-lg flex items-center gap-2"
+        >
+          <Upload className="w-4 h-4" /> Upload File
+        </button>
         <input
           type="file"
           ref={fileInputRef}
@@ -596,59 +621,70 @@ const PlagiarismRemover = () => {
       </div>
 
       {/* Mode Selector */}
-      <div className="mode-selector">
-        {Object.keys(MODES).map((m) => (
+      <div className="flex gap-2 mb-4">
+        {MODES.map((m) => (
           <button
             key={m}
-            className={mode === m ? "active" : ""}
+            className={`px-3 py-1 rounded-lg ${
+              mode === m ? "bg-blue-600 text-white" : "bg-gray-200"
+            }`}
             onClick={() => setMode(m)}
           >
-            {MODES[m]}
+            {m}
           </button>
         ))}
       </div>
 
       {/* Process Button */}
       <button
-        className="process-btn"
+        className="w-full py-3 bg-green-600 text-white rounded-lg flex items-center justify-center gap-2"
         onClick={handleProcessText}
         disabled={isLoading}
       >
         {isLoading ? (
           <>
-            <Loader2 className="icon spin" /> Processing...
+            <Loader2 className="animate-spin w-5 h-5" /> Processing...
           </>
         ) : (
           <>
-            <Wand2 className="icon" /> Remove Plagiarism
+            <Wand2 className="w-5 h-5" /> Remove Plagiarism
           </>
         )}
       </button>
 
       {/* Output */}
       {outputText && (
-        <div className="output-section">
-          <h3>Rewritten Text</h3>
-          <textarea value={outputText} readOnly />
-          <button onClick={handleCopy}>
-            {copied ? <Check className="icon" /> : <Copy className="icon" />}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-2">Rewritten Text</h3>
+          <textarea
+            value={outputText}
+            readOnly
+            className="w-full h-40 border rounded-lg p-3 mb-2"
+          />
+          <button
+            onClick={handleCopy}
+            className="px-4 py-2 bg-gray-200 rounded-lg flex items-center gap-2"
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             {copied ? "Copied!" : "Copy"}
           </button>
 
           {uniqueness !== null && (
-            <p className="uniqueness-score">
-              Uniqueness Score: {getUniquenessScore(uniqueness)}%
+            <p className="mt-2 text-sm text-gray-600">
+              Uniqueness Score: {getUniquenessScore({})}%
             </p>
           )}
         </div>
       )}
 
       {/* Tips */}
-      <div className="tips">
-        <h4>Tips</h4>
-        <ul>
+      <div className="mt-6">
+        <h4 className="text-lg font-semibold mb-2">Tips</h4>
+        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
           {tips.map((t, i) => (
-            <li key={i}>{t}</li>
+            <li key={i}>
+              <span className="font-bold">{t.icon} {t.title}:</span> {t.description}
+            </li>
           ))}
         </ul>
       </div>
