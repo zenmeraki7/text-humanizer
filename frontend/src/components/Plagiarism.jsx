@@ -2,6 +2,21 @@
 import React, { useState } from 'react';
 import { CheckIcon, ChevronDownIcon, CompareIcon, CopyIcon, DocumentIcon, MagicWandIcon, UploadIcon, PasteIcon } from './Icons';
 
+import { removePlagiarism } from "./PlagiarismComponents/utils";
+
+const handlePlagiarismCheck = async () => {
+  setLoading(true);
+  try {
+    const result = await removePlagiarism(inputText);
+    setOutput(result.rewritten_text); // ✅ this comes from backend
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 // Import styles
 import {
   getMainContentStyles,
