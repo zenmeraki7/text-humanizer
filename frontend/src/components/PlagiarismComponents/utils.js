@@ -293,38 +293,17 @@
 
 // utils.js - Utility functions for PlagiarismRemover component
 
+
+
+// final
+
 // Constants
 export const MODES = ['Academic', 'Creative', 'Professional', 'Casual'];
 
 export const SAMPLE_TEXT = "Climate change represents one of the most significant challenges facing humanity in the 21st century. Rising global temperatures, caused primarily by greenhouse gas emissions from human activities, are leading to widespread environmental, economic, and social consequences. Scientists have documented increasing frequency of extreme weather events, melting ice caps, rising sea levels, and shifts in precipitation patterns. These changes threaten ecosystems, agricultural productivity, and human settlements worldwide.";
 
-// ✅ FIXED: Updated API base URL to use your production backend
+// ✅ API base URL for backend
 export const API_BASE_URL = "https://test-3p0b.onrender.com";
-
-const API_BASE = "https://test-3p0b.onrender.com"; // your FastAPI backend
-
-export async function removePlagiarism(text, rewriteMode = "balanced", referenceText = "") {
-  try {
-    const response = await fetch(`${API_BASE}/remove-plagiarism`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        rewrite_mode: rewriteMode,
-        reference_text: referenceText,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Backend error: " + response.status);
-    }
-
-    return await response.json();
-  } catch (err) {
-    console.error("❌ Plagiarism remover failed:", err);
-    throw new Error("Failed to process text. Please try again.");
-  }
-}
 
 // Tips data
 export const tips = [
@@ -384,7 +363,6 @@ export const readTextFile = (file) => {
 export const readPDFFile = async (file) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // Load PDF.js from CDN
       if (!window.pdfjsLib) {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
@@ -418,7 +396,6 @@ export const readPDFFile = async (file) => {
 export const readDocxFile = async (file) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // Load mammoth.js from CDN
       if (!window.mammoth) {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js';
@@ -449,19 +426,13 @@ export const readRTFFile = (file) => {
     reader.onload = (e) => {
       try {
         const rtfContent = e.target.result;
-        // Basic RTF text extraction
         let text = rtfContent;
         
-        // Remove RTF control words and formatting
         text = text.replace(/\\([a-z]{1,32})(-?\d{1,10})?[ ]?/g, '');
         text = text.replace(/[{}]/g, '');
         text = text.replace(/\\\\/g, '\\');
         text = text.replace(/\\;/g, ';');
-        
-        // Clean up extra whitespace
         text = text.replace(/\s+/g, ' ').trim();
-        
-        // Remove remaining RTF artifacts
         text = text.replace(/^rtf\d+/i, '');
         
         if (text.length > 10) {
@@ -507,12 +478,10 @@ export const getWordCount = (text) => {
 
 // File processing main function
 export const processFile = async (file) => {
-  // Validate file size
   if (!validateFileSize(file)) {
     throw new Error('File too large. Maximum size is 10MB.');
   }
 
-  // Validate file type
   if (!validateFileType(file)) {
     throw new Error('Unsupported file type. Please upload .txt, .docx, .pdf, or .rtf files.');
   }
@@ -520,7 +489,6 @@ export const processFile = async (file) => {
   const fileExtension = getFileExtension(file.name);
   let extractedText = '';
 
-  // Process based on file type
   if (fileExtension === '.txt') {
     extractedText = await readTextFile(file);
   } else if (fileExtension === '.pdf') {
@@ -535,7 +503,6 @@ export const processFile = async (file) => {
     throw new Error('No readable text found in the file');
   }
 
-  // Truncate if too long
   extractedText = truncateText(extractedText);
 
   return {
@@ -546,7 +513,7 @@ export const processFile = async (file) => {
   };
 };
 
-// API functions
+// ✅ Final plagiarism remover function (only one definition)
 export const removePlagiarism = async (text, mode) => {
   const backendMode = getModeMapping(mode);
   
@@ -599,11 +566,9 @@ export const pasteFromClipboard = async () => {
 export const getUniquenessScore = (apiResult, inputText) => {
   if (!apiResult) return 95;
   
-  // Calculate uniqueness based on API improvements
   const plagiarismImprovement = apiResult.improvement || 0;
   const aiImprovement = apiResult.ai_improvement || 0;
   
-  // Base score + improvements, capped at 99%
   const uniqueness = Math.min(99, 75 + (plagiarismImprovement * 0.3) + (aiImprovement * 0.2));
   return Math.round(uniqueness);
 };
