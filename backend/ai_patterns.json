@@ -389,5 +389,71 @@
   "uniform_sentences": [
     "^[A-Z][a-z]+ [a-z]+ [a-z]+ [a-z]+\\.",
     "\\. [A-Z][a-z]+ [a-z]+ [a-z]+ [a-z]+\\."
-  ]
+  ],
+
+  "rhetorical_questions": {
+    "obvious_answer": [
+      "Who doesn't want happiness?",
+      "Who doesn't want success?", 
+      "Who wouldn't agree with that?",
+      "Isn't that what we all want?",
+      "Don't we all crave love?",
+      "Haven't we all felt this way?",
+      "Don't we all want to belong?"
+    ],
+    "dramatic_hooks": [
+      "Can you imagine a world without love?",
+      "What if I told you there's a secret?",
+      "What if everything you knew was a lie?"
+    ],
+    "false_choice": [
+      "Do you want to stay stuck, or do you want to grow?",
+      "Will you settle for less, or reach for greatness?"
+    ],
+    "self_answering": [
+      "Why does this matter? Because it changes everything.",
+      "How do we know? The evidence speaks for itself.",
+      "What's the catch? There isn't one."
+    ],
+    "universalizing": [
+      "Haven't we all felt this way?",
+      "Don't we all want to belong?"
+    ],
+    "pseudo_profound": [
+      "What is love, really?",
+      "Who are we without our dreams?",
+      "What's the true meaning of life?"
+    ],
+    "sales_cta": [
+      "Ready to take your life to the next level?",
+      "What are you waiting for?",
+      "Why not start today?",
+      "Isn't it time for change?"
+    ]
+  },
+
+  "rhetorical_question_rewrites": {
+    "Who doesn't want happiness?": "Everyone seeks happiness, but it means different things to different people.",
+    "Who doesn't want success?": "Most people aim for success, though their definitions vary.",
+    "Who wouldn't agree with that?": "State directly without asking for agreement.",
+    "Isn't that what we all want?": "Be specific about what people want.",
+    "Don't we all crave love?": "People naturally seek love and connection.",
+    "Can you imagine a world without love?": "Paint the scene directly instead of asking.",
+    "What if I told you there's a secret?": "Reveal the insight directly without theatrics.",
+    "What if everything you knew was a lie?": "Introduce the twist directly.",
+    "Do you want to stay stuck, or do you want to grow?": "Acknowledge nuance instead of forcing two options.",
+    "Will you settle for less, or reach for greatness?": "Frame growth without oversimplifying.",
+    "Why does this matter? Because it changes everything.": "Combine into a declarative statement.",
+    "How do we know? The evidence speaks for itself.": "The evidence makes it clear.",
+    "What's the catch? There isn't one.": "There's no catch.",
+    "Haven't we all felt this way?": "Use specific scenarios rather than claiming universality.",
+    "Don't we all want to belong?": "Belonging is a common human need.",
+    "What is love, really?": "Be specific about the context of love instead of asking vaguely.",
+    "Who are we without our dreams?": "Dreams shape our identity.",
+    "What's the true meaning of life?": "Avoid unless discussing specific philosophy.",
+    "Ready to take your life to the next level?": "You can take your life to the next level by…",
+    "What are you waiting for?": "Start now to see results.",
+    "Why not start today?": "Begin today.",
+    "Isn't it time for change?": "It's time for change."
+  }
 }
