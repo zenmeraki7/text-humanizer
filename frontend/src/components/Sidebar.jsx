@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Icon components
@@ -50,6 +50,14 @@ const AlertTriangleIcon = () => (
     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
     <line x1="12" y1="9" x2="12" y2="13"></line>
     <line x1="12" y1="17" x2="12.01" y2="17"></line>
+  </svg>
+);
+
+// Close Icon for mobile
+const CloseIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
   </svg>
 );
 
@@ -139,6 +147,24 @@ const LogoutConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
           }
         }
 
+        @keyframes slideInFromLeft {
+          from {
+            transform: translateX(-100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideOutToLeft {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(-100%);
+          }
+        }
+
         .modal-card {
           animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -154,6 +180,14 @@ const LogoutConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
           border-top: 2px solid #ffffff;
           border-radius: 50%;
           animation: spinner 1s linear infinite;
+        }
+
+        .sidebar-enter {
+          animation: slideInFromLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-exit {
+          animation: slideOutToLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
 
@@ -338,14 +372,56 @@ const LogoutConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
 const drawerWidth = 220;
 const collapsedDrawerWidth = 60;
 
+// Hook to detect mobile screen size
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  return isMobile;
+};
+
+// Mobile Overlay Component
+const MobileOverlay = ({ isOpen, onClick }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 1199,
+        animation: 'fadeIn 0.3s ease-out',
+      }}
+      onClick={onClick}
+    />
+  );
+};
+
 // Sidebar Component
-const Sidebar = ({ open, onToggle }) => {
+const Sidebar = ({ open = false, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const isMobile = useIsMobile();
+  
   const isCollapsed = !open;
 
-const getActiveItem = () => {
+  const getActiveItem = () => {
     switch (location.pathname) {
       case '/': return 'home';
       case '/pricing': return 'pricing';
@@ -364,6 +440,11 @@ const getActiveItem = () => {
       return;
     }
 
+    // Close mobile sidebar when navigating (collapse it)
+    if (isMobile && open) {
+      onToggle();
+    }
+
     // Navigation logic
     if (itemId === 'settings') {
       navigate('/settings');
@@ -373,14 +454,10 @@ const getActiveItem = () => {
       navigate('/detector');
     } else if (itemId === 'plagiarism') {
       navigate('/plagiarism');
+    } else if (itemId === 'pricing') {
+      navigate('/pricing');
     }
-  else if (itemId === 'pricing') {
-    navigate('/pricing');
-  }
   };
-
-
- 
 
   const menuItems = [
     { id: 'home', icon: MenuIcon, label: 'AI Humanizer' },
@@ -408,13 +485,13 @@ const getActiveItem = () => {
     overflow: 'hidden',
   };
 
-   const headerStyles = {
-    padding: isCollapsed ? '12px 8px' : '12px 16px', // Reduced padding
+  const headerStyles = {
+    padding: isCollapsed ? '12px 8px' : '12px 16px',
     borderBottom: '1px solid rgba(99, 102, 241, 0.2)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: isCollapsed ? 'center' : 'space-between',
-    minHeight: '56px', // Reduced from 60 to 56
+    minHeight: '56px',
   };
 
   const logoStyles = {
@@ -520,6 +597,7 @@ const getActiveItem = () => {
 
   return (
     <>
+      {/* Sidebar */}
       <div style={sidebarStyles}>
         {/* Header */}
         <div style={headerStyles}>
@@ -615,7 +693,7 @@ const getActiveItem = () => {
       <LogoutConfirmationModal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
-        onConfirm={()=>navigate('/login')}
+        onConfirm={() => navigate('/login')}
       />
     </>
   );

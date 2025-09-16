@@ -174,6 +174,112 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
 
       {/* Main Content Card */}
       <div style={cardStyles}>
+           {/* Enhanced Tips Section */}
+        <div style={tipsContainerStyles}>
+          <div 
+            className="tips-header"
+            style={tipsHeaderStyles}
+            onClick={() => setShowTips(!showTips)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                borderRadius: '8px',
+                color: '#fff'
+              }}>
+                <CompareIcon />
+              </div>
+              <div>
+                <h3 style={{
+                  color: '#f8fafc',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: 0,
+                  marginBottom: '2px'
+                }}>
+                  Plagiarism Removal Tips
+                </h3>
+                <p style={{
+                  color: '#94a3b8',
+                  fontSize: '14px',
+                  margin: 0
+                }}>
+                  {showTips ? 'Click to hide paraphrasing tips' : 'Click to view effective paraphrasing tips'}
+                </p>
+              </div>
+            </div>
+            
+            <div style={{
+              color: '#94a3b8',
+              transition: 'transform 0.3s ease-in-out',
+              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}>
+              <ChevronDownIcon />
+            </div>
+          </div>
+
+          <div style={tipsContentStyles}>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {tips.map((tip, index) => (
+                <div
+                  key={index}
+                  className="tip-item"
+                  style={tipItemStyles}
+                >
+                  <div className="icon-emoji">
+                    {tip.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{
+                      color: '#f8fafc',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      margin: 0,
+                      marginBottom: '6px'
+                    }}>
+                      {tip.title}
+                    </h4>
+                    <p style={{
+                      color: '#94a3b8',
+                      fontSize: '14px',
+                      margin: 0,
+                      lineHeight: '1.5'
+                    }}>
+                      {tip.description}
+                    </p>
+                  </div>
+                  <div style={{
+                    color: '#8b5cf6',
+                    opacity: 0.7
+                  }}>
+                    <CheckIcon />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={tipsFooterStyles}>
+              <p style={{
+                color: '#8b5cf6',
+                fontSize: '14px',
+                fontWeight: '500',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}>
+                <CheckIcon />
+                Always review the paraphrased content to ensure accuracy and proper citation
+              </p>
+            </div>
+          </div>
+        </div>
         {/* Text Input Area */}
         <textarea
           value={inputText}
@@ -401,112 +507,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
           </div>
         )}
 
-        {/* Enhanced Tips Section */}
-        <div style={tipsContainerStyles}>
-          <div 
-            className="tips-header"
-            style={tipsHeaderStyles}
-            onClick={() => setShowTips(!showTips)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                borderRadius: '8px',
-                color: '#fff'
-              }}>
-                <CompareIcon />
-              </div>
-              <div>
-                <h3 style={{
-                  color: '#f8fafc',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  margin: 0,
-                  marginBottom: '2px'
-                }}>
-                  Plagiarism Removal Tips
-                </h3>
-                <p style={{
-                  color: '#94a3b8',
-                  fontSize: '14px',
-                  margin: 0
-                }}>
-                  {showTips ? 'Click to hide paraphrasing tips' : 'Click to view effective paraphrasing tips'}
-                </p>
-              </div>
-            </div>
-            
-            <div style={{
-              color: '#94a3b8',
-              transition: 'transform 0.3s ease-in-out',
-              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}>
-              <ChevronDownIcon />
-            </div>
-          </div>
-
-          <div style={tipsContentStyles}>
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {tips.map((tip, index) => (
-                <div
-                  key={index}
-                  className="tip-item"
-                  style={tipItemStyles}
-                >
-                  <div className="icon-emoji">
-                    {tip.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{
-                      color: '#f8fafc',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      margin: 0,
-                      marginBottom: '6px'
-                    }}>
-                      {tip.title}
-                    </h4>
-                    <p style={{
-                      color: '#94a3b8',
-                      fontSize: '14px',
-                      margin: 0,
-                      lineHeight: '1.5'
-                    }}>
-                      {tip.description}
-                    </p>
-                  </div>
-                  <div style={{
-                    color: '#8b5cf6',
-                    opacity: 0.7
-                  }}>
-                    <CheckIcon />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div style={tipsFooterStyles}>
-              <p style={{
-                color: '#8b5cf6',
-                fontSize: '14px',
-                fontWeight: '500',
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}>
-                <CheckIcon />
-                Always review the paraphrased content to ensure accuracy and proper citation
-              </p>
-            </div>
-          </div>
-        </div>
+     
       </div>
     </div>
   );

@@ -468,7 +468,7 @@ export const TipsSection = ({ tips, showTips, onToggleTips, styles }) => {
           ))}
         </div>
 
-        <div style={{
+        {/* <div style={{
           marginTop: '20px',
           padding: '16px',
           background: 'rgba(16, 185, 129, 0.05)',
@@ -484,12 +484,12 @@ export const TipsSection = ({ tips, showTips, onToggleTips, styles }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px'
+            gap: '8px',
           }}>
             <CheckIcon />
             Advanced pattern detection with 95%+ accuracy + secure local file processing
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

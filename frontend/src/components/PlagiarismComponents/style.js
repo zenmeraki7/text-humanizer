@@ -156,6 +156,7 @@ export const tipsContainerStyles = {
   borderRadius: '12px',
   overflow: 'hidden',
   transition: 'all 0.3s ease-in-out',
+  marginBottom: '24px',
 };
 
 export const getTipsHeaderStyles = (showTips) => ({

@@ -134,7 +134,13 @@ const Detector = ({ sidebarOpen = false }) => {
 
         {/* File Info Display */}
         <FileInfoDisplay uploadedFile={uploadedFile} error={error} />
-
+ {/* Enhanced Tips Section */}
+        <TipsSection 
+          tips={TIPS_DATA}
+          showTips={showTips}
+          onToggleTips={handleToggleTips}
+          styles={styles}
+        />
         {/* Input and Results Grid */}
         <div style={{
           display: 'grid',
@@ -371,13 +377,7 @@ const Detector = ({ sidebarOpen = false }) => {
           onSampleClick={setText} 
         />
 
-        {/* Enhanced Tips Section */}
-        <TipsSection 
-          tips={TIPS_DATA}
-          showTips={showTips}
-          onToggleTips={handleToggleTips}
-          styles={styles}
-        />
+       
       </div>
     </div>
   );

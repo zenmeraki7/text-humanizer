@@ -207,7 +207,119 @@ const MainContent = ({ sidebarOpen = false }) => {
 
         {/* Analysis Results */}
         {renderAnalysisResults()}
+   {/* Enhanced Tips Section */}
+        <div style={tipsContainerStyles}>
+          <div 
+            className="tips-header"
+            style={tipsHeaderStyles}
+            onClick={() => setShowTips(!showTips)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                borderRadius: '8px',
+                color: '#fff'
+              }}>
+                <LightBulbIcon />
+              </div>
+              <div>
+                <h3 style={{
+                  color: '#f8fafc',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: 0,
+                  marginBottom: '2px'
+                }}>
+                  Pro Tips for Best Results
+                </h3>
+                <p style={{
+                  color: '#94a3b8',
+                  fontSize: '14px',
+                  margin: 0
+                }}>
+                  {showTips ? 'Click to hide tips' : 'Click to view optimization tips'}
+                </p>
+              </div>
+            </div>
+            
+            <div style={{
+              color: '#94a3b8',
+              transition: 'transform 0.3s ease-in-out',
+              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}>
+              <ChevronDownIcon/>
+            </div>
+          </div>
 
+          <div style={tipsContentStyles}>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {tips.map((tip, index) => (
+                <div
+                  key={index}
+                  className="tip-item"
+                  style={tipItemStyles}
+                >
+                  <div className="icon-emoji">
+                    {tip.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{
+                      color: '#f8fafc',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      margin: 0,
+                      marginBottom: '6px'
+                    }}>
+                      {tip.title}
+                    </h4>
+                    <p style={{
+                      color: '#94a3b8',
+                      fontSize: '14px',
+                      margin: 0,
+                      lineHeight: '1.5'
+                    }}>
+                      {tip.description}
+                    </p>
+                  </div>
+                  <div style={{
+                    color: '#10b981',
+                    opacity: 0.7
+                  }}>
+                    <CheckIcon />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginTop: '20px',
+              padding: '16px',
+              background: 'rgba(16, 185, 129, 0.05)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <p style={{
+                color: '#10b981',
+                fontSize: '14px',
+                fontWeight: '500',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}>
+                <CheckIcon />
+                Advanced text humanization with local file processing and complete privacy
+              </p>
+            </div>
+          </div>
+        </div>
         {/* Input and Output Grid */}
         <div style={{
           display: 'grid',
@@ -227,7 +339,7 @@ const MainContent = ({ sidebarOpen = false }) => {
                 color: '#f8fafc', 
                 fontSize: '18px', 
                 fontWeight: '600', 
-                margin: 0 
+                marginTop: 20 
               }}>
                 Original Text
               </h3>
@@ -428,119 +540,7 @@ const MainContent = ({ sidebarOpen = false }) => {
           </button>
         </div>
 
-        {/* Enhanced Tips Section */}
-        <div style={tipsContainerStyles}>
-          <div 
-            className="tips-header"
-            style={tipsHeaderStyles}
-            onClick={() => setShowTips(!showTips)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                borderRadius: '8px',
-                color: '#fff'
-              }}>
-                <LightBulbIcon />
-              </div>
-              <div>
-                <h3 style={{
-                  color: '#f8fafc',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  margin: 0,
-                  marginBottom: '2px'
-                }}>
-                  Pro Tips for Best Results
-                </h3>
-                <p style={{
-                  color: '#94a3b8',
-                  fontSize: '14px',
-                  margin: 0
-                }}>
-                  {showTips ? 'Click to hide tips' : 'Click to view optimization tips'}
-                </p>
-              </div>
-            </div>
-            
-            <div style={{
-              color: '#94a3b8',
-              transition: 'transform 0.3s ease-in-out',
-              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}>
-              <ChevronDownIcon/>
-            </div>
-          </div>
-
-          <div style={tipsContentStyles}>
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {tips.map((tip, index) => (
-                <div
-                  key={index}
-                  className="tip-item"
-                  style={tipItemStyles}
-                >
-                  <div className="icon-emoji">
-                    {tip.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{
-                      color: '#f8fafc',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      margin: 0,
-                      marginBottom: '6px'
-                    }}>
-                      {tip.title}
-                    </h4>
-                    <p style={{
-                      color: '#94a3b8',
-                      fontSize: '14px',
-                      margin: 0,
-                      lineHeight: '1.5'
-                    }}>
-                      {tip.description}
-                    </p>
-                  </div>
-                  <div style={{
-                    color: '#10b981',
-                    opacity: 0.7
-                  }}>
-                    <CheckIcon />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{
-              marginTop: '20px',
-              padding: '16px',
-              background: 'rgba(16, 185, 129, 0.05)',
-              border: '1px solid rgba(16, 185, 129, 0.2)',
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <p style={{
-                color: '#10b981',
-                fontSize: '14px',
-                fontWeight: '500',
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}>
-                <CheckIcon />
-                Advanced text humanization with local file processing and complete privacy
-              </p>
-            </div>
-          </div>
-        </div>
+     
       </div>
     </div>
   );
