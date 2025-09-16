@@ -372,22 +372,33 @@ const LogoutConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
 const drawerWidth = 220;
 const collapsedDrawerWidth = 60;
 
-// Hook to detect mobile screen size
+// Hook to detect mobile screen size with more breakpoints
 const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [screenSize, setScreenSize] = useState({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024
+  });
 
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setScreenSize({
+        isMobile: width <= 768,
+        isTablet: width > 768 && width <= 1024,
+        isDesktop: width > 1024,
+        width: width
+      });
     };
 
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
 
-    return () => window.removeEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  return isMobile;
+  return screenSize;
 };
 
 // Mobile Overlay Component
@@ -417,7 +428,7 @@ const Sidebar = ({ open = false, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const isMobile = useIsMobile();
+  const screenSize = useIsMobile();
   
   const isCollapsed = !open;
 
@@ -440,8 +451,8 @@ const Sidebar = ({ open = false, onToggle }) => {
       return;
     }
 
-    // Close mobile sidebar when navigating (collapse it)
-    if (isMobile && open) {
+    // Close mobile/tablet sidebar when navigating (collapse it)
+    if ((screenSize.isMobile || screenSize.isTablet) && open) {
       onToggle();
     }
 
@@ -470,6 +481,7 @@ const Sidebar = ({ open = false, onToggle }) => {
     { id: 'logout', icon: LogoutIcon, label: 'Logout' },
   ];
 
+  // Responsive sidebar styles based on screen size
   const sidebarStyles = {
     position: 'fixed',
     left: 0,
@@ -478,27 +490,31 @@ const Sidebar = ({ open = false, onToggle }) => {
     height: '100vh',
     background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
     borderRight: '1px solid rgba(99, 102, 241, 0.2)',
-    transition: 'width 0.3s ease-in-out',
-    zIndex: 1200,
+    transition: 'width 0.3s ease-in-out, transform 0.3s ease-in-out',
+    zIndex: screenSize.isMobile ? 1300 : 1200, // Higher z-index on mobile
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+    // Mobile: slide from left when collapsed
+    transform: screenSize.isMobile && isCollapsed ? 'translateX(-100%)' : 'translateX(0)',
+    // Add shadow on mobile when expanded
+    boxShadow: screenSize.isMobile && !isCollapsed ? '4px 0 20px rgba(0, 0, 0, 0.3)' : 'none',
   };
 
   const headerStyles = {
-    padding: isCollapsed ? '12px 8px' : '12px 16px',
+    padding: isCollapsed && !screenSize.isMobile ? '12px 8px' : '12px 16px',
     borderBottom: '1px solid rgba(99, 102, 241, 0.2)',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: isCollapsed ? 'center' : 'space-between',
-    minHeight: '56px',
+    justifyContent: (isCollapsed && !screenSize.isMobile) ? 'center' : 'space-between',
+    minHeight: screenSize.isMobile ? '64px' : '56px', // Taller on mobile for touch
   };
 
   const logoStyles = {
-    fontSize: '1.1rem',
+    fontSize: screenSize.isMobile ? '1.2rem' : '1.1rem',
     fontWeight: 'bold',
     color: '#ffffff',
-    opacity: isCollapsed ? 0 : 1,
+    opacity: (isCollapsed && !screenSize.isMobile) ? 0 : 1,
     transition: 'opacity 0.3s ease-in-out',
     whiteSpace: 'nowrap',
   };
@@ -507,8 +523,8 @@ const Sidebar = ({ open = false, onToggle }) => {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '28px',
-    height: '32px',
+    width: screenSize.isMobile ? '32px' : '28px',
+    height: screenSize.isMobile ? '36px' : '32px',
     backgroundColor: 'rgba(99, 102, 241, 0.1)',
     border: 'none',
     borderRadius: '6px',
@@ -516,6 +532,9 @@ const Sidebar = ({ open = false, onToggle }) => {
     cursor: 'pointer',
     transition: 'all 0.2s ease-in-out',
     flexShrink: 0,
+    // Better touch target on mobile
+    minHeight: screenSize.isMobile ? '44px' : '32px',
+    minWidth: screenSize.isMobile ? '44px' : '28px',
   };
 
   const topSectionStyles = {
@@ -529,87 +548,117 @@ const Sidebar = ({ open = false, onToggle }) => {
   const menuItemStyles = {
     display: 'flex',
     alignItems: 'center',
-    gap: isCollapsed ? '0' : '10px',
-    padding: isCollapsed ? '10px' : '10px 16px',
-    margin: isCollapsed ? '0 6px' : '0 12px',
+    gap: (isCollapsed && !screenSize.isMobile) ? '0' : '10px',
+    padding: (isCollapsed && !screenSize.isMobile) ? '12px' : screenSize.isMobile ? '14px 16px' : '10px 16px',
+    margin: (isCollapsed && !screenSize.isMobile) ? '0 6px' : '0 12px',
     backgroundColor: 'transparent',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: screenSize.isMobile ? '8px' : '6px',
     color: '#a1a1aa',
     cursor: 'pointer',
     transition: 'all 0.2s ease-in-out',
-    justifyContent: isCollapsed ? 'center' : 'flex-start',
-    minHeight: '38px',
-    fontSize: '13px',
+    justifyContent: (isCollapsed && !screenSize.isMobile) ? 'center' : 'flex-start',
+    minHeight: screenSize.isMobile ? '48px' : '38px', // Larger touch targets on mobile
+    fontSize: screenSize.isMobile ? '14px' : '13px',
     fontWeight: '500',
     position: 'relative',
+    // Better spacing for touch on mobile/tablet
+    marginBottom: (screenSize.isMobile || screenSize.isTablet) ? '4px' : '0',
   };
 
   const activeMenuItemStyles = {
     ...menuItemStyles,
     background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
     color: '#ffffff',
-    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+    boxShadow: screenSize.isMobile 
+      ? '0 4px 12px rgba(99, 102, 241, 0.4), 0 2px 4px rgba(99, 102, 241, 0.2)' 
+      : '0 4px 12px rgba(99, 102, 241, 0.4)',
   };
 
   const iconContainerStyles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '20px',
-    height: '20px',
+    width: screenSize.isMobile ? '24px' : '20px',
+    height: screenSize.isMobile ? '24px' : '20px',
     flexShrink: 0,
   };
 
   const menuLabelStyles = {
-    opacity: isCollapsed ? 0 : 1,
+    opacity: (isCollapsed && !screenSize.isMobile) ? 0 : 1,
     transition: 'opacity 0.3s ease-in-out',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
-    width: isCollapsed ? '0' : 'auto',
+    width: (isCollapsed && !screenSize.isMobile) ? '0' : 'auto',
+    fontSize: screenSize.isMobile ? '15px' : '13px',
   };
 
   const bottomSectionStyles = {
-    padding: '16px 0 24px 0',
+    padding: screenSize.isMobile ? '20px 0 28px 0' : '16px 0 24px 0',
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    gap: screenSize.isMobile ? '6px' : '4px',
     borderTop: '1px solid rgba(99, 102, 241, 0.2)',
   };
 
   const upgradeButtonStyles = {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: isCollapsed ? 'center' : 'flex-start',
-    gap: isCollapsed ? '0' : '12px',
-    padding: isCollapsed ? '14px' : '12px 20px',
-    margin: isCollapsed ? '0 8px 16px 8px' : '0 16px 16px 16px',
+    justifyContent: (isCollapsed && !screenSize.isMobile) ? 'center' : 'flex-start',
+    gap: (isCollapsed && !screenSize.isMobile) ? '0' : '12px',
+    padding: (isCollapsed && !screenSize.isMobile) ? '14px' : screenSize.isMobile ? '16px 20px' : '12px 20px',
+    margin: (isCollapsed && !screenSize.isMobile) ? '0 8px 16px 8px' : '0 16px 16px 16px',
     background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: screenSize.isMobile ? '10px' : '8px',
     color: '#ffffff',
     cursor: 'pointer',
-    fontSize: '14px',
+    fontSize: screenSize.isMobile ? '15px' : '14px',
     fontWeight: '600',
     transition: 'all 0.2s ease-in-out',
-    minHeight: '44px',
+    minHeight: screenSize.isMobile ? '52px' : '44px', // Larger on mobile
+    boxShadow: screenSize.isMobile ? '0 4px 12px rgba(99, 102, 241, 0.3)' : 'none',
   };
 
   return (
     <>
+      {/* Mobile/Tablet Overlay */}
+      {(screenSize.isMobile || screenSize.isTablet) && !isCollapsed && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 1299,
+            animation: 'fadeIn 0.3s ease-out',
+          }}
+          onClick={onToggle}
+        />
+      )}
+
       {/* Sidebar */}
       <div style={sidebarStyles}>
         {/* Header */}
         <div style={headerStyles}>
-          {!isCollapsed && <div style={logoStyles}>Conversify</div>}
+          {!(isCollapsed && !screenSize.isMobile) && <div style={logoStyles}>Conversify</div>}
           <button
             style={collapseButtonStyles}
             onClick={onToggle}
             onMouseEnter={(e) => {
               e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.2)';
+              if (screenSize.isMobile) {
+                e.target.style.transform = 'scale(1.05)';
+              }
             }}
             onMouseLeave={(e) => {
               e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+              if (screenSize.isMobile) {
+                e.target.style.transform = 'scale(1)';
+              }
             }}
           >
             <MenuIcon />

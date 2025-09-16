@@ -3,27 +3,30 @@ import Sidebar from "../../components/Sidebar";
 import { Outlet } from "react-router-dom";
 
 const MainLayout = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Will be updated based on screen size
+  const [screenSize, setScreenSize] = useState({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Detect mobile screen size
   useEffect(() => {
-    const checkIsMobile = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      const newScreenSize = {
+        isMobile: width <= 768,
+        isTablet: width > 768 && width <= 1024,
+        isDesktop: width > 1024
+      };
+      setScreenSize(newScreenSize);
       
-      // Set initial sidebar state based on screen size
-      // Mobile: collapsed (false), Desktop: expanded (true)
-      setSidebarOpen(!mobile);
+      // Set initial sidebar state: closed on mobile/tablet, open on desktop
+      setSidebarOpen(newScreenSize.isDesktop);
     };
 
-    // Check on component mount
-    checkIsMobile();
-    
-    // Listen for window resize
-    window.addEventListener('resize', checkIsMobile);
-
-    return () => window.removeEventListener('resize', checkIsMobile);
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   return (
@@ -38,13 +41,13 @@ const MainLayout = () => {
         transition: 'all 0.3s',
         background: '#111827',
         minHeight: '100vh',
-        padding: '20px',
-        marginLeft: sidebarOpen ? '220px' : '60px', // Add proper spacing
+        padding: screenSize.isMobile ? '16px' : '20px',
+        marginLeft: screenSize.isDesktop 
+          ? (sidebarOpen ? '220px' : '60px') 
+          : '0', // No margin on mobile/tablet since sidebar slides over
       }}>
-        <Outlet context={{ sidebarOpen }} />
+        <Outlet context={{ sidebarOpen, screenSize }} />
       </main>
     </div>
   );
 };
-
-export default MainLayout;
