@@ -1,8 +1,8 @@
-// MainContent.jsx - Main component file
-import React, { useState } from 'react';
+// MainContent.jsx - Responsive main component
+import React, { useState, useEffect } from 'react';
 import { CheckIcon, ChevronDownIcon, CopyIcon, DocumentIcon, DownloadIcon, ExpandIcon, LightBulbIcon, PasteIcon, UploadIcon } from './Icons';
 
-// Import styles
+// Import responsive styles
 import {
   getMainContentStyles,
   headerStyles,
@@ -25,9 +25,9 @@ import {
   outputButtonHoverStyles,
   spinnerStyles,
   cssStyles
-} from './MainContentComponents/style';
+} from '../components/MainContentComponents/style';
 
-// Import utilities
+// Import utilities (unchanged)
 import {
   processFile,
   humanizeText,
@@ -42,7 +42,31 @@ import {
 } from './MainContentComponents/utils';
 
 const MainContent = ({ sidebarOpen = false }) => {
-  // State management
+  // Screen size detection hook
+  const [screenSize, setScreenSize] = useState({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setScreenSize({
+        isMobile: width <= 768,
+        isTablet: width > 768 && width <= 1024,
+        isDesktop: width > 1024,
+        width
+      });
+    };
+
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // State management (unchanged)
   const [inputText, setInputText] = useState('');
   const [mode, setMode] = useState('Enhanced');
   const [showModeDropdown, setShowModeDropdown] = useState(false);
@@ -60,7 +84,7 @@ const MainContent = ({ sidebarOpen = false }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
 
-  // Event handlers
+  // Event handlers (unchanged)
   const handleFileUpload = () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -119,6 +143,12 @@ const MainContent = ({ sidebarOpen = false }) => {
     if (success) {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
+      
+      // Mobile-friendly notification
+      if (screenSize.isMobile) {
+        setError('✅ Text copied to clipboard!');
+        setTimeout(() => setError(''), 2000);
+      }
     }
   };
 
@@ -141,16 +171,39 @@ const MainContent = ({ sidebarOpen = false }) => {
     return null;
   };
 
-  // Get dynamic styles
+  // Get responsive styles
   const mainContentStyles = getMainContentStyles(sidebarOpen);
   const tipsHeaderStyles = getTipsHeaderStyles(showTips);
   const tipsContentStyles = getTipsContentStyles(showTips);
+
+  // Responsive action buttons
+  const actionButtons = [
+    { 
+      icon: UploadIcon, 
+      text: isUploading ? 'Uploading...' : 'Upload File', 
+      id: 'upload', 
+      action: handleFileUpload,
+      disabled: isUploading
+    },
+    { 
+      icon: DocumentIcon, 
+      text: 'Try A Sample', 
+      id: 'sample', 
+      action: handleSampleText 
+    },
+    { 
+      icon: PasteIcon, 
+      text: 'Paste Text', 
+      id: 'paste', 
+      action: handlePasteText 
+    }
+  ];
 
   return (
     <div style={mainContentStyles}>
       <style>{cssStyles}</style>
 
-      {/* Header */}
+      {/* Responsive Header */}
       <div className="header" style={headerStyles}>
         <h1 className="title" style={titleStyles}>
           Convert AI Text to Authentic Content
@@ -166,7 +219,7 @@ const MainContent = ({ sidebarOpen = false }) => {
         </div>
       </div>
 
-      {/* Main Content Card */}
+      {/* Responsive Main Content Card */}
       <div className="card" style={cardStyles}>
         {/* Error Message */}
         {error && (
@@ -174,10 +227,11 @@ const MainContent = ({ sidebarOpen = false }) => {
             background: error.startsWith('✅') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
             border: error.startsWith('✅') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
             color: error.startsWith('✅') ? '#34d399' : '#fca5a5',
-            padding: '12px',
+            padding: 'clamp(10px, 2vw, 12px)',
             borderRadius: '8px',
             marginBottom: '16px',
-            fontSize: '14px'
+            fontSize: 'clamp(12px, 2vw, 14px)',
+            wordBreak: 'break-word'
           }}>
             {error}
           </div>
@@ -187,18 +241,20 @@ const MainContent = ({ sidebarOpen = false }) => {
         {uploadedFile && !error?.startsWith('Failed') && (
           <div style={{
             marginBottom: '16px',
-            padding: '12px 16px',
+            padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px)',
             background: 'rgba(99, 102, 241, 0.1)',
             border: '1px solid rgba(99, 102, 241, 0.3)',
             borderRadius: '8px',
             color: '#a78bfa',
-            fontSize: '14px',
+            fontSize: 'clamp(12px, 2vw, 14px)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            flexWrap: 'wrap',
+            wordBreak: 'break-word'
           }}>
             <DocumentIcon />
-            <span>
+            <span style={{ flex: 1, minWidth: 0 }}>
               <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB) - 
               Text extracted locally in your browser 🔒
             </span>
@@ -207,14 +263,21 @@ const MainContent = ({ sidebarOpen = false }) => {
 
         {/* Analysis Results */}
         {renderAnalysisResults()}
-   {/* Enhanced Tips Section */}
+
+        {/* Enhanced Responsive Tips Section */}
         <div style={tipsContainerStyles}>
           <div 
             className="tips-header"
             style={tipsHeaderStyles}
             onClick={() => setShowTips(!showTips)}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              flexWrap: screenSize.isMobile ? 'wrap' : 'nowrap',
+              justifyContent: screenSize.isMobile ? 'center' : 'flex-start'
+            }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -227,10 +290,10 @@ const MainContent = ({ sidebarOpen = false }) => {
               }}>
                 <LightBulbIcon />
               </div>
-              <div>
+              <div style={{ textAlign: screenSize.isMobile ? 'center' : 'left' }}>
                 <h3 style={{
                   color: '#f8fafc',
-                  fontSize: '16px',
+                  fontSize: screenSize.isMobile ? '15px' : '16px',
                   fontWeight: '600',
                   margin: 0,
                   marginBottom: '2px'
@@ -239,7 +302,7 @@ const MainContent = ({ sidebarOpen = false }) => {
                 </h3>
                 <p style={{
                   color: '#94a3b8',
-                  fontSize: '14px',
+                  fontSize: screenSize.isMobile ? '13px' : '14px',
                   margin: 0
                 }}>
                   {showTips ? 'Click to hide tips' : 'Click to view optimization tips'}
@@ -250,7 +313,8 @@ const MainContent = ({ sidebarOpen = false }) => {
             <div style={{
               color: '#94a3b8',
               transition: 'transform 0.3s ease-in-out',
-              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
+              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)',
+              flexShrink: 0
             }}>
               <ChevronDownIcon/>
             </div>
@@ -267,10 +331,10 @@ const MainContent = ({ sidebarOpen = false }) => {
                   <div className="icon-emoji">
                     {tip.icon}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <h4 style={{
                       color: '#f8fafc',
-                      fontSize: '15px',
+                      fontSize: screenSize.isMobile ? '14px' : '15px',
                       fontWeight: '600',
                       margin: 0,
                       marginBottom: '6px'
@@ -279,16 +343,18 @@ const MainContent = ({ sidebarOpen = false }) => {
                     </h4>
                     <p style={{
                       color: '#94a3b8',
-                      fontSize: '14px',
+                      fontSize: screenSize.isMobile ? '13px' : '14px',
                       margin: 0,
-                      lineHeight: '1.5'
+                      lineHeight: '1.5',
+                      wordBreak: 'break-word'
                     }}>
                       {tip.description}
                     </p>
                   </div>
                   <div style={{
                     color: '#10b981',
-                    opacity: 0.7
+                    opacity: 0.7,
+                    flexShrink: 0
                   }}>
                     <CheckIcon />
                   </div>
@@ -297,8 +363,8 @@ const MainContent = ({ sidebarOpen = false }) => {
             </div>
 
             <div style={{
-              marginTop: '20px',
-              padding: '16px',
+              marginTop: 'clamp(16px, 3vw, 20px)',
+              padding: 'clamp(12px, 2.5vw, 16px)',
               background: 'rgba(16, 185, 129, 0.05)',
               border: '1px solid rgba(16, 185, 129, 0.2)',
               borderRadius: '8px',
@@ -306,44 +372,59 @@ const MainContent = ({ sidebarOpen = false }) => {
             }}>
               <p style={{
                 color: '#10b981',
-                fontSize: '14px',
+                fontSize: 'clamp(13px, 2vw, 14px)',
                 fontWeight: '500',
                 margin: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                flexWrap: 'wrap'
               }}>
                 <CheckIcon />
-                Advanced text humanization with local file processing and complete privacy
+                <span style={{ textAlign: 'center' }}>
+                  Advanced text humanization with local file processing and complete privacy
+                </span>
               </p>
             </div>
           </div>
         </div>
-        {/* Input and Output Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: outputText ? '1fr 1fr' : '1fr',
-          gap: '24px',
-          marginBottom: '24px'
-        }}>
+
+        {/* Responsive Input and Output Grid */}
+        <div 
+          className="input-output-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: outputText && screenSize.isDesktop ? '1fr 1fr' : '1fr',
+            gap: 'clamp(16px, 3vw, 24px)',
+            marginBottom: 'clamp(16px, 3vw, 24px)'
+          }}
+        >
           {/* Input Section */}
           <div>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}>
               <h3 style={{ 
                 color: '#f8fafc', 
-                fontSize: '18px', 
+                fontSize: 'clamp(16px, 3vw, 18px)', 
                 fontWeight: '600', 
-                marginTop: 20 
+                margin: 0
               }}>
                 Original Text
               </h3>
-              <div style={{ display: 'flex', gap: '8px', color: '#94a3b8', fontSize: '14px' }}>
+              <div style={{ 
+                display: 'flex', 
+                gap: 'clamp(6px, 1.5vw, 8px)', 
+                color: '#94a3b8', 
+                fontSize: 'clamp(12px, 2vw, 14px)',
+                flexWrap: 'wrap'
+              }}>
                 <span>Characters: {getCharacterCount(inputText)}</span>
                 <span>Words: {getWordCount(inputText)}</span>
               </div>
@@ -359,18 +440,20 @@ const MainContent = ({ sidebarOpen = false }) => {
             />
           </div>
 
-          {/* Output Section - Only show when there's output */}
+          {/* Output Section - Responsive positioning */}
           {outputText && (
             <div>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '12px'
+                marginBottom: '12px',
+                flexWrap: 'wrap',
+                gap: '8px'
               }}>
                 <h3 style={{ 
                   color: '#f8fafc', 
-                  fontSize: '18px', 
+                  fontSize: 'clamp(16px, 3vw, 18px)', 
                   fontWeight: '600', 
                   margin: 0 
                 }}>
@@ -386,12 +469,16 @@ const MainContent = ({ sidebarOpen = false }) => {
                 onBlur={(e) => e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)'}
               />
               {/* Copy and Download buttons below the output box */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '8px', 
-                marginTop: '12px',
-                justifyContent: 'flex-end'
-              }}>
+              <div 
+                className="output-buttons"
+                style={{ 
+                  display: 'flex', 
+                  gap: '8px', 
+                  marginTop: '12px',
+                  justifyContent: screenSize.isMobile ? 'center' : 'flex-end',
+                  flexWrap: 'wrap'
+                }}
+              >
                 <button
                   onClick={handleCopy}
                   style={{
@@ -426,29 +513,21 @@ const MainContent = ({ sidebarOpen = false }) => {
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          {[
-            { 
-              icon: UploadIcon, 
-              text: isUploading ? 'Uploading...' : 'Upload File', 
-              id: 'upload', 
-              action: handleFileUpload,
-              disabled: isUploading
-            },
-            { 
-              icon: DocumentIcon, 
-              text: 'Try A Sample', 
-              id: 'sample', 
-              action: handleSampleText 
-            },
-            { 
-              icon: PasteIcon, 
-              text: 'Paste Text', 
-              id: 'paste', 
-              action: handlePasteText 
-            }
-          ].map((item) => (
+        {/* Responsive Action Buttons */}
+        <div 
+          className="action-buttons" 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: screenSize.isMobile 
+              ? '1fr' 
+              : screenSize.isTablet 
+                ? 'repeat(2, 1fr)' 
+                : 'repeat(auto-fit, minmax(180px, 1fr))', 
+            gap: screenSize.isMobile ? '12px' : '16px', 
+            marginBottom: 'clamp(16px, 3vw, 24px)' 
+          }}
+        >
+          {actionButtons.map((item) => (
             <button
               key={item.id}
               className="action-button"
@@ -473,10 +552,35 @@ const MainContent = ({ sidebarOpen = false }) => {
           ))}
         </div>
 
-        {/* Bottom Controls */}
-        <div className="bottom-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ color: '#a1a1aa', fontSize: '16px' }}>Mode:</span>
+        {/* Responsive Bottom Controls */}
+        <div 
+          className="bottom-controls" 
+          style={{ 
+            display: 'flex', 
+            justifyContent: screenSize.isMobile ? 'center' : 'space-between', 
+            alignItems: screenSize.isMobile ? 'stretch' : 'center', 
+            flexDirection: screenSize.isMobile ? 'column' : 'row',
+            flexWrap: 'wrap', 
+            gap: '16px' 
+          }}
+        >
+          <div 
+            className="mode-selector"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px',
+              justifyContent: screenSize.isMobile ? 'center' : 'flex-start',
+              width: screenSize.isMobile ? '100%' : 'auto'
+            }}
+          >
+            <span style={{ 
+              color: '#a1a1aa', 
+              fontSize: 'clamp(14px, 2.5vw, 16px)',
+              whiteSpace: 'nowrap'
+            }}>
+              Mode:
+            </span>
             
             <div style={selectStyles}>
               <button
@@ -487,7 +591,7 @@ const MainContent = ({ sidebarOpen = false }) => {
                   borderColor: showModeDropdown ? '#6366f1' : 'rgba(99, 102, 241, 0.3)',
                 }}
               >
-                {mode}
+                <span>{mode}</span>
                 <ExpandIcon />
               </button>
               
@@ -502,15 +606,18 @@ const MainContent = ({ sidebarOpen = false }) => {
                       }}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px)',
                         backgroundColor: 'transparent',
                         border: 'none',
                         color: '#fff',
                         cursor: 'pointer',
                         textAlign: 'left',
-                        fontSize: '16px',
+                        fontSize: 'clamp(14px, 2.5vw, 16px)',
                         borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
                         transition: 'background-color 0.2s ease-in-out',
+                        minHeight: '44px',
+                        display: 'flex',
+                        alignItems: 'center'
                       }}
                       onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.2)'}
                       onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
@@ -530,17 +637,23 @@ const MainContent = ({ sidebarOpen = false }) => {
               ...primaryButtonStyles,
               ...(isPrimaryHovered && !loading && inputText.trim() ? primaryButtonHoverStyles : {}),
               opacity: (loading || !inputText.trim()) ? 0.6 : 1,
-              cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer'
+              cursor: (loading || !inputText.trim()) ? 'not-allowed' : 'pointer',
+              width: screenSize.isMobile ? '100%' : 'auto'
             }}
             onMouseEnter={() => !loading && inputText.trim() && setIsPrimaryHovered(true)}
             onMouseLeave={() => setIsPrimaryHovered(false)}
             onClick={handleHumanize}
           >
-            {loading ? 'Humanizing...' : 'Humanize'}
+            {loading ? (
+              <>
+                <div style={spinnerStyles}></div>
+                <span>Humanizing...</span>
+              </>
+            ) : (
+              'Humanize'
+            )}
           </button>
         </div>
-
-     
       </div>
     </div>
   );
