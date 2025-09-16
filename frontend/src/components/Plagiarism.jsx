@@ -1,9 +1,8 @@
-// PlagiarismRemover.jsx - Main component file
-import React, { useState } from 'react';
+// PlagiarismRemover.jsx - Responsive main component
+import React, { useState, useEffect } from 'react';
 import { CheckIcon, ChevronDownIcon, CompareIcon, CopyIcon, DocumentIcon, MagicWandIcon, UploadIcon, PasteIcon } from './Icons';
 
-
-// Import styles
+// Import responsive styles
 import {
   getMainContentStyles,
   headerStyles,
@@ -32,9 +31,9 @@ import {
   additionalStatsStyles,
   tipsFooterStyles,
   cssStyles
-} from './PlagiarismComponents/style';
+} from './PlagiarismComponents/styles';
 
-// Import utilities
+// Import utilities (unchanged)
 import {
   MODES,
   SAMPLE_TEXT,
@@ -47,7 +46,31 @@ import {
 } from './PlagiarismComponents/utils';
 
 const PlagiarismRemover = ({ sidebarOpen }) => {
-  // State management
+  // Screen size detection hook
+  const [screenSize, setScreenSize] = useState({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setScreenSize({
+        isMobile: width <= 768,
+        isTablet: width > 768 && width <= 1024,
+        isDesktop: width > 1024,
+        width
+      });
+    };
+
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // State management (unchanged)
   const [inputText, setInputText] = useState('');
   const [mode, setMode] = useState('Academic');
   const [showModeDropdown, setShowModeDropdown] = useState(false);
@@ -62,7 +85,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
 
-  // Event handlers
+  // Event handlers (unchanged)
   const handleSampleText = () => {
     setInputText(SAMPLE_TEXT);
   };
@@ -140,24 +163,43 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
   const handleCopyResult = async () => {
     const success = await copyToClipboard(processedText);
     if (success) {
-      alert('Text copied to clipboard!');
+      // Use a more mobile-friendly notification
+      if (screenSize.isMobile) {
+        setError('✅ Text copied to clipboard!');
+        setTimeout(() => setError(''), 2000);
+      } else {
+        alert('Text copied to clipboard!');
+      }
     } else {
       setError('Failed to copy text to clipboard.');
     }
   };
 
-  // Get dynamic styles
+  // Get responsive styles based on screen size
   const mainContentStyles = getMainContentStyles(sidebarOpen);
   const primaryButtonStyles = getPrimaryButtonStyles(isProcessing);
   const errorStyles = getErrorStyles(error);
   const tipsHeaderStyles = getTipsHeaderStyles(showTips);
   const tipsContentStyles = getTipsContentStyles(showTips);
 
+  // Responsive action buttons configuration
+  const actionButtons = [
+    { 
+      icon: UploadIcon, 
+      text: isUploading ? 'Uploading...' : 'Upload File', 
+      id: 'upload', 
+      action: handleFileUpload,
+      disabled: isUploading
+    },
+    { icon: DocumentIcon, text: 'Try A Sample', id: 'sample', action: handleSampleText },
+    { icon: PasteIcon, text: 'Paste Text', id: 'paste', action: handlePasteText }
+  ];
+
   return (
     <div style={mainContentStyles}>
       <style>{cssStyles}</style>
 
-      {/* Header */}
+      {/* Responsive Header */}
       <div style={headerStyles}>
         <h1 style={titleStyles}>
           Remove Plagiarism Instantly
@@ -172,16 +214,22 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
         </div>
       </div>
 
-      {/* Main Content Card */}
+      {/* Responsive Main Content Card */}
       <div style={cardStyles}>
-           {/* Enhanced Tips Section */}
+        {/* Enhanced Responsive Tips Section */}
         <div style={tipsContainerStyles}>
           <div 
             className="tips-header"
             style={tipsHeaderStyles}
             onClick={() => setShowTips(!showTips)}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              flexWrap: screenSize.isMobile ? 'wrap' : 'nowrap',
+              justifyContent: screenSize.isMobile ? 'center' : 'flex-start'
+            }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -194,10 +242,10 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
               }}>
                 <CompareIcon />
               </div>
-              <div>
+              <div style={{ textAlign: screenSize.isMobile ? 'center' : 'left' }}>
                 <h3 style={{
                   color: '#f8fafc',
-                  fontSize: '16px',
+                  fontSize: screenSize.isMobile ? '15px' : '16px',
                   fontWeight: '600',
                   margin: 0,
                   marginBottom: '2px'
@@ -206,7 +254,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                 </h3>
                 <p style={{
                   color: '#94a3b8',
-                  fontSize: '14px',
+                  fontSize: screenSize.isMobile ? '13px' : '14px',
                   margin: 0
                 }}>
                   {showTips ? 'Click to hide paraphrasing tips' : 'Click to view effective paraphrasing tips'}
@@ -217,7 +265,8 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
             <div style={{
               color: '#94a3b8',
               transition: 'transform 0.3s ease-in-out',
-              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)'
+              transform: showTips ? 'rotate(180deg)' : 'rotate(0deg)',
+              flexShrink: 0
             }}>
               <ChevronDownIcon />
             </div>
@@ -234,10 +283,10 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                   <div className="icon-emoji">
                     {tip.icon}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <h4 style={{
                       color: '#f8fafc',
-                      fontSize: '15px',
+                      fontSize: screenSize.isMobile ? '14px' : '15px',
                       fontWeight: '600',
                       margin: 0,
                       marginBottom: '6px'
@@ -246,16 +295,18 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                     </h4>
                     <p style={{
                       color: '#94a3b8',
-                      fontSize: '14px',
+                      fontSize: screenSize.isMobile ? '13px' : '14px',
                       margin: 0,
-                      lineHeight: '1.5'
+                      lineHeight: '1.5',
+                      wordBreak: 'break-word'
                     }}>
                       {tip.description}
                     </p>
                   </div>
                   <div style={{
                     color: '#8b5cf6',
-                    opacity: 0.7
+                    opacity: 0.7,
+                    flexShrink: 0
                   }}>
                     <CheckIcon />
                   </div>
@@ -266,21 +317,25 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
             <div style={tipsFooterStyles}>
               <p style={{
                 color: '#8b5cf6',
-                fontSize: '14px',
+                fontSize: screenSize.isMobile ? '13px' : '14px',
                 fontWeight: '500',
                 margin: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                flexWrap: 'wrap'
               }}>
                 <CheckIcon />
-                Always review the paraphrased content to ensure accuracy and proper citation
+                <span style={{ textAlign: 'center' }}>
+                  Always review the paraphrased content to ensure accuracy and proper citation
+                </span>
               </p>
             </div>
           </div>
         </div>
-        {/* Text Input Area */}
+
+        {/* Responsive Text Input Area */}
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -301,26 +356,24 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
         {uploadedFile && !error.startsWith('Failed') && (
           <div style={fileInfoStyles}>
             <DocumentIcon />
-            <span>
+            <span style={{ flex: 1, minWidth: 0 }}>
               <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB) - 
               Text extracted locally in your browser 🔒
             </span>
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          {[
-            { 
-              icon: UploadIcon, 
-              text: isUploading ? 'Uploading...' : 'Upload File', 
-              id: 'upload', 
-              action: handleFileUpload,
-              disabled: isUploading
-            },
-            { icon: DocumentIcon, text: 'Try A Sample', id: 'sample', action: handleSampleText },
-            { icon: PasteIcon, text: 'Paste Text', id: 'paste', action: handlePasteText }
-          ].map((item) => (
+        {/* Responsive Action Buttons */}
+        <div 
+          className="action-buttons-grid"
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: screenSize.isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', 
+            gap: '16px', 
+            marginBottom: 'clamp(16px, 3vw, 24px)' 
+          }}
+        >
+          {actionButtons.map((item) => (
             <button
               key={item.id}
               onClick={item.disabled ? undefined : item.action}
@@ -344,10 +397,35 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
           ))}
         </div>
 
-        {/* Bottom Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ color: '#a1a1aa', fontSize: '16px' }}>Mode:</span>
+        {/* Responsive Bottom Controls */}
+        <div 
+          className="bottom-controls"
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: screenSize.isMobile ? 'stretch' : 'center', 
+            flexDirection: screenSize.isMobile ? 'column' : 'row',
+            flexWrap: 'wrap', 
+            gap: '16px' 
+          }}
+        >
+          <div 
+            className="mode-selector"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px',
+              justifyContent: screenSize.isMobile ? 'center' : 'flex-start',
+              width: screenSize.isMobile ? '100%' : 'auto'
+            }}
+          >
+            <span style={{ 
+              color: '#a1a1aa', 
+              fontSize: 'clamp(14px, 2.5vw, 16px)',
+              whiteSpace: 'nowrap'
+            }}>
+              Mode:
+            </span>
             
             <div style={selectStyles}>
               <button
@@ -357,7 +435,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                   borderColor: showModeDropdown ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)',
                 }}
               >
-                {mode}
+                <span>{mode}</span>
                 <ChevronDownIcon />
               </button>
               
@@ -372,15 +450,18 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                       }}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px)',
                         backgroundColor: 'transparent',
                         border: 'none',
                         color: '#fff',
                         cursor: 'pointer',
                         textAlign: 'left',
-                        fontSize: '16px',
+                        fontSize: 'clamp(14px, 2.5vw, 16px)',
                         borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
                         transition: 'background-color 0.2s ease-in-out',
+                        minHeight: '44px',
+                        display: 'flex',
+                        alignItems: 'center'
                       }}
                       onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.2)'}
                       onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
@@ -394,6 +475,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
           </div>
 
           <button
+            className="primary-button"
             style={{
               ...primaryButtonStyles,
               ...(isPrimaryHovered && !isProcessing ? primaryButtonHoverStyles : {}),
@@ -406,22 +488,38 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
             {isProcessing ? (
               <>
                 <div style={spinnerStyles} />
-                Processing...
+                <span>Processing...</span>
               </>
             ) : (
               <>
                 <MagicWandIcon />
-                Remove Plagiarism
+                <span>Remove Plagiarism</span>
               </>
             )}
           </button>
         </div>
 
-        {/* Results Section */}
+        {/* Responsive Results Section */}
         {showComparison && processedText && (
           <div style={resultCardStyles}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ color: '#8b5cf6', fontSize: '20px', fontWeight: '600', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: screenSize.isMobile ? 'flex-start' : 'center',
+              flexDirection: screenSize.isMobile ? 'column' : 'row',
+              gap: '16px',
+              marginBottom: 'clamp(16px, 3vw, 20px)' 
+            }}>
+              <h3 style={{ 
+                color: '#8b5cf6', 
+                fontSize: 'clamp(18px, 3vw, 20px)', 
+                fontWeight: '600', 
+                margin: 0, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                textAlign: screenSize.isMobile ? 'center' : 'left'
+              }}>
                 <CompareIcon />
                 Before & After Comparison
               </h3>
@@ -443,9 +541,17 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
               </button>
             </div>
             
-            <div style={comparisonStyles}>
+            <div 
+              className="comparison-grid"
+              style={comparisonStyles}
+            >
               <div>
-                <h4 style={{ color: '#ef4444', fontSize: '16px', marginBottom: '12px', fontWeight: '600' }}>
+                <h4 style={{ 
+                  color: '#ef4444', 
+                  fontSize: 'clamp(14px, 2.5vw, 16px)', 
+                  marginBottom: '12px', 
+                  fontWeight: '600' 
+                }}>
                   Original Text
                 </h4>
                 <div className="comparison-text">
@@ -454,7 +560,12 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
               </div>
               
               <div>
-                <h4 style={{ color: '#10b981', fontSize: '16px', marginBottom: '12px', fontWeight: '600' }}>
+                <h4 style={{ 
+                  color: '#10b981', 
+                  fontSize: 'clamp(14px, 2.5vw, 16px)', 
+                  marginBottom: '12px', 
+                  fontWeight: '600' 
+                }}>
                   Plagiarism-Free Text
                 </h4>
                 <div className="comparison-text">
@@ -464,41 +575,90 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
             </div>
             
             <div style={statsContainerStyles}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', textAlign: 'center' }}>
+              <div 
+                className="stats-grid"
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+                  gap: 'clamp(12px, 2.5vw, 16px)', 
+                  textAlign: 'center' 
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
+                  <div style={{ 
+                    fontSize: 'clamp(20px, 4vw, 24px)', 
+                    fontWeight: 'bold', 
+                    color: '#10b981' 
+                  }}>
                     {getUniquenessScore(apiResult, inputText)}%
                   </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Uniqueness</div>
+                  <div style={{ 
+                    fontSize: 'clamp(12px, 2vw, 14px)', 
+                    color: '#94a3b8' 
+                  }}>
+                    Uniqueness
+                  </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6' }}>
+                  <div style={{ 
+                    fontSize: 'clamp(20px, 4vw, 24px)', 
+                    fontWeight: 'bold', 
+                    color: '#8b5cf6' 
+                  }}>
                     {apiResult?.new_word_count || inputText.trim().split(' ').length}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Words Processed</div>
+                  <div style={{ 
+                    fontSize: 'clamp(12px, 2vw, 14px)', 
+                    color: '#94a3b8' 
+                  }}>
+                    Words Processed
+                  </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
+                  <div style={{ 
+                    fontSize: 'clamp(20px, 4vw, 24px)', 
+                    fontWeight: 'bold', 
+                    color: '#f59e0b' 
+                  }}>
                     {mode}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Mode Used</div>
+                  <div style={{ 
+                    fontSize: 'clamp(12px, 2vw, 14px)', 
+                    color: '#94a3b8' 
+                  }}>
+                    Mode Used
+                  </div>
                 </div>
               </div>
               
               {/* Additional API Stats */}
               {apiResult && (
                 <div style={additionalStatsStyles}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
+                  <div 
+                    className="additional-stats-grid"
+                    style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: screenSize.isMobile ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))', 
+                      gap: '8px',
+                      textAlign: screenSize.isMobile ? 'center' : 'left'
+                    }}
+                  >
                     {apiResult.improvement !== undefined && (
-                      <div>Plagiarism Reduction: <span style={{ color: '#10b981' }}>-{apiResult.improvement.toFixed(1)}%</span></div>
+                      <div>
+                        Plagiarism Reduction: <span style={{ color: '#10b981' }}>-{apiResult.improvement.toFixed(1)}%</span>
+                      </div>
                     )}
                     {apiResult.ai_improvement !== undefined && (
-                      <div>AI Score Reduction: <span style={{ color: '#10b981' }}>-{apiResult.ai_improvement.toFixed(1)}%</span></div>
+                      <div>
+                        AI Score Reduction: <span style={{ color: '#10b981' }}>-{apiResult.ai_improvement.toFixed(1)}%</span>
+                      </div>
                     )}
                     {apiResult.length_change !== undefined && (
-                      <div>Length Change: <span style={{ color: apiResult.length_change > 0 ? '#8b5cf6' : '#f59e0b' }}>
-                        {apiResult.length_change > 0 ? '+' : ''}{apiResult.length_change.toFixed(1)}%
-                      </span></div>
+                      <div>
+                        Length Change: <span style={{ color: apiResult.length_change > 0 ? '#8b5cf6' : '#f59e0b' }}>
+                          {apiResult.length_change > 0 ? '+' : ''}{apiResult.length_change.toFixed(1)}%
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -506,8 +666,6 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
             </div>
           </div>
         )}
-
-     
       </div>
     </div>
   );

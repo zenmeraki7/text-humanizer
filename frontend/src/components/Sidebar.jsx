@@ -475,7 +475,7 @@ const Sidebar = ({ open = false, onToggle }) => {
     left: 0,
     top: 0,
     width: isCollapsed ? collapsedDrawerWidth : drawerWidth,
-    height: '100vh',
+    height: '100dvh',
     background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
     borderRight: '1px solid rgba(99, 102, 241, 0.2)',
     transition: 'width 0.3s ease-in-out',
