@@ -31,7 +31,7 @@ import {
   additionalStatsStyles,
   tipsFooterStyles,
   cssStyles
-} from '../components/PlagiarismComponents/styles';
+} from '../components/PlagiarismComponents/style';
 
 // Import utilities (unchanged)
 import {
