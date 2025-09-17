@@ -20,11 +20,11 @@ export const headerStyles = {
 };
 
 export const titleStyles = {
-  fontSize: 'clamp(1.8rem, 5vw, 3rem)', // Responsive like detector
+  fontSize: 'clamp(1.8rem, 5vw, 3rem)', // Same responsive sizing as detector
   fontWeight: 'bold',
   color: '#fff',
   marginBottom: '16px',
-  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', // Updated to match detector gradient
   backgroundClip: 'text',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
