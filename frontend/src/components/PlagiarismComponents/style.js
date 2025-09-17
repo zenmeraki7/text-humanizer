@@ -15,11 +15,12 @@ export const getMainContentStyles = (sidebarOpen) => ({
 
 export const headerStyles = {
   textAlign: 'center',
-  marginBottom: '32px',
+  marginBottom: 'clamp(20px, 4vw, 32px)',
+  padding: '0 16px',
 };
 
 export const titleStyles = {
-  fontSize: '3rem',
+  fontSize: 'clamp(1.8rem, 5vw, 3rem)', // Responsive like detector
   fontWeight: 'bold',
   color: '#fff',
   marginBottom: '16px',
@@ -75,17 +76,18 @@ export const actionButtonStyles = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '12px',
-  padding: '16px 24px',
+  gap: 'clamp(8px, 2vw, 12px)',
+  padding: 'clamp(12px 16px, 3vw, 16px 24px)',
   border: '1px solid rgba(139, 92, 246, 0.3)',
   backgroundColor: 'transparent',
   color: '#a1a1aa',
   borderRadius: '8px',
   cursor: 'pointer',
-  fontSize: '16px',
+  fontSize: 'clamp(14px, 2.5vw, 16px)', // Responsive
   fontWeight: 500,
   transition: 'all 0.2s ease-in-out',
   width: '100%',
+  minHeight: '44px', // Touch-friendly minimum
 };
 
 export const actionButtonHoverStyles = {
@@ -95,7 +97,7 @@ export const actionButtonHoverStyles = {
 };
 
 export const getPrimaryButtonStyles = (isProcessing) => ({
-  padding: '12px 32px',
+  padding: 'clamp(10px 24px, 3vw, 12px 32px)',
   background: isProcessing 
     ? 'linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%)' 
     : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
@@ -103,14 +105,17 @@ export const getPrimaryButtonStyles = (isProcessing) => ({
   color: '#fff',
   borderRadius: '8px',
   cursor: isProcessing ? 'not-allowed' : 'pointer',
-  fontSize: '16px',
+  fontSize: 'clamp(14px, 2.5vw, 16px)', // Responsive
   fontWeight: 600,
   transition: 'all 0.2s ease-in-out',
   display: 'flex',
   alignItems: 'center',
-  gap: '8px',
+  gap: 'clamp(6px, 1.5vw, 8px)',
   opacity: isProcessing ? 0.8 : 1,
+  minHeight: '44px', // Touch-friendly
+  width: '100%', // Full width on mobile
 });
+
 
 export const primaryButtonHoverStyles = {
   background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
@@ -126,15 +131,17 @@ export const selectStyles = {
 export const selectButtonStyles = {
   display: 'flex',
   alignItems: 'center',
-  gap: '8px',
-  padding: '8px 16px',
+  gap: 'clamp(6px, 1.5vw, 8px)',
+  padding: 'clamp(8px 12px, 2vw, 8px 16px)',
   backgroundColor: '#374151',
   border: '1px solid rgba(139, 92, 246, 0.3)',
   color: '#fff',
   borderRadius: '8px',
   cursor: 'pointer',
-  fontSize: '16px',
+  fontSize: 'clamp(14px, 2.5vw, 16px)', // Responsive
   transition: 'border-color 0.2s ease-in-out',
+  minHeight: '44px', // Touch-friendly
+  width: '100%',
 };
 
 export const dropdownStyles = {
