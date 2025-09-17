@@ -27,23 +27,53 @@ const MainLayout = () => {
   }, []);
 
   return (
-    <div style={{ display: "flex" }}>
-      <Sidebar 
-        open={sidebarOpen} 
-        onToggle={() => setSidebarOpen(!sidebarOpen)} 
-      />
+    <>
+      {/* Global CSS Reset */}
+      <style>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow-x: hidden;
+        }
+        
+        html {
+          margin: 0;
+          padding: 0;
+        }
+      `}</style>
       
-      <main style={{
-        flexGrow: 1,
-        transition: 'all 0.3s',
-        background: '#111827',
+      <div style={{ 
+        display: "flex",
+        margin: 0,
+        padding: 0,
         minHeight: '100vh',
-        padding: '20px',
-        marginLeft: sidebarOpen ? '220px' : '60px', // Add proper spacing
+        overflow: 'hidden'
       }}>
-        <Outlet context={{ sidebarOpen }} />
-      </main>
-    </div>
+        <Sidebar 
+          open={sidebarOpen} 
+          onToggle={() => setSidebarOpen(!sidebarOpen)} 
+        />
+        
+        <main style={{
+          flexGrow: 1,
+          transition: 'all 0.3s',
+          background: '#111827',
+          minHeight: '100vh',
+          padding: '20px',
+          marginLeft: sidebarOpen ? '220px' : '60px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+        }}>
+          <Outlet context={{ sidebarOpen }} />
+        </main>
+      </div>
+    </>
   );
 };
 
