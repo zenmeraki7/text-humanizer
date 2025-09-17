@@ -473,11 +473,35 @@ export const QuickTestSamples = ({ samples, onSampleClick }) => {
         Try these pre-made samples to see how our AI detection works:
       </p>
       
-      <div className='quick-samples-grid' style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: 'clamp(8px, 2vw, 12px)'
-      }}>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .quick-samples-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: clamp(8px, 2vw, 12px);
+          }
+          
+          @media (min-width: 480px) {
+            .quick-samples-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+          
+          @media (max-width: 479px) {
+            .quick-samples-grid button {
+              min-height: 80px !important;
+            }
+            
+            .quick-samples-grid button > div {
+              flex-direction: column !important;
+              align-items: flex-start !important;
+              gap: 6px !important;
+            }
+          }
+        `
+      }} />
+      
+      <div className='quick-samples-grid'>
         {samples.map((sample, index) => (
           <button 
             key={index}
@@ -486,38 +510,51 @@ export const QuickTestSamples = ({ samples, onSampleClick }) => {
               background: sample.bgColor,
               border: `1px solid ${sample.borderColor}`,
               borderRadius: '8px',
-              padding: 'clamp(10px, 2vw, 12px)',
+              padding: 'clamp(10px, 3vw, 16px)',
               cursor: 'pointer',
               transition: 'all 0.2s ease-in-out',
               textAlign: 'left',
-              width: '100%'
+              width: '100%',
+              minHeight: '90px'
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = `0 4px 12px ${sample.borderColor}`;
+              e.target.style.boxShadow = `0 4px 12px ${sample.borderColor}30`;
             }}
             onMouseLeave={(e) => {
               e.target.style.transform = 'translateY(0)';
               e.target.style.boxShadow = 'none';
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 'clamp(16px, 4vw, 20px)' }}>{sample.icon}</div>
-              <div style={{ flex: '1', minWidth: '150px' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 'clamp(6px, 2vw, 10px)', 
+              height: '100%'
+            }}>
+              <div style={{ 
+                fontSize: 'clamp(18px, 5vw, 24px)',
+                flexShrink: 0
+              }}>
+                {sample.icon}
+              </div>
+              <div style={{ flex: '1', minWidth: 0 }}>
                 <div style={{ 
                   color: '#f8fafc', 
-                  fontSize: 'clamp(12px, 2.5vw, 14px)', 
+                  fontSize: 'clamp(13px, 3vw, 16px)', 
                   fontWeight: 'bold',
                   wordBreak: 'break-word',
-                  lineHeight: '1.2'
+                  lineHeight: '1.3',
+                  marginBottom: '2px'
                 }}>
                   {sample.title}
                 </div>
                 <div style={{ 
                   color: '#94a3b8', 
-                  fontSize: 'clamp(10px, 2vw, 12px)',
+                  fontSize: 'clamp(11px, 2.5vw, 13px)',
                   wordBreak: 'break-word',
-                  lineHeight: '1.2'
+                  lineHeight: '1.3',
+                  opacity: 0.9
                 }}>
                   {sample.subtitle}
                 </div>
