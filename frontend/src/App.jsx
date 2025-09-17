@@ -11,7 +11,7 @@ import MainLayout from './pages/Layout/MainLayout'
 import PricingPage from './pages/Pricing'
 import AIDetectorContent from './components/Detector'
 import PlagiarismRemover from './components/Plagiarism'
-
+import Landing from './pages/Landing'
 function App() {
 
   return (
@@ -22,8 +22,9 @@ function App() {
         <Route path='/forgot-password' element={<ForgotPasswordPage/>}/>
         <Route path='/reset-password' element={<ResetPasswordPage/>}/>
         <Route path="*" element={<NotFoundPage/>} />
+        <Route path="/" element={<Landing/>} />
         <Route element={<MainLayout/>}>
-        <Route path="/" element={<Homepage />} />
+        <Route path="/humanize" element={<Homepage />} />
         <Route path='/settings' element={<SettingsPage/>}/>
         <Route path='/pricing' element={<PricingPage/>}/>
         <Route path='/detector' element={<AIDetectorContent/>} />
