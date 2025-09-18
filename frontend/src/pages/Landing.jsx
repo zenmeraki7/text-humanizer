@@ -26,7 +26,7 @@ import {
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-
+import { useNavigate } from 'react-router-dom';
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -122,13 +122,13 @@ function HideOnScroll({ children }) {
   );
 }
 
-export default function HumanizeAI() {
+export default function Landing() {
   const [activeFeature, setActiveFeature] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
+const navigate = useNavigate();
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 100);
@@ -143,6 +143,28 @@ export default function HumanizeAI() {
     }, 4000);
     return () => clearInterval(interval);
   }, []);
+//handle navigation
+const handleNavigation = (item) => {
+  const routes = {
+    'Home': '/',
+    'Humanizer': '/humanize',
+    'Detector': '/detector',
+    'Plagiarism': '/plagiarism',
+    'Pricing': '/pricing',
+    'Settings': '/settings',
+    'About': '/about' // Add this route to your App.js if needed
+  };
+  
+  if (routes[item]) {
+    navigate(routes[item]);
+  }
+  
+  // Close mobile drawer if open
+  if (mobileOpen) {
+    setMobileOpen(false);
+  }
+};
+
 
   const features = [
     {
@@ -183,7 +205,7 @@ export default function HumanizeAI() {
     },
   ];
 
-  const navItems = ['Home', 'Humanizer', 'Detector', 'Pricing', 'About'];
+  const navItems = ['Home', 'Humanizer', 'Detector', 'Plagiarism', 'Pricing', 'Settings', 'About'];
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -266,79 +288,90 @@ export default function HumanizeAI() {
                 </Typography>
               </Box>
 
-              {!isMobile ? (
-                <Box sx={{ display: 'flex', gap: 3 }}>
-                  {navItems.map((item) => (
-                    <Button
-                      key={item}
-                      color="inherit"
-                      sx={{
-                        position: 'relative',
-                        '&:hover': {
-                          color: '#A78BFA',
-                          transform: 'translateY(-1px)',
-                        },
-                        '&::after': {
-                          content: '""',
-                          position: 'absolute',
-                          bottom: 0,
-                          left: '50%',
-                          width: 0,
-                          height: 2,
-                          background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-                          transition: 'all 0.3s ease',
-                          transform: 'translateX(-50%)',
-                        },
-                        '&:hover::after': {
-                          width: '100%',
-                        },
-                      }}
-                    >
-                      {item}
-                    </Button>
-                  ))}
-                </Box>
-              ) : (
-                <IconButton
-                  color="inherit"
-                  aria-label="open drawer"
-                  onClick={handleDrawerToggle}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
+             {!isMobile ? (
+  <Box sx={{ display: 'flex', gap: 3 }}>
+    {navItems.map((item) => (
+      <Button
+        key={item}
+        color="inherit"
+        onClick={() => handleNavigation(item)}
+        sx={{
+          position: 'relative',
+          cursor: 'pointer',
+          '&:hover': {
+            color: '#A78BFA',
+            transform: 'translateY(-1px)',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: '50%',
+            width: 0,
+            height: 2,
+            background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+            transition: 'all 0.3s ease',
+            transform: 'translateX(-50%)',
+          },
+          '&:hover::after': {
+            width: '100%',
+          },
+        }}
+      >
+        {item}
+      </Button>
+    ))}
+  </Box>
+) : (
+  <IconButton
+    color="inherit"
+    aria-label="open drawer"
+    onClick={handleDrawerToggle}
+  >
+    <MenuIcon />
+  </IconButton>
+)}
             </Toolbar>
           </AppBar>
         </HideOnScroll>
 
         {/* Mobile Drawer */}
-        <Drawer
-          variant="temporary"
-          anchor="right"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
+       <Drawer
+  variant="temporary"
+  anchor="right"
+  open={mobileOpen}
+  onClose={handleDrawerToggle}
+  ModalProps={{ keepMounted: true }}
+  sx={{
+    '& .MuiDrawer-paper': {
+      width: 280,
+      background: 'rgba(15, 15, 35, 0.95)',
+      backdropFilter: 'blur(20px)',
+    },
+  }}
+>
+  <Box sx={{ p: 2 }}>
+    <IconButton onClick={handleDrawerToggle} sx={{ mb: 2 }}>
+      <CloseIcon />
+    </IconButton>
+    <List>
+      {navItems.map((item) => (
+        <ListItem 
+          button 
+          key={item}
+          onClick={() => handleNavigation(item)}
           sx={{
-            '& .MuiDrawer-paper': {
-              width: 280,
-              background: 'rgba(15, 15, 35, 0.95)',
-              backdropFilter: 'blur(20px)',
+            '&:hover': {
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
             },
           }}
         >
-          <Box sx={{ p: 2 }}>
-            <IconButton onClick={handleDrawerToggle} sx={{ mb: 2 }}>
-              <CloseIcon />
-            </IconButton>
-            <List>
-              {navItems.map((item) => (
-                <ListItem button key={item}>
-                  <ListItemText primary={item} />
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        </Drawer>
+          <ListItemText primary={item} />
+        </ListItem>
+      ))}
+    </List>
+  </Box>
+</Drawer>
 
         {/* Hero Section */}
         <Container maxWidth="lg" sx={{ pt: 15, pb: 10 }}>
@@ -706,7 +739,7 @@ export default function HumanizeAI() {
                 </Typography>
                 
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
-                  Join thousands of content creators who trust HumanizeAI for professional-grade text transformation
+                  Join thousands of content creators who trust Landing for professional-grade text transformation
                 </Typography>
                 
                 <Button
