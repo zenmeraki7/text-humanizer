@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './Pricing.css';
 import { CheckIcon, ChevronDownIcon, CrownIcon, StarIcon, TeamIcon, ZapIcon } from '../components/Icons';
 import { useOutletContext } from 'react-router-dom';
+import Navigation from './Layout/Navigation';
 function PricingPage ()  {
-const { sidebarOpen } = useOutletContext();
   const [particles, setParticles] = useState([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [selectedPlan, setSelectedPlan] = useState('pro');
@@ -203,7 +203,6 @@ const { sidebarOpen } = useOutletContext();
     <div
       onMouseMove={handleMouseMove}
       style={{
-        marginLeft: sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`,
         minHeight: '100vh',
         background: `
           radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
@@ -217,6 +216,7 @@ const { sidebarOpen } = useOutletContext();
         transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
+      <Navigation/>
       {/* Floating Particles */}
       {particles.map((particle, index) => (
         <div

@@ -25,6 +25,7 @@ import {
   FileInfoDisplay
 } from '../components/DetectorComponents/DetectorComponent';
 import { AnalyzeIcon, DocumentIcon, PasteIcon, UploadIcon } from './Icons';
+import Navigation from '../pages/Layout/Navigation';
 
 const Detector = ({ sidebarOpen = false }) => {
   const [text, setText] = useState('');
@@ -233,6 +234,7 @@ const Detector = ({ sidebarOpen = false }) => {
   return (
     <div style={styles.mainContentStyles} className="main-content">
       <style>{CSS_STYLES}</style>
+<Navigation/>
 
       {/* Header */}
       <DetectorHeader />

@@ -12,6 +12,7 @@ import PricingPage from './pages/Pricing'
 import AIDetectorContent from './components/Detector'
 import PlagiarismRemover from './components/Plagiarism'
 import Landing from './pages/Landing'
+import Navigation from './pages/Layout/Navigation'
 function App() {
 
   return (
@@ -23,13 +24,11 @@ function App() {
         <Route path='/reset-password' element={<ResetPasswordPage/>}/>
         <Route path="*" element={<NotFoundPage/>} />
         <Route path="/" element={<Landing/>} />
-        <Route element={<MainLayout/>}>
         <Route path="/humanize" element={<Homepage />} />
         <Route path='/settings' element={<SettingsPage/>}/>
         <Route path='/pricing' element={<PricingPage/>}/>
         <Route path='/detector' element={<AIDetectorContent/>} />
         <Route path='/plagiarism' element={<PlagiarismRemover/>} />
-      </Route>
       </Routes>
     </>
   )

@@ -41,7 +41,7 @@ import {
   getCharacterCount
 } from './MainContentComponents/utils';
 
-const MainContent = ({ sidebarOpen = false }) => {
+const MainContent = () => {
   // Screen size detection hook
   const [screenSize, setScreenSize] = useState({
     isMobile: false,
@@ -172,7 +172,7 @@ const MainContent = ({ sidebarOpen = false }) => {
   };
 
   // Get responsive styles
-  const mainContentStyles = getMainContentStyles(sidebarOpen);
+  const mainContentStyles = getMainContentStyles();
   const tipsHeaderStyles = getTipsHeaderStyles(showTips);
   const tipsContentStyles = getTipsContentStyles(showTips);
 
@@ -395,8 +395,7 @@ const MainContent = ({ sidebarOpen = false }) => {
           className="input-output-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: outputText && screenSize.isDesktop ? '1fr 1fr' : '1fr',
-            gap: 'clamp(16px, 3vw, 24px)',
+gridTemplateColumns: '1fr',            gap: 'clamp(16px, 3vw, 24px)',
             marginBottom: 'clamp(16px, 3vw, 24px)'
           }}
         >

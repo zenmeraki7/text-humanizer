@@ -1,32 +1,17 @@
 import React, { useState, useEffect } from "react";
 import {
-  AppBar,
-  Toolbar,
   Typography,
   Button,
   Container,
   Box,
-  Grid,
   Card,
   CardContent,
   Chip,
-  useScrollTrigger,
-  Slide,
   Fade,
-  IconButton,
-  useTheme,
-  useMediaQuery,
-  Avatar,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Backdrop,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import MenuIcon from '@mui/icons-material/Menu';
-import CloseIcon from '@mui/icons-material/Close';
-import { useNavigate } from 'react-router-dom';
+import Navigation from "./Layout/Navigation"; // Import the Navigation component
+
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -101,41 +86,11 @@ const darkTheme = createTheme({
         },
       },
     },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          background: 'rgba(15, 15, 35, 0.8)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        },
-      },
-    },
   },
 });
 
-function HideOnScroll({ children }) {
-  const trigger = useScrollTrigger();
-  return (
-    <Slide appear={false} direction="down" in={!trigger}>
-      {children}
-    </Slide>
-  );
-}
-
 export default function Landing() {
   const [activeFeature, setActiveFeature] = useState(0);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-const navigate = useNavigate();
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 100);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -143,28 +98,6 @@ const navigate = useNavigate();
     }, 4000);
     return () => clearInterval(interval);
   }, []);
-//handle navigation
-const handleNavigation = (item) => {
-  const routes = {
-    'Home': '/',
-    'Humanizer': '/humanize',
-    'Detector': '/detector',
-    'Plagiarism': '/plagiarism',
-    'Pricing': '/pricing',
-    'Settings': '/settings',
-    'About': '/about' // Add this route to your App.js if needed
-  };
-  
-  if (routes[item]) {
-    navigate(routes[item]);
-  }
-  
-  // Close mobile drawer if open
-  if (mobileOpen) {
-    setMobileOpen(false);
-  }
-};
-
 
   const features = [
     {
@@ -204,12 +137,6 @@ const handleNavigation = (item) => {
       gradient: "linear-gradient(135deg, #EF4444, #EC4899)",
     },
   ];
-
-  const navItems = ['Home', 'Humanizer', 'Detector', 'Plagiarism', 'Pricing', 'Settings', 'About'];
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -251,127 +178,8 @@ const handleNavigation = (item) => {
           }}
         />
 
-        {/* Navigation */}
-        <HideOnScroll>
-          <AppBar
-            position="fixed"
-            elevation={0}
-            sx={{
-              background: scrolled 
-                ? 'rgba(15, 15, 35, 0.95)' 
-                : 'rgba(15, 15, 35, 0.8)',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar
-                  sx={{
-                    background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-                    width: 40,
-                    height: 40,
-                    fontWeight: 'bold',
-                  }}
-                >
-                  C
-                </Avatar>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 800,
-                    background: 'linear-gradient(135deg, #FFFFFF, #A78BFA)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  Conversify
-                </Typography>
-              </Box>
-
-             {!isMobile ? (
-  <Box sx={{ display: 'flex', gap: 3 }}>
-    {navItems.map((item) => (
-      <Button
-        key={item}
-        color="inherit"
-        onClick={() => handleNavigation(item)}
-        sx={{
-          position: 'relative',
-          cursor: 'pointer',
-          '&:hover': {
-            color: '#A78BFA',
-            transform: 'translateY(-1px)',
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: 0,
-            left: '50%',
-            width: 0,
-            height: 2,
-            background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-            transition: 'all 0.3s ease',
-            transform: 'translateX(-50%)',
-          },
-          '&:hover::after': {
-            width: '100%',
-          },
-        }}
-      >
-        {item}
-      </Button>
-    ))}
-  </Box>
-) : (
-  <IconButton
-    color="inherit"
-    aria-label="open drawer"
-    onClick={handleDrawerToggle}
-  >
-    <MenuIcon />
-  </IconButton>
-)}
-            </Toolbar>
-          </AppBar>
-        </HideOnScroll>
-
-        {/* Mobile Drawer */}
-       <Drawer
-  variant="temporary"
-  anchor="right"
-  open={mobileOpen}
-  onClose={handleDrawerToggle}
-  ModalProps={{ keepMounted: true }}
-  sx={{
-    '& .MuiDrawer-paper': {
-      width: 280,
-      background: 'rgba(15, 15, 35, 0.95)',
-      backdropFilter: 'blur(20px)',
-    },
-  }}
->
-  <Box sx={{ p: 2 }}>
-    <IconButton onClick={handleDrawerToggle} sx={{ mb: 2 }}>
-      <CloseIcon />
-    </IconButton>
-    <List>
-      {navItems.map((item) => (
-        <ListItem 
-          button 
-          key={item}
-          onClick={() => handleNavigation(item)}
-          sx={{
-            '&:hover': {
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            },
-          }}
-        >
-          <ListItemText primary={item} />
-        </ListItem>
-      ))}
-    </List>
-  </Box>
-</Drawer>
+        {/* Navigation Component */}
+        <Navigation />
 
         {/* Hero Section */}
         <Container maxWidth="lg" sx={{ pt: 15, pb: 10 }}>
@@ -410,33 +218,32 @@ const handleNavigation = (item) => {
                 >
                   Start Humanizing
                 </Button>
-                 <Button
-    variant="contained"
-    size="large"
-    sx={{
-      background: 'linear-gradient(135deg, #6366F1, #3B82F6)', // teal → blue
-      '&:hover': {
-        background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-        boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)',
-      },
-    }}
-  >
-    Try Detection Free
-  </Button>
-                     <Button
-    variant="contained"
-    size="large"
-    sx={{
-      background: 'linear-gradient(135deg, #9333EA, #C026D3)', // amber → red
-      '&:hover': {
-        background: 'linear-gradient(135deg, #C026D3, #9333EA)',
-        boxShadow: '0 10px 30px rgba(147, 51, 234, 0.4)' // soft violet glow
-,
-      },
-    }}
-  >
-    Instant Plagiarism Scan
-  </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    background: 'linear-gradient(135deg, #6366F1, #3B82F6)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+                      boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4)',
+                    },
+                  }}
+                >
+                  Try Detection Free
+                </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    background: 'linear-gradient(135deg, #9333EA, #C026D3)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #C026D3, #9333EA)',
+                      boxShadow: '0 10px 30px rgba(147, 51, 234, 0.4)',
+                    },
+                  }}
+                >
+                  Instant Plagiarism Scan
+                </Button>
               </Box>
 
               <Box sx={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -475,232 +282,232 @@ const handleNavigation = (item) => {
             </Box>
           </Fade>
         </Container>
- {/* Features Section */}
-{/* Features Section - Complete Replacement */}
-<Container maxWidth="lg" sx={{ py: 10 }}>
-  <Box sx={{ textAlign: 'center', mb: 8 }}>
-    <Typography
-      variant="h2"
-      sx={{
-        mb: 3,
-        background: 'linear-gradient(135deg, #FFFFFF, #A78BFA)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-      }}
-    >
-      Powered by Advanced AI
-    </Typography>
-    <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-      Experience the future of content transformation with our cutting-edge technology stack
-    </Typography>
-  </Box>
 
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-    {/* Row 1 */}
-    <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-      {[features[0], features[1]].map((feature, index) => (
-        <Box key={feature.title} sx={{ flex: '1 1 calc(50% - 16px)', minWidth: '300px' }}>
-          <Fade in timeout={1000 + index * 200}>
-            <Card
+        {/* Features Section */}
+        <Container maxWidth="lg" sx={{ py: 10 }}>
+          <Box sx={{ textAlign: 'center', mb: 8 }}>
+            <Typography
+              variant="h2"
               sx={{
-                height: '100%',
-                p: 3,
-                cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden',
-                background: activeFeature === index 
-                  ? 'rgba(139, 92, 246, 0.15)' 
-                  : 'rgba(255, 255, 255, 0.05)',
-                border: activeFeature === index 
-                  ? '1px solid rgba(139, 92, 246, 0.5)' 
-                  : '1px solid rgba(255, 255, 255, 0.1)',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 4,
-                  background: feature.gradient,
-                  transform: activeFeature === index ? 'scaleX(1)' : 'scaleX(0)',
-                  transformOrigin: 'left',
-                  transition: 'transform 0.5s ease',
-                },
+                mb: 3,
+                background: 'linear-gradient(135deg, #FFFFFF, #A78BFA)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
-              onMouseEnter={() => setActiveFeature(index)}
             >
-              <CardContent sx={{ p: 0 }}>
-                <Box
-                  sx={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 2,
-                    background: feature.gradient,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.5rem',
-                    mb: 3,
-                    transition: 'transform 0.3s ease',
-                    transform: activeFeature === index ? 'scale(1.1)' : 'scale(1)',
-                  }}
-                >
-                  {feature.icon}
+              Powered by Advanced AI
+            </Typography>
+            <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
+              Experience the future of content transformation with our cutting-edge technology stack
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {/* Row 1 */}
+            <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {[features[0], features[1]].map((feature, index) => (
+                <Box key={feature.title} sx={{ flex: '1 1 calc(50% - 16px)', minWidth: '300px' }}>
+                  <Fade in timeout={1000 + index * 200}>
+                    <Card
+                      sx={{
+                        height: '100%',
+                        p: 3,
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        background: activeFeature === index 
+                          ? 'rgba(139, 92, 246, 0.15)' 
+                          : 'rgba(255, 255, 255, 0.05)',
+                        border: activeFeature === index 
+                          ? '1px solid rgba(139, 92, 246, 0.5)' 
+                          : '1px solid rgba(255, 255, 255, 0.1)',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 4,
+                          background: feature.gradient,
+                          transform: activeFeature === index ? 'scaleX(1)' : 'scaleX(0)',
+                          transformOrigin: 'left',
+                          transition: 'transform 0.5s ease',
+                        },
+                      }}
+                      onMouseEnter={() => setActiveFeature(index)}
+                    >
+                      <CardContent sx={{ p: 0 }}>
+                        <Box
+                          sx={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: 2,
+                            background: feature.gradient,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.5rem',
+                            mb: 3,
+                            transition: 'transform 0.3s ease',
+                            transform: activeFeature === index ? 'scale(1.1)' : 'scale(1)',
+                          }}
+                        >
+                          {feature.icon}
+                        </Box>
+                        
+                        <Typography variant="h4" sx={{ mb: 2, color: 'text.primary' }}>
+                          {feature.title}
+                        </Typography>
+                        
+                        <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                          {feature.description}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Fade>
                 </Box>
-                
-                <Typography variant="h4" sx={{ mb: 2, color: 'text.primary' }}>
-                  {feature.title}
-                </Typography>
-                
-                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  {feature.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Fade>
-        </Box>
-      ))}
-    </Box>
+              ))}
+            </Box>
 
-    {/* Row 2 */}
-    <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-      {[features[2], features[3]].map((feature, index) => {
-        const globalIndex = index + 2;
-        return (
-          <Box key={feature.title} sx={{ flex: '1 1 calc(50% - 16px)', minWidth: '300px' }}>
-            <Fade in timeout={1000 + globalIndex * 200}>
-              <Card
-                sx={{
-                  height: '100%',
-                  p: 3,
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  background: activeFeature === globalIndex 
-                    ? 'rgba(139, 92, 246, 0.15)' 
-                    : 'rgba(255, 255, 255, 0.05)',
-                  border: activeFeature === globalIndex 
-                    ? '1px solid rgba(139, 92, 246, 0.5)' 
-                    : '1px solid rgba(255, 255, 255, 0.1)',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    background: feature.gradient,
-                    transform: activeFeature === globalIndex ? 'scaleX(1)' : 'scaleX(0)',
-                    transformOrigin: 'left',
-                    transition: 'transform 0.5s ease',
-                  },
-                }}
-                onMouseEnter={() => setActiveFeature(globalIndex)}
-              >
-                <CardContent sx={{ p: 0 }}>
-                  <Box
-                    sx={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 2,
-                      background: feature.gradient,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.5rem',
-                      mb: 3,
-                      transition: 'transform 0.3s ease',
-                      transform: activeFeature === globalIndex ? 'scale(1.1)' : 'scale(1)',
-                    }}
-                  >
-                    {feature.icon}
+            {/* Row 2 */}
+            <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {[features[2], features[3]].map((feature, index) => {
+                const globalIndex = index + 2;
+                return (
+                  <Box key={feature.title} sx={{ flex: '1 1 calc(50% - 16px)', minWidth: '300px' }}>
+                    <Fade in timeout={1000 + globalIndex * 200}>
+                      <Card
+                        sx={{
+                          height: '100%',
+                          p: 3,
+                          cursor: 'pointer',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          background: activeFeature === globalIndex 
+                            ? 'rgba(139, 92, 246, 0.15)' 
+                            : 'rgba(255, 255, 255, 0.05)',
+                          border: activeFeature === globalIndex 
+                            ? '1px solid rgba(139, 92, 246, 0.5)' 
+                            : '1px solid rgba(255, 255, 255, 0.1)',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 4,
+                            background: feature.gradient,
+                            transform: activeFeature === globalIndex ? 'scaleX(1)' : 'scaleX(0)',
+                            transformOrigin: 'left',
+                            transition: 'transform 0.5s ease',
+                          },
+                        }}
+                        onMouseEnter={() => setActiveFeature(globalIndex)}
+                      >
+                        <CardContent sx={{ p: 0 }}>
+                          <Box
+                            sx={{
+                              width: 64,
+                              height: 64,
+                              borderRadius: 2,
+                              background: feature.gradient,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.5rem',
+                              mb: 3,
+                              transition: 'transform 0.3s ease',
+                              transform: activeFeature === globalIndex ? 'scale(1.1)' : 'scale(1)',
+                            }}
+                          >
+                            {feature.icon}
+                          </Box>
+                          
+                          <Typography variant="h4" sx={{ mb: 2, color: 'text.primary' }}>
+                            {feature.title}
+                          </Typography>
+                          
+                          <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                            {feature.description}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Fade>
                   </Box>
-                  
-                  <Typography variant="h4" sx={{ mb: 2, color: 'text.primary' }}>
-                    {feature.title}
-                  </Typography>
-                  
-                  <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    {feature.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Fade>
-          </Box>
-        );
-      })}
-    </Box>
+                );
+              })}
+            </Box>
 
-    {/* Row 3 */}
-    <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-      {[features[4], features[5]].map((feature, index) => {
-        const globalIndex = index + 4;
-        return (
-          <Box key={feature.title} sx={{ flex: '1 1 calc(50% - 16px)', minWidth: '300px' }}>
-            <Fade in timeout={1000 + globalIndex * 200}>
-              <Card
-                sx={{
-                  height: '100%',
-                  p: 3,
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  background: activeFeature === globalIndex 
-                    ? 'rgba(139, 92, 246, 0.15)' 
-                    : 'rgba(255, 255, 255, 0.05)',
-                  border: activeFeature === globalIndex 
-                    ? '1px solid rgba(139, 92, 246, 0.5)' 
-                    : '1px solid rgba(255, 255, 255, 0.1)',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    background: feature.gradient,
-                    transform: activeFeature === globalIndex ? 'scaleX(1)' : 'scaleX(0)',
-                    transformOrigin: 'left',
-                    transition: 'transform 0.5s ease',
-                  },
-                }}
-                onMouseEnter={() => setActiveFeature(globalIndex)}
-              >
-                <CardContent sx={{ p: 0 }}>
-                  <Box
-                    sx={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 2,
-                      background: feature.gradient,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.5rem',
-                      mb: 3,
-                      transition: 'transform 0.3s ease',
-                      transform: activeFeature === globalIndex ? 'scale(1.1)' : 'scale(1)',
-                    }}
-                  >
-                    {feature.icon}
+            {/* Row 3 */}
+            <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {[features[4], features[5]].map((feature, index) => {
+                const globalIndex = index + 4;
+                return (
+                  <Box key={feature.title} sx={{ flex: '1 1 calc(50% - 16px)', minWidth: '300px' }}>
+                    <Fade in timeout={1000 + globalIndex * 200}>
+                      <Card
+                        sx={{
+                          height: '100%',
+                          p: 3,
+                          cursor: 'pointer',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          background: activeFeature === globalIndex 
+                            ? 'rgba(139, 92, 246, 0.15)' 
+                            : 'rgba(255, 255, 255, 0.05)',
+                          border: activeFeature === globalIndex 
+                            ? '1px solid rgba(139, 92, 246, 0.5)' 
+                            : '1px solid rgba(255, 255, 255, 0.1)',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 4,
+                            background: feature.gradient,
+                            transform: activeFeature === globalIndex ? 'scaleX(1)' : 'scaleX(0)',
+                            transformOrigin: 'left',
+                            transition: 'transform 0.5s ease',
+                          },
+                        }}
+                        onMouseEnter={() => setActiveFeature(globalIndex)}
+                      >
+                        <CardContent sx={{ p: 0 }}>
+                          <Box
+                            sx={{
+                              width: 64,
+                              height: 64,
+                              borderRadius: 2,
+                              background: feature.gradient,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.5rem',
+                              mb: 3,
+                              transition: 'transform 0.3s ease',
+                              transform: activeFeature === globalIndex ? 'scale(1.1)' : 'scale(1)',
+                            }}
+                          >
+                            {feature.icon}
+                          </Box>
+                          
+                          <Typography variant="h4" sx={{ mb: 2, color: 'text.primary' }}>
+                            {feature.title}
+                          </Typography>
+                          
+                          <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                            {feature.description}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Fade>
                   </Box>
-                  
-                  <Typography variant="h4" sx={{ mb: 2, color: 'text.primary' }}>
-                    {feature.title}
-                  </Typography>
-                  
-                  <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    {feature.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Fade>
+                );
+              })}
+            </Box>
           </Box>
-        );
-      })}
-    </Box>
-  </Box>
-</Container>
+        </Container>
 
         {/* CTA Section */}
         <Container maxWidth="md" sx={{ py: 10 }}>
@@ -739,7 +546,7 @@ const handleNavigation = (item) => {
                 </Typography>
                 
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
-                  Join thousands of content creators who trust Landing for professional-grade text transformation
+                  Join thousands of content creators who trust Conversify for professional-grade text transformation
                 </Typography>
                 
                 <Button

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MainContent from '../components/Maincontent';
 import { MenuIcon } from '../components/Icons';
+import Navigation from './Layout/Navigation';
 
 function  HomePage  ()  {
   const [sidebarOpen, setSidebarOpen] = useState(false); // Start collapsed
@@ -8,10 +9,11 @@ function  HomePage  ()  {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', margin: 0, padding: 0,backgroundColor: '#0a0a0a' }}>
       {/* Sidebar */}
+    <Navigation/>
 
 
       {/* Main Content */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1 ,marginTop: "25px"}}>
         <MainContent  />
       </div>
 

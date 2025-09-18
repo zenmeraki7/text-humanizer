@@ -10,7 +10,7 @@ export const getMainContentStyles = (sidebarOpen) => ({
   background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
   padding: '24px',
   margin: 0,
-  marginTop: 0,
+  marginTop: '20px',
 });
 
 export const headerStyles = {

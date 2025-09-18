@@ -3,9 +3,9 @@ import { ChevronRightIcon, DataIcon, HelpIcon, LanguageIcon, NotificationIcon, P
 import './Settings.css';
 import { useOutletContext } from 'react-router-dom';
 import { HeadphoneOff } from 'lucide-react';
+import Navigation from './Layout/Navigation';
 // Main Settings Page Component
 function SettingsPage ()  {
-  const { sidebarOpen } = useOutletContext();
   const [activeSection, setActiveSection] = useState('profile');
   const [settings, setSettings] = useState({
     // Profile Settings
@@ -350,7 +350,6 @@ function SettingsPage ()  {
     <div
       onMouseMove={handleMouseMove}
       style={{
-        marginLeft: sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px`,
         minHeight: '100vh',
         background: `
           radial-gradient(circle at 20% 50%, rgba(5, 6, 87, 0.1) 0%, transparent 50%),
@@ -363,8 +362,7 @@ function SettingsPage ()  {
         overflow: 'hidden',
       }}
     >
-
-
+<Navigation/>
       {/* Floating Particles */}
       {particles.map((particle, index) => (
         <div

@@ -11,13 +11,15 @@ export const getDetectorStyles = (sidebarOpen, showTips) => {
       background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
       padding: '24px',
       margin: 0,
-      marginTop: 0,
+      marginTop: '20px',
       '@media (max-width: 768px)': {
         marginLeft: '0',
         padding: '16px',
+         marginTop: '16px'
       },
       '@media (max-width: 480px)': {
         padding: '12px',
+         marginTop: '12px'
       },
     },
 

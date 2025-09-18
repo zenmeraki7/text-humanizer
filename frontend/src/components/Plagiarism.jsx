@@ -44,6 +44,7 @@ import {
   pasteFromClipboard,
   getUniquenessScore
 } from './PlagiarismComponents/utils';
+import Navigation from '../pages/Layout/Navigation';
 
 const PlagiarismRemover = ({ sidebarOpen }) => {
   // Screen size detection hook
@@ -198,7 +199,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
   return (
     <div style={mainContentStyles}>
       <style>{cssStyles}</style>
-
+<Navigation/>
       {/* Responsive Header */}
       <div style={headerStyles}>
         <h1 style={titleStyles}>

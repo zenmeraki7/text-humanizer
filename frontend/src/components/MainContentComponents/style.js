@@ -72,6 +72,7 @@ export const chipStyles = {
 export const cardStyles = {
   maxWidth: '100%',
   width: '100%',
+    maxWidth: '900px',
   margin: '0 auto',
   background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.5) 0%, rgba(22, 33, 62, 0.3) 100%)',
   backdropFilter: 'blur(10px)',
