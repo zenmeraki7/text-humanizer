@@ -179,17 +179,22 @@ export default function Navigation() {
           <List>
             {navItems.map((item) => (
               <ListItem 
-                button 
-                key={item}
-                onClick={() => handleNavigation(item)}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                  },
-                }}
-              >
-                <ListItemText primary={item} />
-              </ListItem>
+  button 
+  key={item}
+  onClick={() => handleNavigation(item)}
+  sx={{
+    '&:hover': {
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    },
+    '& .MuiListItemText-primary': {
+      color: '#fff',
+      fontWeight: 500,
+    },
+  }}
+>
+  <ListItemText primary={item} />
+</ListItem>
+
             ))}
           </List>
         </Box>
