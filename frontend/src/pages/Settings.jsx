@@ -4,6 +4,7 @@ import './Settings.css';
 import { useOutletContext } from 'react-router-dom';
 import { HeadphoneOff } from 'lucide-react';
 import Navigation from './Layout/Navigation';
+
 // Main Settings Page Component
 function SettingsPage ()  {
   const [activeSection, setActiveSection] = useState('profile');
@@ -33,6 +34,9 @@ function SettingsPage ()  {
 
   const [particles, setParticles] = useState([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  
+  // Ref for the settings content area
+  const settingsContentRef = useRef(null);
 
   // Constants
   const drawerWidth = 220;
@@ -102,6 +106,23 @@ function SettingsPage ()  {
       ...prev,
       [key]: value
     }));
+  };
+
+  // Function to handle section change with auto-scroll
+  const handleSectionChange = (sectionId) => {
+    setActiveSection(sectionId);
+    
+    // Auto-scroll to settings content on mobile
+    if (window.innerWidth <= 768 && settingsContentRef.current) {
+      // Small delay to ensure state update completes
+      setTimeout(() => {
+        settingsContentRef.current.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start',
+          inline: 'nearest'
+        });
+      }, 100);
+    }
   };
 
   const renderSettingContent = () => {
@@ -444,7 +465,7 @@ function SettingsPage ()  {
                 <div
                   key={section.id}
                   className={`menu-item ${activeSection === section.id ? 'active' : ''}`}
-                  onClick={() => setActiveSection(section.id)}
+                  onClick={() => handleSectionChange(section.id)}
                 >
                   <div style={{
                     display: 'flex',
@@ -468,7 +489,11 @@ function SettingsPage ()  {
           </div>
 
           {/* Settings Content */}
-          <div style={{ flex: 1, minHeight: '500px' }}>
+          <div 
+            ref={settingsContentRef}
+            style={{ flex: 1, minHeight: '500px' }}
+            className="settings-content-area"
+          >
             {renderSettingContent()}
 
             {/* Save Button */}

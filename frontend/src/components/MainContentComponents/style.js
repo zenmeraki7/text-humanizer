@@ -209,12 +209,23 @@ export const getTipsHeaderStyles = (showTips) => ({
   gap: '12px',
 });
 
-export const getTipsContentStyles = (showTips) => ({
-  maxHeight: showTips ? '800px' : '0',
-  overflow: 'hidden',
-  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-  padding: showTips ? 'clamp(16px, 3vw, 20px)' : '0 clamp(16px, 3vw, 20px)',
-});
+export const getTipsContentStyles = (showTips) => {
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  
+  return {
+    maxHeight: showTips ? (isMobile ? 'none' : '500px') : '0',
+    height: showTips ? 'auto' : '0',
+    overflow: showTips ? (isMobile ? 'visible' : 'auto') : 'hidden',
+    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    padding: showTips ? 'clamp(16px, 3vw, 20px)' : '0 clamp(16px, 3vw, 20px)',
+    // Add scrolling for very long content on mobile if needed
+    ...(isMobile && showTips && {
+      maxHeight: 'calc(100vh - 300px)', // Fallback max height
+      overflowY: 'auto',
+      WebkitOverflowScrolling: 'touch'
+    })
+  };
+};
 
 export const tipItemStyles = {
   display: 'flex',

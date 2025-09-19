@@ -10,7 +10,7 @@ export const getMainContentStyles = (sidebarOpen) => ({
   background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
   padding: '24px',
   margin: 0,
-  marginTop: '20px',
+  marginTop: '30px',
 });
 
 export const headerStyles = {
@@ -176,12 +176,25 @@ export const getTipsHeaderStyles = (showTips) => ({
   borderBottom: showTips ? '1px solid rgba(139, 92, 246, 0.2)' : 'none',
 });
 
-export const getTipsContentStyles = (showTips) => ({
-  maxHeight: showTips ? '500px' : '0',
-  overflow: 'hidden',
-  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-  padding: showTips ? '20px' : '0 20px',
-});
+export const getTipsContentStyles = (showTips) => {
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  
+  return {
+    // Use responsive maxHeight - none for mobile, limited for desktop
+    maxHeight: showTips ? (isMobile ? 'none' : '500px') : '0',
+    height: showTips ? 'auto' : '0',
+    // Allow visible overflow on mobile, auto scroll on desktop
+    overflow: showTips ? (isMobile ? 'visible' : 'auto') : 'hidden',
+    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    padding: showTips ? '20px' : '0 20px',
+    // Add scrolling for very long content on mobile if needed
+    ...(isMobile && showTips && {
+      maxHeight: 'calc(100vh - 300px)', // Fallback max height
+      overflowY: 'auto',
+      WebkitOverflowScrolling: 'touch'
+    })
+  };
+};
 
 export const tipItemStyles = {
   display: 'flex',

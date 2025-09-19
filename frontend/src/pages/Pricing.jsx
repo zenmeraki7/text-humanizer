@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckIcon, ChevronDownIcon, CrownIcon, StarIcon, ZapIcon } from '../components/Icons';
 import Navigation from './Layout/Navigation';
-
-// Icon components
-
+import './Pricing.css';
 
 const TeamIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -13,8 +11,6 @@ const TeamIcon = () => (
     <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
-
-
 
 function PricingPage() {
   const [particles, setParticles] = useState([]);
@@ -227,141 +223,57 @@ function PricingPage() {
   const isTablet = windowWidth >= 768 && windowWidth < 1024;
 
   return (
-    <div
+    <div 
+      className="pricing-page"
       onMouseMove={handleMouseMove}
-      style={{
-        minHeight: '100vh',
-        background: `
-          radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-          radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-          radial-gradient(circle at 40% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
-          linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)
-        `,
-        padding: isMobile ? '16px' : isTablet ? '24px' : '32px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
     >
       <Navigation/>
+      
       {/* Floating Particles */}
       {particles.map((particle, index) => (
         <div
           key={index}
+          className="particle"
           style={{
-            position: 'absolute',
             left: `${particle.x}px`,
             top: `${particle.y}px`,
             width: `${particle.size}px`,
             height: `${particle.size}px`,
             opacity: particle.opacity,
-            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, transparent 70%)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            animation: `particle-float 8s ease-in-out infinite ${index * 0.2}s`,
+            animationDelay: `${index * 0.2}s`,
           }}
         />
       ))}
 
       {/* Header */}
-      <div style={{
-        marginBottom: isMobile ? '40px' : isTablet ? '50px' : '60px',
-        textAlign: 'center',
-        position: 'relative',
-        zIndex: 10,
-      }}>
-        <h1 style={{
-          fontSize: isMobile ? '2.5rem' : isTablet ? '3rem' : '4rem',
-          fontWeight: 'bold',
-          color: '#fff',
-          marginBottom: isMobile ? '12px' : '20px',
-          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          lineHeight: '1.2',
-          textShadow: '0 0 40px rgba(99, 102, 241, 0.3)',
-          transform: isMobile ? 'none' : `rotateX(${mousePosition.y * 0.5}deg) rotateY(${mousePosition.x * 0.5}deg)`,
-          transition: 'transform 0.3s ease-out',
-          padding: isMobile ? '0 10px' : '0',
-        }}>
+      <div className={`header ${isMobile ? 'mobile' : isTablet ? 'tablet' : ''}`}>
+        <h1 
+          className="main-title"
+          style={{
+            transform: isMobile ? 'none' : `rotateX(${mousePosition.y * 0.5}deg) rotateY(${mousePosition.x * 0.5}deg)`,
+          }}
+        >
           Choose Your Plan
         </h1>
-        <p style={{
-          color: '#94a3b8',
-          fontSize: isMobile ? '16px' : isTablet ? '18px' : '20px',
-          fontWeight: 400,
-          maxWidth: isMobile ? '100%' : '700px',
-          margin: `0 auto ${isMobile ? '30px' : '40px'} auto`,
-          lineHeight: '1.6',
-          padding: isMobile ? '0 10px' : '0',
-        }}>
+        <p className="subtitle">
           Unlock the power of AI-driven content transformation with our flexible pricing plans
         </p>
 
         {/* Billing Toggle */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          marginBottom: '20px',
-          padding: isMobile ? '0 10px' : '0',
-        }}>
-          <div style={{
-            background: 'rgba(30, 41, 59, 0.6)',
-            border: '2px solid rgba(99, 102, 241, 0.3)',
-            borderRadius: '16px',
-            padding: '8px',
-            display: 'flex',
-            gap: '8px',
-            backdropFilter: 'blur(10px)',
-            flexDirection: isMobile ? 'column' : 'row',
-            width: isMobile ? '100%' : 'auto',
-            maxWidth: isMobile ? '300px' : 'none',
-          }}>
+        <div className={`billing-toggle-container ${isMobile ? 'mobile' : ''}`}>
+          <div className={`billing-toggle ${isMobile ? 'mobile' : ''}`}>
             <button
-              style={{
-                padding: isMobile ? '14px 20px' : '12px 24px',
-                borderRadius: '12px',
-                background: billingPeriod === 'monthly' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'transparent',
-                border: 'none',
-                color: billingPeriod === 'monthly' ? '#fff' : '#94a3b8',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                fontWeight: '600',
-                position: 'relative',
-                boxShadow: billingPeriod === 'monthly' ? '0 4px 15px rgba(99, 102, 241, 0.3)' : 'none',
-              }}
+              className={`billing-btn ${billingPeriod === 'monthly' ? 'active' : ''} ${isMobile ? 'mobile' : ''}`}
               onClick={() => setBillingPeriod('monthly')}
             >
               Monthly
             </button>
             <button
-              style={{
-                padding: isMobile ? '14px 20px' : '12px 24px',
-                borderRadius: '12px',
-                background: billingPeriod === 'yearly' ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'transparent',
-                border: 'none',
-                color: billingPeriod === 'yearly' ? '#fff' : '#94a3b8',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                fontWeight: '600',
-                position: 'relative',
-                boxShadow: billingPeriod === 'yearly' ? '0 4px 15px rgba(99, 102, 241, 0.3)' : 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              className={`billing-btn ${billingPeriod === 'yearly' ? 'active' : ''} ${isMobile ? 'mobile' : ''}`}
               onClick={() => setBillingPeriod('yearly')}
             >
               Yearly
-              <span style={{
-                background: '#10b981',
-                color: '#fff',
-                padding: '2px 8px',
-                borderRadius: '8px',
-                fontSize: '10px',
-                fontWeight: '700'
-              }}>
+              <span className="save-badge">
                 Save 17%
               </span>
             </button>
@@ -370,148 +282,48 @@ function PricingPage() {
       </div>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
-        position: 'relative',
-        zIndex: 10,
-      }}>
+      <div className="main-content">
         {/* Pricing Plans */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)',
-          gap: isMobile ? '20px' : isTablet ? '24px' : '32px',
-          marginBottom: isMobile ? '60px' : '80px',
-          maxWidth: isMobile ? '100%' : '800px',
-          margin: `0 auto ${isMobile ? '60px' : '80px'} auto`,
-        }}>
+        <div className={`pricing-grid ${isMobile ? 'mobile' : isTablet ? 'tablet' : ''}`}>
           {plans.map((plan) => (
             <div
               key={plan.id}
-              style={{
-                background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.7) 0%, rgba(22, 33, 62, 0.5) 50%, rgba(15, 15, 35, 0.6) 100%)',
-                backdropFilter: 'blur(20px)',
-                border: plan.popular ? '2px solid rgba(99, 102, 241, 0.6)' : '2px solid rgba(99, 102, 241, 0.3)',
-                borderRadius: '24px',
-                padding: isMobile ? '24px' : '32px',
-                transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)',
-                position: 'relative',
-                overflow: 'hidden',
-                cursor: 'pointer',
-                transform: plan.popular && !isMobile ? 'scale(1.05)' : 'scale(1)',
-                animation: plan.popular ? 'popular-pulse 3s ease-in-out infinite' : 'none',
-                boxShadow: plan.popular ? '0 0 30px rgba(99, 102, 241, 0.4)' : 'none',
-              }}
+              className={`pricing-card ${plan.popular ? 'popular' : ''} ${isMobile ? 'mobile' : ''}`}
               onClick={() => handlePlanSelect(plan.id)}
-              onMouseEnter={(e) => {
-                if (!isMobile) {
-                  e.target.style.transform = plan.popular ? 'scale(1.05) translateY(-8px)' : 'translateY(-8px)';
-                  e.target.style.boxShadow = '0 32px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 80px rgba(99, 102, 241, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isMobile) {
-                  e.target.style.transform = plan.popular ? 'scale(1.05)' : 'scale(1)';
-                  e.target.style.boxShadow = plan.popular ? '0 0 30px rgba(99, 102, 241, 0.4)' : 'none';
-                }
-              }}
             >
               {plan.popular && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-8px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                  color: '#fff',
-                  padding: '8px 20px',
-                  borderRadius: '20px',
-                  fontSize: isMobile ? '11px' : '12px',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
-                  zIndex: 10,
-                }}>
+                <div className={`popular-badge ${isMobile ? 'mobile' : ''}`}>
                   Most Popular
                 </div>
               )}
 
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                marginBottom: '24px',
-                flexDirection: isMobile ? 'column' : 'row',
-                textAlign: isMobile ? 'center' : 'left',
-              }}>
-                <div style={{
-                  width: isMobile ? '40px' : '48px',
-                  height: isMobile ? '40px' : '48px',
-                  background: plan.color,
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff'
-                }}>
+              <div className={`plan-header ${isMobile ? 'mobile' : ''}`}>
+                <div className={`plan-icon ${isMobile ? 'mobile' : ''}`} style={{ background: plan.color }}>
                   <plan.icon />
                 </div>
                 <div>
-                  <h3 style={{
-                    color: '#f8fafc',
-                    fontSize: isMobile ? '20px' : '24px',
-                    fontWeight: '700',
-                    margin: 0
-                  }}>
+                  <h3 className={`plan-name ${isMobile ? 'mobile' : ''}`}>
                     {plan.name}
                   </h3>
-                  <p style={{
-                    color: '#94a3b8',
-                    fontSize: isMobile ? '12px' : '14px',
-                    margin: '4px 0 0 0'
-                  }}>
+                  <p className={`plan-description ${isMobile ? 'mobile' : ''}`}>
                     {plan.description}
                   </p>
                 </div>
               </div>
 
-              <div style={{ 
-                marginBottom: '24px',
-                textAlign: isMobile ? 'center' : 'left',
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '36px' : '48px',
-                  fontWeight: '900',
-                  color: '#f8fafc',
-                  lineHeight: '1'
-                }}>
+              <div className={`plan-pricing ${isMobile ? 'mobile' : ''}`}>
+                <div className={`price-main ${isMobile ? 'mobile' : ''}`}>
                   {getPrice(plan)}
                 </div>
-                <div style={{
-                  color: '#64748b',
-                  fontSize: isMobile ? '12px' : '14px',
-                  marginTop: '4px'
-                }}>
+                <div className={`price-sub ${isMobile ? 'mobile' : ''}`}>
                   {getFullPrice(plan)}
                 </div>
               </div>
 
-              <ul style={{
-                listStyle: 'none',
-                padding: 0,
-                margin: '0 0 32px 0',
-              }}>
+              <ul className="features-list">
                 {plan.features.map((feature, index) => (
-                  <li key={index} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '6px 0',
-                    color: '#e2e8f0',
-                    fontSize: isMobile ? '12px' : '14px',
-                  }}>
-                    <span style={{ color: '#10b981', flexShrink: 0 }}>
+                  <li key={index} className={`feature-item ${isMobile ? 'mobile' : ''}`}>
+                    <span className="check-icon">
                       <CheckIcon/>
                     </span>
                     {feature}
@@ -520,50 +332,13 @@ function PricingPage() {
               </ul>
               
               <button
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '14px' : '16px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  fontWeight: '700',
-                  fontSize: isMobile ? '14px' : '16px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.23, 1, 0.32, 1)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  background: plan.popular ? 
-                    'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 
-                    'rgba(99, 102, 241, 0.1)',
-                  color: plan.popular ? '#fff' : '#6366f1',
-                  boxShadow: plan.popular ? '0 8px 25px rgba(99, 102, 241, 0.3)' : 'none',
-                  ...(plan.popular ? {} : { border: '2px solid rgba(99, 102, 241, 0.3)' })
-                }}
+                className={`cta-button ${plan.popular ? 'popular' : ''} ${isMobile ? 'mobile' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (plan.id === 'enterprise') {
                     alert('Contact our sales team for Enterprise pricing');
                   } else {
                     alert(`Starting ${plan.name} plan...`);
-                  }
-                }}
-                onMouseEnter={(e) => {
-                  if (!isMobile) {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = plan.popular ? 
-                      '0 12px 35px rgba(99, 102, 241, 0.4)' : 
-                      '0 4px 15px rgba(99, 102, 241, 0.2)';
-                    if (!plan.popular) {
-                      e.target.style.background = 'rgba(99, 102, 241, 0.2)';
-                    }
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isMobile) {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = plan.popular ? '0 8px 25px rgba(99, 102, 241, 0.3)' : 'none';
-                    if (!plan.popular) {
-                      e.target.style.background = 'rgba(99, 102, 241, 0.1)';
-                    }
                   }
                 }}
               >
@@ -577,46 +352,19 @@ function PricingPage() {
 
         {/* Features Comparison Table */}
         {!isMobile && (
-          <div style={{ marginBottom: '80px' }}>
-            <h2 style={{
-              fontSize: isTablet ? '2rem' : '2.5rem',
-              fontWeight: '700',
-              color: '#f8fafc',
-              textAlign: 'center',
-              marginBottom: '40px',
-              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
+          <div className="comparison-section">
+            <h2 className={`comparison-title ${isTablet ? 'tablet' : ''}`}>
               Feature Comparison
             </h2>
 
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.7) 0%, rgba(22, 33, 62, 0.5) 100%)',
-              backdropFilter: 'blur(20px)',
-              border: '2px solid rgba(99, 102, 241, 0.3)',
-              borderRadius: '20px',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                background: 'rgba(99, 102, 241, 0.1)',
-                padding: '20px',
-                borderBottom: '1px solid rgba(99, 102, 241, 0.2)',
-              }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: isTablet ? '2fr 1fr 1fr 1fr 1fr' : '2fr 1fr 1fr 1fr 1fr',
-                  padding: '0',
-                  alignItems: 'center',
-                  fontWeight: '700',
-                  color: '#f8fafc',
-                }}>
+            <div className="comparison-table">
+              <div className="table-header">
+                <div className={`table-header-grid ${isTablet ? 'tablet' : ''}`}>
                   <div>Features</div>
-                  <div style={{ textAlign: 'center' }}>Free</div>
-                  <div style={{ textAlign: 'center' }}>Pro</div>
-                  <div style={{ textAlign: 'center' }}>Team</div>
-                  <div style={{ textAlign: 'center' }}>Enterprise</div>
+                  <div>Free</div>
+                  <div>Pro</div>
+                  <div>Team</div>
+                  <div>Enterprise</div>
                 </div>
               </div>
 
@@ -630,26 +378,12 @@ function PricingPage() {
                 ['Custom Training', '❌', '❌', '❌', '✅'],
                 ['White Label', '❌', '❌', '✅', '✅'],
               ].map((row, index) => (
-                <div key={index} style={{
-                  display: 'grid',
-                  gridTemplateColumns: isTablet ? '2fr 1fr 1fr 1fr 1fr' : '2fr 1fr 1fr 1fr 1fr',
-                  padding: '16px 20px',
-                  borderBottom: '1px solid rgba(99, 102, 241, 0.1)',
-                  alignItems: 'center',
-                  transition: 'background 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(99, 102, 241, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
-                >
-                  <div style={{ fontWeight: '600', color: '#f8fafc' }}>{row[0]}</div>
-                  <div style={{ textAlign: 'center', color: '#94a3b8' }}>{row[1]}</div>
-                  <div style={{ textAlign: 'center', color: '#94a3b8' }}>{row[2]}</div>
-                  <div style={{ textAlign: 'center', color: '#94a3b8' }}>{row[3]}</div>
-                  <div style={{ textAlign: 'center', color: '#94a3b8' }}>{row[4]}</div>
+                <div key={index} className={`table-row ${isTablet ? 'tablet' : ''}`}>
+                  <div className="feature-name">{row[0]}</div>
+                  <div className="feature-value">{row[1]}</div>
+                  <div className="feature-value">{row[2]}</div>
+                  <div className="feature-value">{row[3]}</div>
+                  <div className="feature-value">{row[4]}</div>
                 </div>
               ))}
             </div>
@@ -657,91 +391,25 @@ function PricingPage() {
         )}
 
         {/* FAQ Section */}
-        <div style={{ marginBottom: isMobile ? '60px' : '80px' }}>
-          <h2 style={{
-            fontSize: isMobile ? '2rem' : isTablet ? '2.25rem' : '2.5rem',
-            fontWeight: '700',
-            color: '#f8fafc',
-            textAlign: 'center',
-            marginBottom: isMobile ? '30px' : '40px',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
+        <div className={`faq-section ${isMobile ? 'mobile' : ''}`}>
+          <h2 className={`faq-title ${isMobile ? 'mobile' : isTablet ? 'tablet' : ''}`}>
             Frequently Asked Questions
           </h2>
 
-          <div style={{ 
-            maxWidth: isMobile ? '100%' : '800px', 
-            margin: '0 auto',
-          }}>
+          <div className={`faq-container ${isMobile ? 'mobile' : ''}`}>
             {faqs.map((faq, index) => (
-              <div key={index} style={{
-                background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.7) 0%, rgba(22, 33, 62, 0.5) 100%)',
-                backdropFilter: 'blur(20px)',
-                border: '2px solid rgba(99, 102, 241, 0.3)',
-                borderRadius: '16px',
-                marginBottom: '16px',
-                overflow: 'hidden',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isMobile) {
-                  e.target.style.borderColor = 'rgba(99, 102, 241, 0.5)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isMobile) {
-                  e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)';
-                }
-              }}
-              >
+              <div key={index} className="faq-item">
                 <button
-                  style={{
-                    width: '100%',
-                    padding: isMobile ? '16px 20px' : '20px 24px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#f8fafc',
-                    fontSize: isMobile ? '14px' : '16px',
-                    fontWeight: '600',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    transition: 'all 0.3s ease',
-                  }}
+                  className={`faq-question ${isMobile ? 'mobile' : ''}`}
                   onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
-                  onMouseEnter={(e) => {
-                    if (!isMobile) {
-                      e.target.style.color = '#6366f1';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isMobile) {
-                      e.target.style.color = '#f8fafc';
-                    }
-                  }}
                 >
-                  <span style={{ paddingRight: '16px' }}>{faq.question}</span>
-                  <div style={{
-                    transform: openFAQ === index ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.3s ease',
-                    flexShrink: 0,
-                  }}>
+                  <span className="question-text">{faq.question}</span>
+                  <div className={`chevron ${openFAQ === index ? 'open' : ''}`}>
                     <ChevronDownIcon />
                   </div>
                 </button>
                 {openFAQ === index && (
-                  <div style={{
-                    padding: isMobile ? '0 20px 16px 20px' : '0 24px 20px 24px',
-                    color: '#94a3b8',
-                    lineHeight: '1.6',
-                    fontSize: isMobile ? '13px' : '14px',
-                    animation: 'fadeIn 0.3s ease-in-out',
-                  }}>
+                  <div className={`faq-answer ${isMobile ? 'mobile' : ''}`}>
                     {faq.answer}
                   </div>
                 )}
@@ -751,102 +419,22 @@ function PricingPage() {
         </div>
 
         {/* Call to Action */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: isMobile ? '60px' : '80px',
-          padding: isMobile ? '40px 20px' : isTablet ? '50px 30px' : '60px 40px',
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
-          borderRadius: '24px',
-          border: '2px solid rgba(99, 102, 241, 0.3)',
-          backdropFilter: 'blur(20px)',
-        }}>
-          <h3 style={{
-            fontSize: isMobile ? '1.5rem' : isTablet ? '1.75rem' : '2rem',
-            fontWeight: '700',
-            color: '#f8fafc',
-            marginBottom: '16px'
-          }}>
+        <div className={`cta-section ${isMobile ? 'mobile' : isTablet ? 'tablet' : ''}`}>
+          <h3 className={`cta-title ${isMobile ? 'mobile' : isTablet ? 'tablet' : ''}`}>
             Ready to transform your content?
           </h3>
-          <p style={{
-            color: '#94a3b8',
-            fontSize: isMobile ? '14px' : '18px',
-            marginBottom: '32px',
-            maxWidth: '600px',
-            margin: '0 auto 32px auto',
-            lineHeight: '1.6',
-          }}>
+          <p className={`cta-description ${isMobile ? 'mobile' : ''}`}>
             Join thousands of content creators who trust our AI humanization technology to create authentic, engaging content.
           </p>
-          <div style={{
-            display: 'flex',
-            gap: isMobile ? '12px' : '16px',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: 'center',
-          }}>
+          <div className={`cta-buttons ${isMobile ? 'mobile' : ''}`}>
             <button
-              style={{
-                padding: isMobile ? '14px 24px' : '16px 32px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                border: 'none',
-                borderRadius: '12px',
-                color: '#fff',
-                fontSize: isMobile ? '14px' : '16px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                boxShadow: '0 8px 25px rgba(99, 102, 241, 0.3)',
-                width: isMobile ? '100%' : 'auto',
-                maxWidth: isMobile ? '280px' : 'none',
-              }}
-              onMouseEnter={(e) => {
-                if (!isMobile) {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 12px 35px rgba(99, 102, 241, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isMobile) {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 8px 25px rgba(99, 102, 241, 0.3)';
-                }
-              }}
+              className={`cta-primary ${isMobile ? 'mobile' : ''}`}
               onClick={() => alert('Starting Pro trial...')}
             >
               Start Free Trial
             </button>
             <button
-              style={{
-                padding: isMobile ? '14px 24px' : '16px 32px',
-                background: 'rgba(99, 102, 241, 0.1)',
-                border: '2px solid rgba(99, 102, 241, 0.3)',
-                borderRadius: '12px',
-                color: '#6366f1',
-                fontSize: isMobile ? '14px' : '16px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                width: isMobile ? '100%' : 'auto',
-                maxWidth: isMobile ? '280px' : 'none',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(99, 102, 241, 0.2)';
-                if (!isMobile) {
-                  e.target.style.transform = 'translateY(-2px)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(99, 102, 241, 0.1)';
-                if (!isMobile) {
-                  e.target.style.transform = 'translateY(0)';
-                }
-              }}
+              className={`cta-secondary ${isMobile ? 'mobile' : ''}`}
               onClick={() => alert('Contacting sales...')}
             >
               Contact Sales
@@ -855,25 +443,11 @@ function PricingPage() {
         </div>
 
         {/* Trust Indicators */}
-        <div style={{
-          marginTop: isMobile ? '40px' : '60px',
-          textAlign: 'center',
-        }}>
-          <p style={{
-            color: '#64748b',
-            fontSize: isMobile ? '12px' : '14px',
-            marginBottom: '20px'
-          }}>
+        <div className={`trust-section ${isMobile ? 'mobile' : ''}`}>
+          <p className={`trust-text ${isMobile ? 'mobile' : ''}`}>
             Trusted by over 50,000+ content creators worldwide
           </p>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: isMobile ? '16px' : '32px',
-            flexWrap: 'wrap',
-            flexDirection: isMobile ? 'column' : 'row',
-          }}>
+          <div className={`trust-features ${isMobile ? 'mobile' : ''}`}>
             {[
               '🔒 Enterprise Security',
               '💳 Secure Payments',
@@ -881,52 +455,13 @@ function PricingPage() {
               '📞 24/7 Support',
               '🌍 Global CDN'
             ].map((feature, index) => (
-              <div key={index} style={{
-                color: '#94a3b8',
-                fontSize: isMobile ? '12px' : '14px',
-                fontWeight: '500'
-              }}>
+              <div key={index} className={`trust-feature ${isMobile ? 'mobile' : ''}`}>
                 {feature}
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Add custom CSS animations */}
-      <style jsx>{`
-        @keyframes particle-float {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          33% {
-            transform: translateY(-15px) rotate(120deg);
-          }
-          66% {
-            transform: translateY(8px) rotate(240deg);
-          }
-        }
-
-        @keyframes popular-pulse {
-          0%, 100% {
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
-          }
-          50% {
-            box-shadow: 0 0 50px rgba(99, 102, 241, 0.6);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

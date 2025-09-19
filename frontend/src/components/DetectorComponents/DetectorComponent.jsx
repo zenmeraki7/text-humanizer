@@ -569,6 +569,9 @@ export const QuickTestSamples = ({ samples, onSampleClick }) => {
 
 // Tips Section Component
 export const TipsSection = ({ tips, showTips, onToggleTips, styles }) => {
+  // Detect screen size
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  
   return (
     <div style={{
       ...styles.tipsContainerStyles,
@@ -641,12 +644,20 @@ export const TipsSection = ({ tips, showTips, onToggleTips, styles }) => {
         </div>
       </div>
 
+      {/* FIXED: Mobile-responsive tips content */}
       <div style={{
-        ...styles.tipsContentStyles,
-        maxHeight: showTips ? '600px' : '0',
-        overflow: 'hidden',
+        // Remove fixed maxHeight for mobile, allow natural height
+        maxHeight: showTips ? (isMobile ? 'none' : '600px') : '0',
+        height: showTips ? 'auto' : '0',
+        overflow: showTips ? (isMobile ? 'visible' : 'auto') : 'hidden',
         transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         padding: showTips ? 'clamp(16px, 4vw, 20px)' : '0 clamp(16px, 4vw, 20px)',
+        // Add scrolling for very long content on mobile if needed
+        ...(isMobile && showTips && {
+          maxHeight: 'calc(100vh - 200px)',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch'
+        })
       }}>
         <div style={{ display: 'grid', gap: 'clamp(8px, 2vw, 12px)' }}>
           {tips.map((tip, index) => (

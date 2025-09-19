@@ -248,14 +248,13 @@ const Detector = ({ sidebarOpen = false }) => {
         <FileInfoDisplay uploadedFile={uploadedFile} error={error} />
 
         {/* Enhanced Tips Section - Show at top on mobile */}
-        {isMobile && (
           <TipsSection 
             tips={TIPS_DATA}
             showTips={showTips}
             onToggleTips={handleToggleTips}
             styles={styles}
           />
-        )}
+        
 
         {/* Input and Results Grid */}
         <div style={gridConfig.inputResultsGrid}>
@@ -512,7 +511,7 @@ const Detector = ({ sidebarOpen = false }) => {
           isMobile={isMobile}
         />
 
-        {/* Enhanced Tips Section - Show at bottom on desktop/tablet */}
+        {/* Enhanced Tips Section - Show at bottom on desktop/tablet
         {!isMobile && (
           <TipsSection 
             tips={TIPS_DATA}
@@ -520,7 +519,7 @@ const Detector = ({ sidebarOpen = false }) => {
             onToggleTips={handleToggleTips}
             styles={styles}
           />
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -262,6 +262,7 @@
 #     allow_origins=[
 #         "https://test-finam.onrender.com",  # your frontend
 #         "http://localhost:3000",            # local dev
+#          "http://localhost:5173", 
 #     ],
 #     allow_credentials=True,
 #     allow_methods=["*"],
