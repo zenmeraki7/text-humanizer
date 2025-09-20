@@ -399,106 +399,111 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
         </div>
 
         {/* Responsive Bottom Controls */}
-        <div 
-          className="bottom-controls"
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: screenSize.isMobile ? 'stretch' : 'center', 
-            flexDirection: screenSize.isMobile ? 'column' : 'row',
-            flexWrap: 'wrap', 
-            gap: '16px' 
-          }}
-        >
-          <div 
-            className="mode-selector"
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '16px',
-              justifyContent: screenSize.isMobile ? 'center' : 'flex-start',
-              width: screenSize.isMobile ? '100%' : 'auto'
-            }}
-          >
-            <span style={{ 
-              color: '#a1a1aa', 
-              fontSize: 'clamp(14px, 2.5vw, 16px)',
-              whiteSpace: 'nowrap'
-            }}>
-              Mode:
-            </span>
-            
-            <div style={selectStyles}>
-              <button
-                onClick={() => setShowModeDropdown(!showModeDropdown)}
-                style={{
-                  ...selectButtonStyles,
-                  borderColor: showModeDropdown ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)',
-                }}
-              >
-                <span>{mode}</span>
-                <ChevronDownIcon />
-              </button>
-              
-              {showModeDropdown && (
-                <div style={dropdownStyles}>
-                  {MODES.map((modeOption) => (
-                    <button
-                      key={modeOption}
-                      onClick={() => {
-                        setMode(modeOption);
-                        setShowModeDropdown(false);
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px)',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontSize: 'clamp(14px, 2.5vw, 16px)',
-                        borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
-                        transition: 'background-color 0.2s ease-in-out',
-                        minHeight: '44px',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.2)'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      {modeOption}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            className="primary-button"
-            style={{
-              ...primaryButtonStyles,
-              ...(isPrimaryHovered && !isProcessing ? primaryButtonHoverStyles : {}),
-            }}
-            onMouseEnter={() => !isProcessing && setIsPrimaryHovered(true)}
-            onMouseLeave={() => setIsPrimaryHovered(false)}
-            onClick={handleProcessText}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <>
-                <div style={spinnerStyles} />
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <MagicWandIcon />
-                <span>Remove Plagiarism</span>
-              </>
-            )}
-          </button>
+<div 
+  className="bottom-controls"
+  style={{ 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: screenSize.isMobile ? 'stretch' : 'center', 
+    flexDirection: screenSize.isMobile ? 'column' : 'row',
+    flexWrap: 'wrap', 
+    gap: '16px' 
+  }}
+>
+  <div 
+    className="mode-selector"
+    style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '16px',
+      justifyContent: screenSize.isMobile ? 'center' : 'flex-start',
+      width: screenSize.isMobile ? '100%' : 'auto',
+      flex: screenSize.isMobile ? 'none' : '1' // Take up available space on desktop
+    }}
+  >
+    <span style={{ 
+      color: '#a1a1aa', 
+      fontSize: 'clamp(14px, 2.5vw, 16px)',
+      whiteSpace: 'nowrap'
+    }}>
+      Mode:
+    </span>
+    
+    <div style={selectStyles}>
+      {/* Your existing mode selector code */}
+      <button
+        onClick={() => setShowModeDropdown(!showModeDropdown)}
+        style={{
+          ...selectButtonStyles,
+          borderColor: showModeDropdown ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)',
+        }}
+      >
+        <span>{mode}</span>
+        <ChevronDownIcon />
+      </button>
+      
+      {showModeDropdown && (
+        <div style={dropdownStyles}>
+          {MODES.map((modeOption) => (
+            <button
+              key={modeOption}
+              onClick={() => {
+                setMode(modeOption);
+                setShowModeDropdown(false);
+              }}
+              style={{
+                width: '100%',
+                padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px)',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: 'clamp(14px, 2.5vw, 16px)',
+                borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
+                transition: 'background-color 0.2s ease-in-out',
+                minHeight: '44px',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.2)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+              {modeOption}
+            </button>
+          ))}
         </div>
+      )}
+    </div>
+  </div>
+
+  <button
+    className="primary-button"
+    style={{
+      ...primaryButtonStyles,
+      ...(isPrimaryHovered && !isProcessing ? primaryButtonHoverStyles : {}),
+      width: screenSize.isMobile ? '100%' : 'auto', // Full width on mobile, auto on desktop
+      maxWidth: screenSize.isMobile ? 'none' : '200px', // Limit max width on desktop
+      flexShrink: 0 // Prevent button from shrinking
+    }}
+    onMouseEnter={() => !isProcessing && setIsPrimaryHovered(true)}
+    onMouseLeave={() => setIsPrimaryHovered(false)}
+    onClick={handleProcessText}
+    disabled={isProcessing}
+  >
+    {isProcessing ? (
+      <>
+        <div style={spinnerStyles} />
+        <span>Processing...</span>
+      </>
+    ) : (
+      <>
+        <MagicWandIcon />
+        <span>Remove Plagiarism</span>
+      </>
+    )}
+  </button>
+</div>
 
         {/* Responsive Results Section */}
         {showComparison && processedText && (
