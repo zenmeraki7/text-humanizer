@@ -13,6 +13,7 @@ import AIDetectorContent from './components/Detector'
 import PlagiarismRemover from './components/Plagiarism'
 import Landing from './pages/Landing'
 import Navigation from './pages/Layout/Navigation'
+import Tone from './pages/Tone'
 function App() {
 
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path='/pricing' element={<PricingPage/>}/>
         <Route path='/detector' element={<AIDetectorContent/>} />
         <Route path='/plagiarism' element={<PlagiarismRemover/>} />
+        <Route path='/tone' element={<Tone/>}/>
       </Routes>
     </>
   )

@@ -344,21 +344,20 @@ export const getDetectorStyles = (sidebarOpen, showTips) => {
 };
 
 export const CSS_STYLES = `
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
   /* Enhanced responsive styles */
-  .main-content {
-    transition: margin-left 0.3s ease-in-out;
-  }
-
-  @media (max-width: 1024px) {
-    .main-content {
-      margin-left: 0 !important;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .main-content {
-      padding: 16px !important;
-    }
+ .main-content {
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+  /* Remove any max-width constraints */
+  max-width: none !important;
+}
     
     .title {
       font-size: clamp(2rem, 6vw, 2.5rem) !important;
