@@ -103,7 +103,7 @@ function LoginPage() {
     backdropFilter: 'blur(24px)',
     border: '1px solid rgba(148, 163, 184, 0.1)',
     borderRadius: isMobile ? '16px' : '20px',
-    padding: isMobile ? '24px' : '48px',
+    padding: isMobile ? '24px' : '20px',
     width: '100%',
     maxWidth: isMobile ? '100%' : '460px',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(148, 163, 184, 0.05)',

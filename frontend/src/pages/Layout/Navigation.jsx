@@ -52,7 +52,7 @@ export default function Navigation() {
       'Plagiarism': '/plagiarism',
       'Pricing': '/pricing',
       'Settings': '/settings',
-      'Tone': '/tone'
+      'Tone': '/tone',
     };
     
     if (routes[item]) {
