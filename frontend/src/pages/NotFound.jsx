@@ -12,7 +12,6 @@ function NotFoundPage() {
   // Responsive breakpoints
   const isMobile = windowSize.width < 768;
   const isTablet = windowSize.width >= 768 && windowSize.width < 1024;
-  const isDesktop = windowSize.width >= 1024;
 
   useEffect(() => {
     const handleResize = () => {
@@ -142,18 +141,24 @@ function NotFoundPage() {
   return (
     <div style={{
       margin: 0,
+      padding: 0,
       boxSizing: 'border-box',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       background: 'radial-gradient(ellipse at center, #0f0f23 0%, #1a0b2e 30%, #16213e 70%, #0f3460 100%)',
       color: 'white',
       minHeight: '100vh',
+      height: '100vh',
+      width: '100vw',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
       overflow: 'hidden',
-      position: 'relative',
-      padding: isMobile ? '20px' : isTablet ? '30px' : '40px'
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
@@ -164,9 +169,14 @@ function NotFoundPage() {
           box-sizing: border-box;
         }
 
-        body {
-          font-family: 'Orbitron', monospace;
+        html, body {
+          height: 100%;
+          width: 100%;
           overflow: hidden;
+          font-family: 'Orbitron', monospace;
+          position: fixed;
+          top: 0;
+          left: 0;
         }
 
         .canvas-container {
@@ -194,9 +204,11 @@ function NotFoundPage() {
           animation: hologram-pulse 4s ease-in-out infinite;
           transform-style: preserve-3d;
           perspective: 1000px;
-          max-width: ${isMobile ? '350px' : isTablet ? '500px' : '800px'};
+          max-width: ${isMobile ? '90vw' : isTablet ? '500px' : '800px'};
+          max-height: 90vh;
           width: 100%;
           margin: 0 auto;
+          overflow-y: auto;
         }
 
         @keyframes hologram-pulse {
@@ -227,7 +239,7 @@ function NotFoundPage() {
         }
 
         .error-code {
-          font-size: ${isMobile ? '4rem' : isTablet ? '6rem' : '8rem'};
+          font-size: ${isMobile ? '3.5rem' : isTablet ? '5rem' : '7rem'};
           font-weight: 900;
           font-family: 'Orbitron', monospace;
           background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dda0dd);
@@ -237,7 +249,7 @@ function NotFoundPage() {
           background-clip: text;
           animation: rainbow-flow 3s ease-in-out infinite, ${isMobile ? 'none' : 'glitch-effect 5s infinite'};
           text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
-          margin-bottom: ${isMobile ? '1rem' : '2rem'};
+          margin-bottom: ${isMobile ? '0.8rem' : '1.5rem'};
           position: relative;
           display: inline-block;
           line-height: 1;
@@ -337,9 +349,9 @@ function NotFoundPage() {
         }
 
         .title {
-          font-size: ${isMobile ? '1.8rem' : isTablet ? '2.8rem' : '4rem'};
+          font-size: ${isMobile ? '1.5rem' : isTablet ? '2.2rem' : '3rem'};
           font-weight: 700;
-          margin-bottom: ${isMobile ? '1rem' : '2rem'};
+          margin-bottom: ${isMobile ? '0.8rem' : '1.5rem'};
           background: linear-gradient(45deg, #64ffda, #1de9b6, #00bcd4, #3f51b5);
           background-size: 400% 400%;
           -webkit-background-clip: text;
@@ -380,12 +392,12 @@ function NotFoundPage() {
         }
 
         .description {
-          font-size: ${isMobile ? '1rem' : isTablet ? '1.2rem' : '1.4rem'};
+          font-size: ${isMobile ? '0.9rem' : isTablet ? '1.1rem' : '1.3rem'};
           color: #b3e5fc;
-          margin-bottom: ${isMobile ? '2rem' : '3rem'};
+          margin-bottom: ${isMobile ? '1.5rem' : '2.5rem'};
           max-width: ${isMobile ? '100%' : '600px'};
-          line-height: 1.8;
-          text-shadow: 0 0 10px rgba9, 229, 252, 0.3);
+          line-height: 1.6;
+          text-shadow: 0 0 10px rgba(179, 229, 252, 0.3);
           animation: text-shimmer 4s ease-in-out infinite;
           padding: ${isMobile ? '0 10px' : '0'};
         }
@@ -424,14 +436,14 @@ function NotFoundPage() {
           flex-direction: ${isMobile ? 'column' : 'row'};
           align-items: center;
           flex-wrap: wrap;
-          margin-bottom: ${isMobile ? '2rem' : '3rem'};
+          margin-bottom: ${isMobile ? '1.5rem' : '2.5rem'};
         }
 
         .btn {
-          padding: ${isMobile ? '14px 28px' : isTablet ? '16px 32px' : '18px 36px'};
+          padding: ${isMobile ? '12px 24px' : isTablet ? '14px 28px' : '16px 32px'};
           border: none;
           border-radius: 50px;
-          font-size: ${isMobile ? '16px' : '18px'};
+          font-size: ${isMobile ? '14px' : '16px'};
           font-weight: 700;
           cursor: pointer;
           transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -439,14 +451,14 @@ function NotFoundPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: ${isMobile ? '8px' : '12px'};
+          gap: ${isMobile ? '6px' : '10px'};
           position: relative;
           overflow: hidden;
           font-family: 'Orbitron', monospace;
           text-transform: uppercase;
           letter-spacing: 1px;
-          width: ${isMobile ? '280px' : 'auto'};
-          min-width: ${isMobile ? '280px' : '200px'};
+          width: ${isMobile ? '240px' : 'auto'};
+          min-width: ${isMobile ? '240px' : '180px'};
           text-align: center;
         }
 
@@ -475,9 +487,9 @@ function NotFoundPage() {
         }
 
         .btn-primary:hover {
-          transform: translateY(${isMobile ? '-4px' : '-8px'}) scale(${isMobile ? '1.02' : '1.05'});
+          transform: translateY(${isMobile ? '-3px' : '-6px'}) scale(${isMobile ? '1.02' : '1.05'});
           box-shadow: 
-            0 ${isMobile ? '12px' : '16px'} ${isMobile ? '30px' : '40px'} rgba(102, 126, 234, 0.6),
+            0 ${isMobile ? '10px' : '14px'} ${isMobile ? '25px' : '35px'} rgba(102, 126, 234, 0.6),
             0 0 0 1px rgba(255, 255, 255, 0.3);
           background: linear-gradient(45deg, #7c3aed 0%, #a855f7 100%);
         }
@@ -494,19 +506,19 @@ function NotFoundPage() {
 
         .btn-secondary:hover {
           background: rgba(100, 255, 218, 0.1);
-          transform: translateY(${isMobile ? '-4px' : '-8px'}) scale(${isMobile ? '1.02' : '1.05'});
+          transform: translateY(${isMobile ? '-3px' : '-6px'}) scale(${isMobile ? '1.02' : '1.05'});
           border-color: rgba(100, 255, 218, 0.6);
           box-shadow: 
-            0 ${isMobile ? '12px' : '16px'} ${isMobile ? '30px' : '40px'} rgba(100, 255, 218, 0.3),
+            0 ${isMobile ? '10px' : '14px'} ${isMobile ? '25px' : '35px'} rgba(100, 255, 218, 0.3),
             inset 0 0 30px rgba(100, 255, 218, 0.1);
         }
 
         .support {
           color: #81c784;
-          font-size: ${isMobile ? '0.9rem' : '1.1rem'};
+          font-size: ${isMobile ? '0.8rem' : '1rem'};
           text-shadow: 0 0 10px rgba(129, 199, 132, 0.3);
           text-align: center;
-          padding: ${isMobile ? '0 20px' : '0'};
+          padding: ${isMobile ? '0 15px' : '0'};
         }
 
         .support-link {
@@ -651,68 +663,56 @@ function NotFoundPage() {
           }
         }
 
-        /* Touch-friendly adjustments for mobile */
+        /* Mobile-specific fixes */
         @media (max-width: 480px) {
           .title {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
           }
           
           .error-code {
-            font-size: 3.5rem;
-            margin-bottom: 0.8rem;
+            font-size: 3rem;
+            margin-bottom: 0.6rem;
           }
           
           .description {
-            font-size: 0.9rem;
-            padding: 0 15px;
-            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            padding: 0 10px;
+            margin-bottom: 1.2rem;
           }
           
           .btn {
-            width: 260px;
-            min-width: 260px;
-            padding: 12px 24px;
-            font-size: 15px;
+            width: 220px;
+            min-width: 220px;
+            padding: 10px 20px;
+            font-size: 13px;
           }
           
           .holographic-container {
             padding: 15px;
-            max-width: 320px;
+            max-width: 95vw;
             margin: 10px;
+            max-height: 95vh;
           }
 
           .support {
-            font-size: 0.8rem;
-            padding: 0 15px;
+            font-size: 0.75rem;
+            padding: 0 10px;
           }
         }
 
-        /* Tablet optimizations */
-        @media (min-width: 768px) and (max-width: 1023px) {
-          .buttons {
-            flex-direction: row;
-            gap: 1.5rem;
-          }
-          
-          .btn {
-            width: auto;
-            min-width: 180px;
-          }
-        }
-
-        /* Performance optimizations for mobile */
-        @media (max-width: 767px) {
-          .error-code::before,
-          .error-code::after {
-            display: none;
-          }
-          
-          .floating-shape {
-            animation-duration: 40s;
-          }
-          
+        /* Ensure full height on all devices */
+        @media (max-height: 600px) {
           .holographic-container {
-            animation-duration: 6s;
+            max-height: 95vh;
+            overflow-y: auto;
+          }
+          
+          .error-code {
+            font-size: ${isMobile ? '2.5rem' : '4rem'};
+          }
+          
+          .title {
+            font-size: ${isMobile ? '1.2rem' : '2rem'};
           }
         }
       `}</style>

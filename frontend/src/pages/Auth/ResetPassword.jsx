@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ParticleBackground from '../../components/Particle';
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -379,7 +380,6 @@ function ResetPasswordPage() {
             }
           }
         `}</style>
-
         <div 
           className="reset-password-card"
           style={cardStyles}
@@ -413,10 +413,13 @@ function ResetPasswordPage() {
   }
 
   return (
+    
     <div 
       className="reset-password-container"
       style={containerStyles}
     >
+      <ParticleBackground/>
+
       <style>{`
         @media (max-width: 480px) {
           .reset-password-container {
