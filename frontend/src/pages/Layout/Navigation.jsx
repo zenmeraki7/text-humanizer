@@ -52,7 +52,7 @@ export default function Navigation() {
       'Plagiarism': '/plagiarism',
       'Pricing': '/pricing',
       'Settings': '/settings',
-      'About': '/about'
+      'Tone': '/tone'
     };
     
     if (routes[item]) {
@@ -64,7 +64,7 @@ export default function Navigation() {
     }
   };
 
-  const navItems = ['Home', 'Humanizer', 'Detector', 'Plagiarism', 'Pricing', 'Settings', 'About'];
+  const navItems = ['Home', 'Humanizer', 'Detector', 'Plagiarism', 'Pricing', 'Settings', 'Tone'];
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);

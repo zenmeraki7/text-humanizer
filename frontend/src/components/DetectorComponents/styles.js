@@ -364,10 +364,22 @@ html, body {
     }
     
     .action-buttons {
-      grid-template-columns: 1fr !important;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 12px !important;
     }
-    
+    @media (maxWidth: 768px) {
+  .action-buttons {
+    grid-template-columns: 1fr 1fr 1fr; /* Keep 3 columns on tablet */
+    gap: 12px;
+  }
+}
+
+@media (maxWidth: 480px) {
+  .action-buttons {
+    grid-template-columns: 1fr; /* Stack vertically only on very small screens */
+    gap: 10px;
+  }
+}
     .textarea {
       height: 200px !important;
       padding: 12px !important;
