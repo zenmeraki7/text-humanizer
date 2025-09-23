@@ -1,10 +1,10 @@
 """
-Enhanced Summarizer Module with Pretrained Models
-Replaces Ollama with lightweight Hugging Face models and strongest prompts
+Enhanced Summarizer Module with Best Pretrained Models & Strongest Prompts
+Uses state-of-the-art models optimized for summarization with expert-level prompts
 """
 
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import logging
 import re
 import math
@@ -13,896 +13,1217 @@ logger = logging.getLogger(__name__)
 
 # Try to import transformers, fall back gracefully if not available
 try:
-    from transformers import pipeline
+    from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
     logger.warning("Transformers not available. Using fallback methods only.")
 
-class SummaryMode(Enum):
-    """Available summary modes for text summarization"""
-    STANDARD = "standard"
-    EXECUTIVE = "executive"
-    BULLET = "bullet"
-    TECHNICAL = "technical"
-    CREATIVE = "creative"
-    ACADEMIC = "academic"
-    EXTRACT = "extract"
-    ABSTRACT = "abstract"
-    MEETING = "meeting"
-    NEWS = "news"
+class SummaryType(Enum):
+    """Available summary types for text summarization"""
+    EXTRACTIVE = "extractive"      # Key sentences extraction
+    ABSTRACTIVE = "abstractive"    # Rewritten summary  
+    BULLET_POINTS = "bullet_points" # Key points in bullets
+    PARAGRAPH = "paragraph"        # Single flowing paragraph
+    OUTLINE = "outline"           # Hierarchical structure
+    EXECUTIVE = "executive"       # Business executive summary
+    ACADEMIC = "academic"         # Research/academic summary
+    SOCIAL = "social"             # Social media friendly
+    TECHNICAL = "technical"       # Technical documentation summary
+    NARRATIVE = "narrative"       # Story-like summary
 
 class SummaryLength(Enum):
     """Summary length options"""
-    BRIEF = "brief"          # ~25% of original
-    MEDIUM = "medium"        # ~40% of original  
-    DETAILED = "detailed"    # ~60% of original
-    COMPREHENSIVE = "comprehensive"  # ~75% of original
+    ULTRA_SHORT = "ultra_short"   # 1-2 sentences
+    SHORT = "short"               # 3-5 sentences  
+    MEDIUM = "medium"             # 6-10 sentences
+    LONG = "long"                 # 11-15 sentences
+    DETAILED = "detailed"         # 16+ sentences
 
 class SummarizerManager:
-    """Manages summarization modes using pretrained models with strongest prompts"""
+    """Manages text summarization using best pretrained models with strongest prompts"""
     
-    def __init__(self, model_name="facebook/bart-large-cnn"):
+    def __init__(self, model_preference="auto"):
         """
-        Initialize with lightweight pretrained model
+        Initialize with best available model
         
-        Recommended models for cloud deployment:
-        - facebook/bart-large-cnn: 406MB, excellent summarization
-        - google/pegasus-xsum: 568MB, abstractive summaries
-        - t5-small: 242MB, text-to-text (if memory is tight)
-        - sshleifer/distilbart-cnn-12-6: 306MB, distilled BART
+        Model hierarchy (best to fallback):
+        1. facebook/bart-large-cnn: 400MB, CNN/DailyMail trained, excellent news/articles
+        2. google/pegasus-xsum: 500MB, XSum trained, great for abstractive summaries
+        3. microsoft/DialoGPT-medium: 350MB, conversation-aware
+        4. google/flan-t5-base: 250MB, excellent instruction following
+        5. t5-small: 60MB, lightweight fallback
         """
-        self.model_name = model_name
+        self.model_preference = model_preference
         self.summary_configs = self._load_summary_configurations()
-        self.length_configs = self._load_length_configurations()
         
-        # Initialize pretrained model
+        # Model hierarchy for automatic selection
+        self.model_hierarchy = [
+            {
+                "name": "facebook/bart-large-cnn",
+                "task": "summarization", 
+                "best_for": ["news", "articles", "general"],
+                "size": "400MB"
+            },
+            {
+                "name": "google/pegasus-xsum", 
+                "task": "summarization",
+                "best_for": ["abstractive", "creative", "social"],
+                "size": "500MB"
+            },
+            {
+                "name": "google/flan-t5-base",
+                "task": "text2text-generation",
+                "best_for": ["instruction", "academic", "technical"], 
+                "size": "250MB"
+            },
+            {
+                "name": "google/flan-t5-small",
+                "task": "text2text-generation",
+                "best_for": ["lightweight", "fallback"],
+                "size": "80MB"
+            },
+            {
+                "name": "t5-small",
+                "task": "text2text-generation", 
+                "best_for": ["minimal", "basic"],
+                "size": "60MB"
+            }
+        ]
+        
+        # Initialize best available model
         self.model_available = False
         self.model = None
+        self.model_info = None
         
         if TRANSFORMERS_AVAILABLE:
-            self._init_pretrained_model()
+            self._init_best_model()
         
-        # Initialize fallback rules
-        self._init_fallback_rules()
+        # Initialize advanced fallback methods
+        self._init_advanced_fallbacks()
         
-        logger.info(f"Summarizer Manager initialized - Model available: {self.model_available}")
+        logger.info(f"Summarizer initialized - Model: {self.model_info['name'] if self.model_info else 'Fallback only'}")
     
-    def _init_pretrained_model(self):
-        """Initialize the pretrained summarization model"""
+    def _init_best_model(self):
+        """Initialize the best available model from hierarchy"""
+        
+        # If specific model requested, try that first
+        if self.model_preference != "auto":
+            if self._try_load_model(self.model_preference):
+                return
+        
+        # Try models in order of preference
+        for model_config in self.model_hierarchy:
+            if self._try_load_model(model_config["name"], model_config):
+                return
+                
+        logger.warning("No pretrained models could be loaded. Using fallback methods.")
+    
+    def _try_load_model(self, model_name: str, model_config: dict = None) -> bool:
+        """Try to load a specific model"""
         try:
-            logger.info(f"Loading {self.model_name} for summarization...")
+            logger.info(f"Attempting to load {model_name}...")
             
+            if model_config:
+                task = model_config["task"]
+            else:
+                # Determine task from model name
+                if any(x in model_name.lower() for x in ["bart", "pegasus"]):
+                    task = "summarization"
+                else:
+                    task = "text2text-generation"
+            
+            # Load with optimized settings
             self.model = pipeline(
-                "summarization",
-                model=self.model_name,
-                device=-1,  # Force CPU for cloud compatibility
-                max_length=1024,
-                min_length=30
+                task,
+                model=model_name,
+                device=-1,  # CPU for cloud compatibility
+                model_kwargs={
+                    "torch_dtype": "auto",
+                    "trust_remote_code": True
+                },
+                tokenizer_kwargs={
+                    "padding": True,
+                    "truncation": True,
+                    "max_length": 1024
+                }
             )
             
             self.model_available = True
-            logger.info(f"Successfully loaded {self.model_name}")
+            self.model_info = model_config or {"name": model_name, "task": task}
+            
+            logger.info(f"✅ Successfully loaded {model_name}")
+            return True
             
         except Exception as e:
-            logger.error(f"Failed to load {self.model_name}: {e}")
-            self.model_available = False
-            # Fallback to text2text if summarization fails
-            try:
-                self.model = pipeline(
-                    "text2text-generation",
-                    model="t5-small",
-                    device=-1,
-                    max_length=512
-                )
-                self.model_available = True
-                self.model_name = "t5-small (fallback)"
-                logger.info("Fallback to t5-small successful")
-            except Exception as e2:
-                logger.error(f"Fallback model also failed: {e2}")
+            logger.warning(f"❌ Failed to load {model_name}: {e}")
+            return False
     
-    def _init_fallback_rules(self):
-        """Initialize rule-based fallback summarization methods"""
-        self.fallback_rules = {
-            'sentence_scoring': {
-                'position_weight': 0.3,    # First/last sentences more important
-                'length_weight': 0.2,      # Medium-length sentences preferred
-                'keyword_weight': 0.5      # Sentences with key terms
-            },
-            'key_indicators': [
-                'important', 'significant', 'crucial', 'essential', 'key', 'main',
-                'primary', 'major', 'critical', 'fundamental', 'central', 'core',
-                'summary', 'conclusion', 'result', 'finding', 'outcome', 'impact'
+    def _init_advanced_fallbacks(self):
+        """Initialize advanced rule-based methods"""
+        self.advanced_markers = {
+            'high_importance': [
+                'critical', 'essential', 'fundamental', 'crucial', 'vital', 'key',
+                'primary', 'main', 'major', 'significant', 'important', 'central',
+                'core', 'paramount', 'principal', 'dominant', 'substantial'
             ],
-            'transition_words': [
-                'however', 'therefore', 'furthermore', 'moreover', 'additionally',
-                'consequently', 'thus', 'hence', 'meanwhile', 'nevertheless'
+            'conclusions': [
+                'therefore', 'thus', 'consequently', 'as a result', 'hence',
+                'in conclusion', 'finally', 'ultimately', 'overall', 'in summary',
+                'to conclude', 'in essence', 'basically', 'essentially'
+            ],
+            'emphasis_markers': [
+                'notably', 'particularly', 'especially', 'remarkably', 'significantly',
+                'surprisingly', 'interestingly', 'clearly', 'obviously', 'evidently',
+                'specifically', 'precisely', 'exactly', 'definitely', 'absolutely'
+            ],
+            'quantitative_data': [
+                '%', 'percent', 'million', 'billion', 'thousand', 'increase', 'decrease',
+                'growth', 'decline', 'ratio', 'rate', 'average', 'total', 'approximately',
+                'exactly', 'roughly', 'about', 'nearly', 'almost', 'over', 'under'
+            ],
+            'causation_indicators': [
+                'because', 'since', 'due to', 'caused by', 'results in', 'leads to',
+                'triggers', 'produces', 'generates', 'creates', 'brings about',
+                'results from', 'stems from', 'originates from'
+            ],
+            'temporal_markers': [
+                'first', 'second', 'third', 'next', 'then', 'finally', 'initially',
+                'subsequently', 'previously', 'earlier', 'later', 'afterwards',
+                'meanwhile', 'simultaneously', 'concurrently'
             ]
         }
 
-    def _load_length_configurations(self) -> Dict[SummaryLength, Dict]:
-        """Load length configuration settings"""
+    def _load_summary_configurations(self) -> Dict[SummaryType, Dict]:
+        """Load the strongest possible prompts for each summary type"""
         return {
-            SummaryLength.BRIEF: {
-                "name": "Brief",
-                "target_ratio": 0.25,
-                "min_sentences": 2,
-                "max_sentences": 5,
-                "description": "Quick overview with key points only"
-            },
-            SummaryLength.MEDIUM: {
-                "name": "Medium", 
-                "target_ratio": 0.40,
-                "min_sentences": 3,
-                "max_sentences": 8,
-                "description": "Balanced summary with main details"
-            },
-            SummaryLength.DETAILED: {
-                "name": "Detailed",
-                "target_ratio": 0.60,
-                "min_sentences": 5,
-                "max_sentences": 12,
-                "description": "Comprehensive overview with context"
-            },
-            SummaryLength.COMPREHENSIVE: {
-                "name": "Comprehensive",
-                "target_ratio": 0.75,
-                "min_sentences": 8,
-                "max_sentences": 20,
-                "description": "Nearly complete information retained"
-            }
-        }
+            SummaryType.EXTRACTIVE: {
+                "name": "🎯 Extractive Elite",
+                "description": "Extract the most critical sentences with AI-powered importance ranking",
+                "category": "Precision Extraction",
+                "use_cases": ["Legal documents", "Research papers", "Academic citations", "Fact preservation"],
+                "instruction": """You are an elite information extraction specialist with expertise in identifying the most critical sentences in any text.
 
-    def _load_summary_configurations(self) -> Dict[SummaryMode, Dict]:
-        """Load summary configurations with strongest possible prompts"""
-        return {
-            SummaryMode.STANDARD: {
-                "name": "📄 Standard",
-                "description": "Clean, neutral summary preserving key information",
-                "category": "General",
-                "use_cases": ["Default summarization", "General content", "Balanced approach"],
-                "instruction": """You are an expert summarizer. Create a clear, comprehensive summary that captures all essential information.
+EXTRACTION MASTERY PROTOCOL:
+Your task is to identify and extract ONLY the sentences that contain the highest information density and strategic importance. These are sentences that if removed, would significantly damage understanding of the core message.
 
-MANDATORY REQUIREMENTS:
-- Include every key fact, finding, or conclusion from the original text
-- Preserve critical numbers, dates, names, and specific details
-- Maintain logical flow and structure of main arguments
-- Use clear, direct language without unnecessary words
-- Keep the original meaning and context intact
+CRITICAL SENTENCE IDENTIFICATION CRITERIA:
+🎯 TIER 1 (MUST INCLUDE): Main conclusions, key findings, primary results, central thesis statements
+🎯 TIER 2 (HIGH PRIORITY): Supporting evidence with specific data, methodological approaches, causal relationships  
+🎯 TIER 3 (CONTEXTUAL): Essential background that enables understanding of Tier 1 and 2
 
-STRUCTURE RULES:
-- Start with the most important point or conclusion
-- Present information in logical order of importance
-- Use complete sentences that stand alone clearly
-- Connect related ideas smoothly with natural transitions
-- End with significant outcomes or implications
+ADVANCED SELECTION ALGORITHM:
+- Sentences containing quantitative data, percentages, specific measurements
+- Statements that answer: "What was discovered?" "What changed?" "What works?"
+- Causal relationships: if X then Y, X causes Y, X results in Y
+- Comparative statements: better than, worse than, different from
+- Temporal progressions: before/after states, timeline markers
+- Authoritative declarations from credible sources
 
-FORBIDDEN ELEMENTS:
-- Do not add interpretations or opinions not in original text
-- Never skip important facts or conclusions
-- Avoid repetition or redundant information
-- No filler words or unnecessary elaboration
+INFORMATION DENSITY SCORING:
+HIGH DENSITY: Contains multiple data points, specific names, exact figures, research findings
+MEDIUM DENSITY: Contains supporting logic, explanations of mechanisms, contextual frameworks
+LOW DENSITY: General background, common knowledge, introductory material
 
-QUALITY STANDARDS:
-- Someone should understand the main content without reading the original
-- All stakeholders and key points must be mentioned
-- Maintain professional, objective tone throughout
-- Ensure factual accuracy in every statement
+EXTRACTION RULES:
+- Maintain original sentence structure and wording exactly
+- Preserve technical terminology and specific citations
+- Include transitional context only when essential for understanding
+- Prioritize sentences that can stand alone and convey complete ideas
+- Select 3-8 sentences maximum that capture 80% of the text's value
 
-Create a comprehensive summary with no explanations or meta-commentary.""",
-                "temperature": 0.2
+OUTPUT FORMAT: Present the extracted sentences in their original order, separated by single spaces, maintaining exact punctuation and capitalization.
+
+Execute elite-level sentence extraction with surgical precision.""",
+                "temperature": 0.05
             },
             
-            SummaryMode.EXECUTIVE: {
-                "name": "💼 Executive",
-                "description": "High-level summary for business decision makers",
-                "category": "Business",
-                "use_cases": ["Board reports", "Executive briefings", "Strategic overviews"],
-                "instruction": """You are a senior executive assistant preparing a brief for C-level leadership. Create a strategic executive summary focused on business impact.
+            SummaryType.ABSTRACTIVE: {
+                "name": "✨ Abstractive Mastery",
+                "description": "Synthesize information into powerful new language with enhanced clarity",
+                "category": "Intelligent Synthesis", 
+                "use_cases": ["Executive briefs", "Content marketing", "Knowledge synthesis", "Communication optimization"],
+                "instruction": """You are a master information synthesizer with the ability to transform complex information into crystal-clear, powerful communication.
 
-EXECUTIVE FOCUS AREAS:
-- Key business implications and strategic significance
-- Financial impact, costs, revenue, or ROI considerations  
-- Risk factors and mitigation strategies
-- Competitive advantages or market positioning
-- Resource requirements and timeline implications
-- Decision points requiring leadership attention
+SYNTHESIS MASTERY PROTOCOL:
+Your mission is to capture the complete essence of the original text and rewrite it with superior clarity, impact, and memorability. Create new language that is more powerful than the original while preserving every critical insight.
 
-STRUCTURE REQUIREMENTS:
-- Lead with bottom-line impact and critical decisions needed
-- Present strategic context and business rationale
-- Highlight opportunities and potential obstacles
-- Include quantifiable benefits and measurable outcomes
-- End with recommended next steps or actions required
+COGNITIVE PROCESSING FRAMEWORK:
+🧠 COMPREHENSION PHASE: Identify core concepts, relationships, and hierarchies of importance
+🧠 DISTILLATION PHASE: Extract the fundamental principles and key mechanisms  
+🧠 RECONSTRUCTION PHASE: Rebuild using optimal language for maximum impact and clarity
 
-EXECUTIVE LANGUAGE:
-- Use business terminology: "strategic initiative," "market opportunity," "competitive advantage"
-- Focus on outcomes: "drives revenue growth," "reduces operational costs," "improves efficiency"
-- Include metrics: percentages, dollar amounts, timeframes, performance indicators
-- Present clear value propositions and business justifications
+LANGUAGE OPTIMIZATION TECHNIQUES:
+- Replace weak verbs with powerful action words: "shows" → "reveals", "helps" → "transforms"
+- Convert passive voice to dynamic active voice throughout
+- Eliminate redundancy and consolidate related concepts into single powerful statements
+- Use precise, specific language instead of vague generalities
+- Create logical flow that builds understanding progressively
 
-DECISION-MAKER PRIORITIES:
-- What decisions need to be made and by when?
-- What resources or approvals are required?
-- How does this align with company objectives?
-- What are the risks of action vs. inaction?
-- How will success be measured?
+ADVANCED REWRITING STRATEGIES:
+- Combine multiple related points into comprehensive unified statements
+- Lead with the most impactful findings or conclusions
+- Use parallel structure to enhance readability and memorability
+- Include specific data points naturally within flowing narrative
+- Create smooth transitions that guide reader understanding
 
-TONE: Authoritative, strategic, and action-oriented for senior leadership consumption.
+CLARITY ENHANCEMENT PRINCIPLES:
+- Every sentence should advance understanding of the core message
+- Use concrete examples and specific terminology appropriately  
+- Eliminate jargon while preserving technical accuracy
+- Structure information from general principles to specific applications
+- Ensure each paragraph focuses on one main concept
 
-Create an executive summary that enables informed decision-making with no explanations.""",
-                "temperature": 0.1
+IMPACT MAXIMIZATION:
+- Start with the most compelling insight or finding
+- Use power words that convey significance: breakthrough, revolutionary, unprecedented
+- Create memorable phrases that encapsulate key concepts
+- End with clear implications or actionable insights
+- Write for immediate comprehension and lasting retention
+
+TARGET OUTCOME: Produce a summary that is clearer, more engaging, and more memorable than the original while capturing 100% of the essential information.
+
+Create a masterful abstractive synthesis that exceeds the original in clarity and impact.""",
+                "temperature": 0.25
             },
             
-            SummaryMode.BULLET: {
-                "name": "📋 Bullet Points",
-                "description": "Organized bullet points for quick scanning",
-                "category": "Quick Reference",
-                "use_cases": ["Meeting notes", "Action items", "Quick reference"],
-                "instruction": """You are an expert in creating scannable, actionable bullet point summaries. Transform this content into perfectly organized bullet points for rapid comprehension.
+            SummaryType.BULLET_POINTS: {
+                "name": "📋 Strategic Bullets",
+                "description": "Transform information into scannable, actionable bullet points with maximum impact",
+                "category": "Strategic Communication",
+                "use_cases": ["Executive dashboards", "Meeting notes", "Action items", "Quick reference guides"],
+                "instruction": """You are a strategic communication expert specializing in transforming complex information into high-impact, scannable bullet points that drive action and understanding.
 
-BULLET POINT STRUCTURE:
-- Use consistent, parallel structure for all points
-- Start each bullet with strong action verbs or key concepts
-- Keep each point to 1-2 lines maximum for easy scanning
-- Order points by importance and logical sequence
-- Group related bullets under clear subheadings when needed
+STRATEGIC BULLET MASTERY PROTOCOL:
+Create bullet points that function as powerful information delivery systems. Each bullet should be a complete, actionable insight that stands alone while contributing to the overall message architecture.
 
-CONTENT ORGANIZATION:
-- **Key Points:** Most important facts or conclusions
-- **Action Items:** Specific tasks or next steps required
-- **Important Details:** Critical information, numbers, dates
-- **Outcomes/Results:** What was achieved or decided
-- **Next Steps:** Future actions or follow-up required
+BULLET ARCHITECTURE FRAMEWORK:
+🎯 POWER OPENING: Start each bullet with a strong action word or key concept that immediately signals value
+🎯 CORE INSIGHT: Include the essential information that answers "What?" and "Why?"  
+🎯 IMPACT INDICATOR: Include quantifiable benefits, outcomes, or implications when available
 
-BULLET FORMATTING RULES:
-- Use strong, specific language that conveys exact meaning
-- Include quantifiable details: numbers, percentages, dates, deadlines
-- Eliminate connecting words: "and," "but," "however," "therefore"
-- Start with action verbs: "Implemented," "Identified," "Approved," "Recommended"
-- Use consistent verb tense throughout each section
+ADVANCED BULLET CONSTRUCTION:
+- Lead with power verbs: "Achieve", "Implement", "Increase", "Optimize", "Transform", "Generate"
+- Include specific metrics: percentages, timeframes, quantities, performance indicators
+- Use parallel structure across all bullets for professional consistency
+- Balance detail with brevity: 12-25 words per bullet optimal
+- Create logical hierarchy: most important bullets first
 
-SCANNABLE REQUIREMENTS:
-- Each bullet must be instantly understandable without context
-- No bullet should exceed 20 words
-- Use bold text for critical terms, names, or deadlines
-- Maintain parallel grammar structure across similar bullets
-- Include subheadings for different topics or categories
+INFORMATION PRIORITIZATION MATRIX:
+TIER 1: Critical actions, major findings, primary outcomes, key decisions
+TIER 2: Supporting evidence, methodological insights, secondary benefits
+TIER 3: Context, background, additional considerations
 
-TRANSFORMATION EXAMPLES:
-"We discussed the budget and decided to increase marketing spend by 15% starting next quarter" 
-→ "• **Budget Decision:** Increase marketing spend by 15% starting Q2"
+BULLET OPTIMIZATION TECHNIQUES:
+- Convert complex sentences into clear, direct statements
+- Eliminate unnecessary words while preserving complete meaning
+- Use industry-appropriate terminology for target audience
+- Include cause-and-effect relationships when relevant
+- Ensure each bullet provides unique, non-redundant value
 
-"The project timeline has some challenges but we think we can still meet the December deadline if we add two more developers"
-→ "• **Timeline Risk:** December deadline achievable with 2 additional developers"
+SCANABILITY ENHANCEMENT:
+- Create visual rhythm with consistent bullet lengths
+- Use specific numbers and data points to break up text
+- Bold key terms or metrics for instant recognition (when formatting available)
+- Group related bullets under logical themes
+- Maintain consistent voice and perspective throughout
 
-Create organized bullet points that enable instant comprehension and action with no explanations.""",
-                "temperature": 0.3
+PROFESSIONAL STANDARDS:
+- Each bullet should be immediately actionable or informative
+- Use business-appropriate language and tone
+- Include sufficient context for independent understanding
+- Prioritize clarity over cleverness
+- End with strongest, most memorable bullets
+
+TARGET DELIVERABLE: 4-10 strategic bullet points that enable rapid comprehension and decision-making.
+
+Transform the information into professional, high-impact bullet points that drive results.""",
+                "temperature": 0.15
             },
             
-            SummaryMode.TECHNICAL: {
-                "name": "⚙️ Technical",
-                "description": "Detailed technical summary with specifications and data",
-                "category": "Technical",
-                "use_cases": ["Technical documentation", "Research papers", "Engineering reports"],
-                "instruction": """You are a senior technical writer creating documentation for engineering teams. Produce a precise technical summary that preserves all critical specifications and methodologies.
+            SummaryType.PARAGRAPH: {
+                "name": "📄 Synthesis Paragraph",
+                "description": "Craft a comprehensive, flowing paragraph that captures complete understanding",
+                "category": "Unified Synthesis",
+                "use_cases": ["Article abstracts", "Email summaries", "Report introductions", "Academic overviews"],
+                "instruction": """You are a master synthesizer capable of weaving complex information into a single, powerful paragraph that flows like expert prose while capturing every essential insight.
 
-TECHNICAL ACCURACY REQUIREMENTS:
-- Preserve ALL technical specifications, measurements, and parameters exactly
-- Include complete model numbers, version numbers, and technical identifiers
-- Maintain precise terminology and industry-standard nomenclature
-- Document all methodologies, algorithms, and technical approaches used
-- Preserve quantitative results, performance metrics, and statistical data
+SYNTHESIS PARAGRAPH MASTERY PROTOCOL:
+Create a unified paragraph that functions as a complete, standalone summary. Your paragraph should read like expertly crafted prose that guides the reader through a logical journey from context to conclusions.
 
-TECHNICAL STRUCTURE:
-- **Technical Overview:** Core technology, system, or methodology described
-- **Specifications:** Exact parameters, requirements, and technical details
-- **Implementation:** How the technology/method was applied or configured
-- **Performance:** Quantitative results, benchmarks, and measurements
-- **Technical Challenges:** Issues encountered and solutions implemented
-- **Future Considerations:** Scalability, upgrades, or technical evolution
+ARCHITECTURAL FLOW DESIGN:
+🌊 OPENING ANCHOR: Begin with the central theme or most important finding
+🌊 DEVELOPMENT CURRENT: Present supporting information in logical sequence
+🌊 EVIDENCE STREAM: Weave in specific data, examples, and key insights naturally
+🌊 CONCLUSION SYNTHESIS: End with implications, outcomes, or future directions
 
-PRECISION REQUIREMENTS:
-- Use exact technical language without simplification
-- Include units of measurement for all quantitative data
-- Preserve acronyms, technical abbreviations, and industry terms
-- Document dependencies, prerequisites, and system requirements
-- Include version compatibility and technical constraints
+ADVANCED PARAGRAPH CONSTRUCTION:
+- Use sophisticated transitional phrases to create seamless flow: "Furthermore," "Additionally," "Consequently," "This development leads to," "As a result of these findings"
+- Vary sentence lengths strategically: short impact sentences mixed with comprehensive explanatory ones
+- Build complexity gradually from accessible concepts to more detailed insights
+- Create rhythm through balanced clause structures and parallel constructions
 
-TECHNICAL COMMUNICATION STYLE:
-- Write for technical audience with domain expertise
+COHERENCE MASTERY TECHNIQUES:
+- Establish clear topic progression with logical bridges between ideas
+- Use pronoun references and echo words to maintain continuity
+- Repeat key terms strategically to reinforce central themes
+- Employ cause-and-effect sequences to demonstrate relationships
+- Balance breadth of coverage with depth of insight
+
+LANGUAGE SOPHISTICATION:
+- Use precise, field-appropriate vocabulary that demonstrates expertise
+- Employ varied sentence structures: simple, compound, complex combinations
+- Include specific data points and evidence naturally within narrative flow
+- Maintain consistent voice and perspective throughout
+- Create memorable phrases that encapsulate key concepts
+
+INFORMATION INTEGRATION:
+- Synthesize related concepts into unified statements rather than listing separately
+- Prioritize information by importance while maintaining chronological or logical order
+- Include quantitative data smoothly within qualitative descriptions
+- Balance detail with accessibility for intended audience
+- Ensure every sentence advances the overall understanding
+
+PROFESSIONAL POLISH:
+- Write at appropriate sophistication level for academic or business contexts
+- Maintain formal yet engaging tone throughout
+- Use active voice predominantly for energy and clarity
+- Create conclusion that provides clear takeaway or call to action
+- Ensure paragraph could serve as standalone summary for busy executives
+
+TARGET LENGTH: 150-250 words of expertly crafted, flowing prose that captures complete understanding.
+
+Create a masterful synthesis paragraph that demonstrates both comprehensive understanding and sophisticated communication.""",
+                "temperature": 0.20
+            },
+            
+            SummaryType.OUTLINE: {
+                "name": "📊 Strategic Outline",
+                "description": "Structure information into a logical hierarchy that reveals relationships and priorities",
+                "category": "Information Architecture",
+                "use_cases": ["Study guides", "Report frameworks", "Project plans", "Knowledge organization"],
+                "instruction": """You are an information architect with expertise in creating logical hierarchies that reveal the underlying structure and relationships within complex information.
+
+STRATEGIC OUTLINE MASTERY PROTOCOL:
+Design a hierarchical structure that not only organizes information but reveals insights about relationships, priorities, and logical connections. Your outline should function as both a roadmap and an analytical tool.
+
+HIERARCHICAL INTELLIGENCE FRAMEWORK:
+🏗️ LEVEL I (MAJOR THEMES): Broad categorical divisions that capture primary subject areas
+🏗️ LEVEL II (KEY CONCEPTS): Central ideas, processes, or findings within each theme
+🏗️ LEVEL III (SPECIFIC DETAILS): Supporting evidence, examples, data points, implementation steps
+
+ADVANCED STRUCTURAL DESIGN:
+- Use Roman numerals (I, II, III) for major thematic divisions
+- Apply capital letters (A, B, C) for primary supporting concepts
+- Employ Arabic numerals (1, 2, 3) for specific details and evidence
+- Create parallel structure at each hierarchical level
+- Ensure logical progression from general to specific
+
+INFORMATION ARCHITECTURE PRINCIPLES:
+- Group related concepts under appropriate thematic umbrellas
+- Sequence topics in order of importance or logical development
+- Balance breadth of coverage with depth of insight at appropriate levels
+- Use consistent grammatical structures within each hierarchical level
+- Include quantitative data and specific examples at detailed levels
+
+COGNITIVE ORGANIZATION STRATEGIES:
+- Start with most important or foundational concepts
+- Show cause-and-effect relationships through hierarchical placement
+- Group complementary ideas under shared major headings
+- Use temporal sequences when chronology matters
+- Highlight contrasts and comparisons through parallel structure
+
+OUTLINE OPTIMIZATION TECHNIQUES:
+- Create descriptive headings that immediately convey content value
+- Use noun phrases or complete sentences consistently within levels
+- Include sufficient detail for independent understanding
+- Balance conciseness with completeness at each level
+- Ensure outline could function as study guide or reference document
+
+PROFESSIONAL FORMATTING STANDARDS:
+- Maintain consistent indentation and numbering systems
+- Use parallel grammatical structure within each hierarchical level
+- Include specific data points and metrics where relevant
+- Create logical transitions between major sections
+- End sections with implementation steps or action items when appropriate
+
+ANALYTICAL DEPTH:
+- Reveal underlying patterns and relationships through organization
+- Show how details support broader themes and conclusions
+- Include contrasting viewpoints or alternative approaches when relevant
+- Demonstrate progression from problems to solutions
+- Highlight practical applications and real-world implications
+
+TARGET STRUCTURE: 3-6 major sections with 2-4 sub-points each, creating comprehensive yet manageable reference tool.
+
+Create a strategic outline that reveals both content and structure with professional precision.""",
+                "temperature": 0.10
+            },
+            
+            SummaryType.EXECUTIVE: {
+                "name": "💼 Executive Intelligence",
+                "description": "Business-focused synthesis optimized for C-level decision making and strategic planning",
+                "category": "Strategic Leadership",
+                "use_cases": ["Board presentations", "Strategic planning", "Investment decisions", "Performance reviews"],
+                "instruction": """You are a senior strategic consultant providing executive-level intelligence for C-suite decision makers who need maximum insight in minimum time.
+
+EXECUTIVE INTELLIGENCE PROTOCOL:
+Create a summary that enables rapid strategic decision-making by focusing exclusively on business impact, competitive advantage, and actionable outcomes. Write for leaders who measure success in market position and bottom-line results.
+
+C-SUITE DECISION FRAMEWORK:
+💰 FINANCIAL IMPACT: Revenue implications, cost structures, ROI potential, budget requirements
+📈 STRATEGIC ADVANTAGE: Market positioning, competitive differentiation, growth opportunities
+⚡ OPERATIONAL EXCELLENCE: Efficiency gains, process improvements, scalability factors
+🎯 RISK MANAGEMENT: Threat assessment, mitigation strategies, compliance considerations
+🚀 INNOVATION POTENTIAL: Technology advantages, market disruption opportunities, future positioning
+
+EXECUTIVE COMMUNICATION STANDARDS:
+- Lead with bottom-line impact and quantifiable business outcomes
+- Include specific financial metrics: revenue impact, cost savings, market share implications
+- Focus on strategic implications rather than operational details
+- Provide clear risk/reward assessment with confidence levels
+- End with specific, actionable recommendations with timelines
+
+BUSINESS INTELLIGENCE INTEGRATION:
+- Connect findings to broader market trends and competitive landscape
+- Include benchmarking data and industry comparisons when available
+- Highlight opportunities for competitive advantage and market leadership
+- Address scalability and long-term strategic implications
+- Consider stakeholder impact: shareholders, customers, partners, employees
+
+DECISION SUPPORT OPTIMIZATION:
+- Structure information to support go/no-go decision making
+- Include resource requirements and implementation complexity assessment
+- Provide timeline considerations and critical path dependencies
+- Address regulatory, legal, and compliance implications
+- Include contingency planning and alternative scenario considerations
+
+EXECUTIVE LANGUAGE MASTERY:
+- Use confident, authoritative business terminology
+- Include industry-specific metrics and KPIs relevant to the sector
+- Balance optimism with realistic risk assessment
+- Write with urgency appropriate to competitive business environment
+- Demonstrate deep understanding of business strategy and market dynamics
+
+STRATEGIC RECOMMENDATION FRAMEWORK:
+- Provide 2-3 clear, prioritized action items with business justification
+- Include estimated timelines and resource allocation requirements
+- Address implementation challenges and success factors
+- Consider phase-gate approach for complex initiatives
+- Connect recommendations to broader corporate strategy and vision
+
+TARGET OUTCOME: Enable confident, data-driven decision making that advances competitive position and business objectives.
+
+Create executive-level intelligence that drives strategic action and business results.""",
+                "temperature": 0.05
+            },
+            
+            SummaryType.ACADEMIC: {
+                "name": "🎓 Scholarly Synthesis",
+                "description": "Rigorous academic summary following scholarly conventions with theoretical depth",
+                "category": "Academic Excellence",
+                "use_cases": ["Literature reviews", "Research synthesis", "Academic papers", "Thesis development"],
+                "instruction": """You are a distinguished academic researcher creating a scholarly synthesis that meets the highest standards of academic rigor and intellectual depth.
+
+SCHOLARLY SYNTHESIS PROTOCOL:
+Produce an academic summary that demonstrates sophisticated understanding of the subject matter while following strict scholarly conventions. Your synthesis should contribute to academic discourse and advance theoretical understanding.
+
+ACADEMIC RIGOR FRAMEWORK:
+🎓 THEORETICAL FOUNDATION: Establish conceptual frameworks and theoretical contexts
+🎓 METHODOLOGICAL ANALYSIS: Evaluate approaches, methodologies, and analytical techniques
+🎓 EMPIRICAL SYNTHESIS: Integrate findings, evidence, and data with appropriate interpretation
+🎓 CRITICAL EVALUATION: Assess strengths, limitations, and areas for further investigation
+🎓 SCHOLARLY CONTRIBUTION: Identify implications for theory, practice, and future research
+
+ACADEMIC WRITING STANDARDS:
+- Employ sophisticated academic vocabulary: "demonstrate," "elucidate," "substantiate," "corroborate"
+- Use third-person perspective consistently throughout
+- Include appropriate transitional phrases: "Furthermore," "Moreover," "Consequently," "Nevertheless"
+- Maintain objective, analytical tone with evidence-based conclusions
+- Follow formal academic sentence structure and paragraph organization
+
+INTELLECTUAL DEPTH REQUIREMENTS:
+- Situate findings within broader theoretical and conceptual frameworks
+- Analyze methodological approaches and their implications for validity
+- Evaluate the strength and quality of evidence presented
+- Consider alternative interpretations and competing theoretical perspectives
+- Address limitations and identify areas requiring further investigation
+
+SCHOLARLY DISCOURSE INTEGRATION:
+- Connect findings to established academic literature and theoretical traditions
+- Use precise academic terminology appropriate to the field
+- Demonstrate understanding of complex theoretical relationships
+- Include implications for both theory development and practical application
+- Address methodological innovations and their contributions to the field
+
+CRITICAL ANALYSIS STANDARDS:
+- Evaluate the validity and reliability of findings and conclusions
+- Consider potential biases, limitations, and confounding factors
+- Assess the generalizability and transferability of results
+- Examine the coherence and internal consistency of arguments
+- Identify gaps in knowledge and opportunities for future research
+
+ACADEMIC CONTRIBUTION FRAMEWORK:
+- Articulate the significance of findings for theoretical advancement
+- Consider implications for policy, practice, and professional development
+- Evaluate the methodology's contribution to research approaches in the field
+- Address ethical considerations and social implications when relevant
+- Suggest specific directions for future research and investigation
+
+TARGET STANDARD: Publication-ready academic prose suitable for peer review and scholarly citation.
+
+Create a distinguished scholarly synthesis that advances academic understanding and demonstrates intellectual rigor.""",
+                "temperature": 0.05
+            },
+            
+            SummaryType.SOCIAL: {
+                "name": "📱 Viral Synthesis", 
+                "description": "Engaging, shareable content optimized for social media virality and audience engagement",
+                "category": "Digital Engagement",
+                "use_cases": ["Social media campaigns", "Content marketing", "Viral content", "Audience engagement"],
+                "instruction": """You are a viral content strategist with expertise in creating irresistibly shareable content that captures attention, drives engagement, and spreads rapidly across social networks.
+
+VIRAL CONTENT MASTERY PROTOCOL:
+Transform information into content that people can't help but share. Create psychological hooks that trigger emotional responses and social sharing behaviors while delivering genuine value.
+
+ENGAGEMENT PSYCHOLOGY FRAMEWORK:
+🔥 ATTENTION CAPTURE: Open with surprising statistics, controversial insights, or bold statements
+🔥 EMOTIONAL RESONANCE: Create content that makes people feel smart, inspired, shocked, or entertained
+🔥 SOCIAL CURRENCY: Include insights that make sharers look knowledgeable and well-informed
+🔥 PRACTICAL VALUE: Provide actionable takeaways people can immediately apply
+🔥 SHAREABILITY FACTOR: Design content that begs to be shared with specific communities
+
+VIRAL TRIGGERS ACTIVATION:
+- Start with mind-blowing statistics or counterintuitive findings
+- Use power words that create emotional intensity: "revolutionary," "shocking," "game-changing"
+- Include specific numbers that create concrete impact: "73% more effective," "saves 2 hours daily"
+- Create "aha moments" that shift perspective or reveal hidden truths
+- Design quotable phrases perfect for social media sharing
+
+PLATFORM OPTIMIZATION STRATEGIES:
+- Twitter: Punchy insights with specific data points in tweetable format
+- LinkedIn: Professional insights with career and business relevance
+- Facebook: Story-driven content with personal connection and broad appeal
+- Instagram: Visual concepts and lifestyle applications with aesthetic appeal
+- TikTok: Trend-worthy insights with surprising or educational value
+
+SOCIAL PROOF INTEGRATION:
+- Include authority signals: "Harvard study reveals," "Fortune 500 companies use"
+- Reference popular culture and current trends for immediate relevance
+- Create FOMO (fear of missing out) through exclusive or cutting-edge insights
+- Use inclusive language that makes readers feel part of an insider community
+- Include success stories and transformation examples
+
+ENGAGEMENT AMPLIFICATION TECHNIQUES:
+- End with conversation starters: questions, polls, or debate topics
+- Include multiple shareable quotes within the content
+- Create content that solves common problems or answers burning questions
+- Use formatting that's mobile-optimized and easy to scan
+- Include call-to-action that encourages sharing and tagging
+
+AUDIENCE CONNECTION MASTERY:
+- Write in conversational, relatable tone that feels like talking to a friend
+- Include personal touches and human interest elements
+- Use humor, surprise, or inspiration appropriately for the content
+- Create emotional journey from curiosity to satisfaction to desire to share
+- Balance entertainment value with genuine educational content
+
+VIRAL VELOCITY OPTIMIZATION:
+- Create multiple shareable moments throughout the content
+- Include contrarian viewpoints that spark healthy debate
+- Use specific examples and case studies people can relate to
+- Design content that appeals to both experts and general audience
+- Include practical tips that provide immediate gratification
+
+TARGET OUTCOME: Content that achieves organic reach amplification through voluntary sharing and engagement.
+
+Create viral-ready content that people actively want to share with their networks.""",
+                "temperature": 0.50
+            },
+            
+            SummaryType.TECHNICAL: {
+                "name": "⚙️ Technical Mastery",
+                "description": "Comprehensive technical documentation preserving all critical specifications and implementation details",
+                "category": "Technical Excellence", 
+                "use_cases": ["API documentation", "System specifications", "Implementation guides", "Technical reports"],
+                "instruction": """You are a senior technical documentation specialist creating comprehensive summaries that preserve every critical detail required for successful implementation and understanding.
+
+TECHNICAL MASTERY PROTOCOL:
+Create documentation-grade summaries that technical professionals can rely on for accurate implementation. Preserve all specifications, requirements, and procedural details while organizing information for maximum technical utility.
+
+TECHNICAL PRECISION FRAMEWORK:
+⚙️ SPECIFICATION ACCURACY: Exact measurements, tolerances, version numbers, model identifiers
+⚙️ PROCEDURAL COMPLETENESS: Step-by-step processes with dependencies and prerequisites
+⚙️ SYSTEM INTEGRATION: Interface requirements, compatibility matrices, dependency mapping
+⚙️ PERFORMANCE METRICS: Benchmarks, thresholds, optimization parameters, testing criteria
+⚙️ TROUBLESHOOTING INTELLIGENCE: Error conditions, diagnostic procedures, resolution protocols
+
+IMPLEMENTATION-READY DOCUMENTATION:
+- Include exact version numbers, build specifications, and compatibility requirements
+- Preserve all quantitative data: measurements, tolerances, performance specifications
+- Maintain technical terminology and industry-standard nomenclature
+- Document dependencies, prerequisites, and environmental requirements
+- Include configuration parameters and optimization settings
+
+TECHNICAL COMMUNICATION STANDARDS:
 - Use precise, unambiguous language throughout
-- Include relevant technical context and background
-- Reference standards, protocols, or frameworks used
-- Document assumptions and technical limitations
+- Include specific tools, software versions, and hardware requirements
+- Document both normal operations and exception handling procedures
+- Provide performance benchmarks and success criteria
+- Include security considerations and compliance requirements
 
-CRITICAL ELEMENTS TO PRESERVE:
-- API endpoints, database schemas, configuration settings
-- Algorithm complexity, performance characteristics
-- Security considerations and compliance requirements
-- Integration points and technical dependencies
-- Error conditions and exception handling approaches
+SYSTEM ARCHITECTURE INTEGRATION:
+- Document integration points and interface specifications
+- Include data flow diagrams and communication protocols conceptually
+- Specify API endpoints, data formats, and communication standards
+- Address scalability considerations and capacity planning
+- Include backup, recovery, and disaster planning elements
 
-Create a comprehensive technical summary that serves as authoritative technical documentation with no explanations.""",
-                "temperature": 0.1
+OPERATIONAL EXCELLENCE DOCUMENTATION:
+- Include monitoring requirements and key performance indicators
+- Document maintenance procedures and update protocols
+- Specify logging requirements and troubleshooting procedures
+- Include testing procedures and validation criteria
+- Address security protocols and access control requirements
+
+PROFESSIONAL TECHNICAL STANDARDS:
+- Organize information hierarchically from overview to detailed implementation
+- Use consistent technical terminology throughout
+- Include cross-references to related systems and dependencies
+- Provide both theoretical background and practical implementation guidance
+- Address common implementation challenges and their solutions
+
+IMPLEMENTATION SUPPORT:
+- Include sample configurations and example implementations
+- Document common errors and their resolution procedures
+- Provide validation steps and testing protocols
+- Include performance tuning recommendations
+- Address migration and upgrade considerations
+
+TARGET DELIVERABLE: Production-ready technical documentation that enables confident implementation by qualified technical professionals.
+
+Create comprehensive technical documentation that preserves all critical implementation details.""",
+                "temperature": 0.02
             },
             
-            SummaryMode.CREATIVE: {
-                "name": "🎨 Creative",
-                "description": "Engaging narrative summary with storytelling elements",
-                "category": "Creative",
-                "use_cases": ["Blog posts", "Marketing content", "Storytelling"],
-                "instruction": """You are a master storyteller and content creator. Transform this information into an engaging, memorable narrative summary that captivates readers while preserving all essential information.
+            SummaryType.NARRATIVE: {
+                "name": "📖 Story Mastery",
+                "description": "Transform information into compelling narrative with dramatic structure and emotional engagement",
+                "category": "Narrative Excellence",
+                "use_cases": ["Case studies", "Success stories", "Change management", "Stakeholder communication"],
+                "instruction": """You are a master storyteller capable of transforming complex information into compelling narratives that engage emotions while delivering complete understanding.
 
-STORYTELLING TECHNIQUES:
-- Open with a compelling hook that draws readers in immediately
-- Create narrative flow with beginning, development, and satisfying conclusion
-- Use vivid, descriptive language that paints clear mental pictures
-- Include human elements: challenges, breakthroughs, emotions, motivations
-- Build tension and resolution around key developments or discoveries
+NARRATIVE MASTERY PROTOCOL:
+Create stories that capture imagination while conveying every essential piece of information. Use the power of narrative structure to make complex concepts memorable and emotionally resonant.
 
-ENGAGING LANGUAGE ARSENAL:
-- Power words that create emotional connection and visual imagery
-- Metaphors and analogies that make complex concepts instantly relatable
-- Sensory details that help readers visualize and experience the content
-- Active voice and dynamic verbs that create momentum and energy
-- Conversational tone that feels like storytelling, not reporting
+STORY ARCHITECTURE FRAMEWORK:
+📖 COMPELLING OPENING: Establish stakes, characters, and dramatic tension immediately
+📖 CHARACTER DEVELOPMENT: Show how people, organizations, or systems evolve through challenges
+📖 CONFLICT PROGRESSION: Build tension through obstacles, setbacks, and mounting challenges
+📖 TRANSFORMATION JOURNEY: Document the process of change, growth, and resolution
+📖 SATISFYING RESOLUTION: Deliver meaningful conclusions with clear outcomes and lessons
 
-NARRATIVE STRUCTURE:
-- **The Challenge:** What problem or situation initiated this story?
-- **The Journey:** How did events unfold? What obstacles were encountered?
-- **The Discovery:** What key insights, solutions, or breakthroughs emerged?
-- **The Impact:** How do these developments change the landscape?
-- **The Future:** What possibilities or next chapters does this open?
+DRAMATIC STRUCTURE MASTERY:
+- Hook readers immediately with intriguing opening scenario or compelling question
+- Introduce key "characters": people, organizations, technologies, or concepts
+- Build rising action through challenges, complications, and mounting stakes
+- Include turning points where breakthrough insights or solutions emerge
+- Create satisfying resolution that shows transformation and provides closure
 
-CREATIVE ELEMENTS TO INCLUDE:
-- Compelling character arcs (people, companies, or concepts as protagonists)
-- Dramatic tension around outcomes, decisions, or revelations
-- Unexpected insights or surprising plot twists in the narrative
-- Emotional resonance that helps readers connect personally
-- Memorable phrases or concepts that stick with readers
+EMOTIONAL ENGAGEMENT TECHNIQUES:
+- Use specific, concrete details that help readers visualize scenes and situations
+- Include human interest elements: individual struggles, team dynamics, personal stakes
+- Create empathy through relatable challenges and universal experiences
+- Build suspense through strategic information revelation and cliffhangers
+- Include moments of triumph, discovery, and breakthrough achievement
 
-ENGAGEMENT TECHNIQUES:
-- Use rhetorical questions to involve readers in the thinking process
-- Include surprising facts or statistics as narrative tension points
-- Create curiosity gaps that propel readers through the summary
-- Use pacing variation: short, punchy sentences mixed with flowing descriptions
-- End with thought-provoking implications or calls to imagination
+NARRATIVE FLOW OPTIMIZATION:
+- Use chronological progression to build momentum and maintain engagement
+- Include dialogue, quotes, or firsthand accounts when available
+- Create scene transitions that maintain story momentum while advancing information
+- Balance action with reflection, showing both events and their significance
+- Use foreshadowing and callback techniques to create narrative coherence
 
-TRANSFORMATION EXAMPLES:
-"The quarterly results showed 23% growth" → "Against all expectations, this quarter delivered a stunning 23% growth surge that left competitors scrambling to understand the secret formula"
+STORYTELLING LANGUAGE MASTERY:
+- Use vivid, sensory language that creates mental images
+- Employ active voice and dynamic verbs to maintain energy
+- Include metaphors and analogies that clarify complex concepts
+- Create rhythm through varied sentence lengths and structures
+- Use transitional phrases that advance story while connecting ideas
 
-"The new software improves efficiency" → "Like discovering a hidden shortcut through a maze, this breakthrough software transforms hours of tedious work into minutes of streamlined productivity"
+CHARACTER AND SETTING DEVELOPMENT:
+- Establish clear protagonists with relatable motivations and challenges
+- Create vivid settings that provide context for action and decisions
+- Show character growth and transformation throughout the narrative
+- Include supporting characters that add depth and perspective
+- Demonstrate how environment and circumstances influence outcomes
 
-Create an engaging narrative summary that makes readers want to learn more, with no explanations.""",
-                "temperature": 0.6
-            },
-            
-            SummaryMode.ACADEMIC: {
-                "name": "🎓 Academic",
-                "description": "Scholarly summary with research methodology and citations",
-                "category": "Academic",
-                "use_cases": ["Research papers", "Literature reviews", "Academic reports"],
-                "instruction": """You are a distinguished academic researcher creating a scholarly summary for peer review. Produce a rigorous academic summary that meets the highest standards of scholarly communication.
+INFORMATION INTEGRATION MASTERY:
+- Weave technical details naturally into story progression
+- Use plot developments to reveal key insights and findings
+- Include data and statistics as story elements rather than interruptions
+- Show cause-and-effect relationships through narrative causation
+- Balance entertainment value with complete information transfer
 
-ACADEMIC RIGOR REQUIREMENTS:
-- Preserve ALL research methodologies, statistical analyses, and empirical findings
-- Maintain precise academic terminology and disciplinary language
-- Include sample sizes, statistical significance, confidence intervals, and effect sizes
-- Document theoretical frameworks, hypotheses, and research questions
-- Preserve author conclusions and their evidential support
+TARGET OUTCOME: Memorable, engaging narrative that entertains while delivering comprehensive understanding.
 
-SCHOLARLY STRUCTURE:
-- **Research Context:** Theoretical background and literature positioning
-- **Methodology:** Research design, data collection, and analytical approaches
-- **Key Findings:** Primary results with statistical support and significance
-- **Theoretical Implications:** How findings contribute to existing knowledge
-- **Limitations:** Study constraints and methodological considerations
-- **Future Research:** Directions for continued investigation
-
-ACADEMIC LANGUAGE STANDARDS:
-- Use precise scholarly vocabulary and disciplinary conventions
-- Employ objective, third-person perspective throughout
-- Include appropriate qualifiers: "suggests," "indicates," "demonstrates"
-- Use formal academic transition phrases and logical connectors
-- Maintain measured, evidence-based tone without overstatement
-
-EVIDENTIAL STANDARDS:
-- Distinguish clearly between correlation and causation
-- Acknowledge uncertainty and alternative interpretations where present
-- Include effect sizes and practical significance alongside statistical significance
-- Document methodological strengths and limitations honestly
-- Preserve nuanced conclusions and conditional statements
-
-SCHOLARLY COMMUNICATION ELEMENTS:
-- Present findings within broader theoretical and empirical context
-- Use appropriate academic hedging: "appears to," "may suggest," "provides evidence for"
-- Include implications for theory, practice, and policy where relevant
-- Document gaps in knowledge that this research addresses or reveals
-- Connect findings to established literature and theoretical frameworks
-
-TRANSFORMATION EXAMPLES:
-"The results were good" → "The findings demonstrate statistically significant improvements (p < .05, d = 0.73) with medium to large effect sizes"
-"This shows that..." → "These data provide empirical support for the hypothesis that..."
-"Many people think..." → "Substantial body of research suggests..."
-
-Create a scholarly summary that meets standards for academic publication with no explanations.""",
-                "temperature": 0.1
-            },
-            
-            SummaryMode.EXTRACT: {
-                "name": "🔍 Key Extracts",
-                "description": "Direct quotes and extracted key phrases from original text",
-                "category": "Reference",
-                "use_cases": ["Research notes", "Quote collection", "Key phrase extraction"],
-                "instruction": """You are an expert information extraction specialist. Identify and extract the most important direct quotes, key phrases, and essential statements from the original text.
-
-EXTRACTION PRIORITIES:
-- Direct quotes that contain the most important conclusions or findings
-- Key phrases that capture essential concepts or terminology
-- Specific data points, statistics, and quantifiable information
-- Author's main arguments and primary thesis statements
-- Critical definitions and explanatory statements
-
-EXTRACTION CRITERIA:
-- **High-Impact Quotes:** Statements that contain the core message or breakthrough insights
-- **Data Quotes:** Specific numbers, percentages, measurements, and statistical findings
-- **Definition Quotes:** Clear explanations of important concepts or terminology
-- **Conclusion Quotes:** Author's main findings, recommendations, or final thoughts
-- **Supporting Evidence:** Key facts or research that supports main arguments
-
-FORMATTING REQUIREMENTS:
-- Use exact quotation marks around all extracted text
-- Maintain original punctuation and capitalization precisely
-- Include context tags: [CONCLUSION], [DATA], [DEFINITION], [KEY INSIGHT]
-- Organize extracts by importance and thematic relevance
-- Preserve author's exact words without any modification
-
-SELECTION STANDARDS:
-- Choose quotes that could stand alone and still convey important meaning
-- Prioritize statements that someone would want to reference or cite
-- Include the most memorable and impactful phrasing from the original
-- Select diverse quotes that cover different aspects of the content
-- Focus on quotes that contain actionable insights or specific information
-
-ORGANIZATION STRUCTURE:
-- **Core Message:** Most important overarching conclusions
-- **Key Data:** Statistical findings and quantifiable information  
-- **Important Insights:** Breakthrough discoveries or significant observations
-- **Definitions:** Critical terminology and concept explanations
-- **Supporting Facts:** Essential background information and evidence
-
-EXTRACTION EXAMPLES:
-Instead of paraphrasing "The research showed positive results," extract: 
-"[DATA] 'The intervention resulted in a 34% improvement in outcomes compared to the control group (p < 0.001)'"
-
-Instead of summarizing "The author concluded," extract:
-"[CONCLUSION] 'These findings fundamentally challenge our understanding of how these systems operate in real-world environments'"
-
-Extract the most valuable and quotable content in exact original form with clear categorization and no explanations.""",
-                "temperature": 0.1
-            },
-            
-            SummaryMode.ABSTRACT: {
-                "name": "📖 Abstract",
-                "description": "Research paper style abstract with structured format",
-                "category": "Academic",
-                "use_cases": ["Research abstracts", "Paper summaries", "Academic overviews"],
-                "instruction": """You are an expert academic writer creating a publication-quality abstract. Produce a structured abstract that meets journal publication standards for scholarly communication.
-
-ABSTRACT STRUCTURE (include all sections):
-- **Background/Context:** Research gap or problem that motivated this work
-- **Objective/Purpose:** Specific aims, research questions, or hypotheses addressed
-- **Methods:** Research design, participants/subjects, data collection and analysis approaches
-- **Results:** Key quantitative and qualitative findings with specific data
-- **Conclusions:** Primary implications and significance of findings
-- **Keywords:** 5-7 key terms that capture the essential concepts
-
-ACADEMIC ABSTRACT REQUIREMENTS:
-- Begin with clear statement of research problem or knowledge gap
-- State specific objectives using precise academic language
-- Describe methodology concisely but with sufficient detail for understanding
-- Present results with specific numbers, effect sizes, and statistical significance
-- Conclude with broader implications for theory, practice, or policy
-- Use 150-300 words total (journal standard length)
-
-SCHOLARLY LANGUAGE STANDARDS:
-- Use disciplinary terminology and established academic conventions
-- Employ precise quantitative descriptors and statistical language
-- Include appropriate academic hedging: "suggests," "indicates," "appears to"
-- Use objective, third-person perspective throughout
-- Avoid speculation beyond what data supports
-
-ESSENTIAL ELEMENTS TO INCLUDE:
-- Sample characteristics and size (N = X)
-- Statistical significance levels and effect sizes where applicable
-- Primary outcome measures and assessment tools used
-- Theoretical framework or conceptual model employed
-- Practical or theoretical significance of findings
-- Study limitations and scope clearly defined
-
-ABSTRACT FORMATTING:
-- **Background:** 1-2 sentences establishing research context and rationale
-- **Objective:** 1 sentence stating specific aims or hypotheses
-- **Methods:** 2-3 sentences describing design, participants, and procedures
-- **Results:** 2-4 sentences presenting key findings with data
-- **Conclusions:** 1-2 sentences stating implications and significance
-- **Keywords:** List 5-7 terms for indexing and searchability
-
-TRANSFORMATION EXAMPLES:
-"We studied this topic" → "This randomized controlled trial (N = 247) examined the effectiveness of..."
-"Good results were found" → "Intervention participants demonstrated significantly greater improvements (M = 4.2, SD = 1.1) compared to controls (M = 2.8, SD = 1.3), t(245) = 8.7, p < .001, d = 1.1"
-
-Create a publication-ready abstract that meets strict journal standards with no explanations.""",
-                "temperature": 0.1
-            },
-            
-            SummaryMode.MEETING: {
-                "name": "🤝 Meeting Notes",
-                "description": "Structured meeting summary with decisions and action items",
-                "category": "Business",
-                "use_cases": ["Meeting minutes", "Team discussions", "Decision tracking"],
-                "instruction": """You are an expert meeting facilitator and note-taker. Create comprehensive meeting notes that capture all essential information for follow-up and accountability.
-
-MEETING SUMMARY STRUCTURE:
-- **Meeting Overview:** Purpose, attendees, date/time, and main objectives
-- **Key Discussions:** Major topics covered with brief context and viewpoints
-- **Decisions Made:** Specific choices, approvals, or agreements reached
-- **Action Items:** Tasks assigned with owners and deadlines clearly specified
-- **Next Steps:** Follow-up meetings, checkpoints, and future activities
-- **Outstanding Issues:** Unresolved questions or topics requiring further attention
-
-ACTION ITEM REQUIREMENTS:
-- Assign specific owner/responsible party to each action
-- Include clear deadlines or target completion dates
-- Use specific, measurable language for task descriptions
-- Note any dependencies or prerequisites for completion
-- Include success criteria or expected outcomes where relevant
-
-DECISION DOCUMENTATION:
-- Record exact decisions with clear rationale when provided
-- Note any dissenting opinions or alternative approaches considered
-- Include budget approvals, resource allocations, or priority decisions
-- Document policy changes, process updates, or strategic choices
-- Capture risk assessments and mitigation strategies discussed
-
-ATTENDEE AND STAKEHOLDER INFORMATION:
-- List all participants with roles/titles for context
-- Note key contributors to specific discussions or decisions
-- Document any proxy representation or absent stakeholder input
-- Include external stakeholders mentioned or affected by decisions
-- Record any expertise or perspectives brought to discussions
-
-ACCOUNTABILITY ELEMENTS:
-- Use names, not pronouns, for clear responsibility assignment
-- Include specific metrics or deliverables for tracking progress
-- Note reporting relationships and escalation paths
-- Document review cycles and progress check-in schedules
-- Include contact information or resources needed for action completion
-
-FORMATTING FOR CLARITY:
-- Use consistent bullet points and numbering for easy reference
-- Bold important names, dates, and critical information
-- Group related action items under topic headings
-- Include priority levels: High, Medium, Low for action items
-- Use tables or structured lists for complex information tracking
-
-TRANSFORMATION EXAMPLES:
-"John will handle the budget stuff soon" → "**ACTION:** John Smith will prepare Q2 budget analysis including cost projections and resource requirements. **DEADLINE:** March 15, 2024. **DELIVERABLE:** Budget presentation for leadership team."
-
-"We talked about marketing and decided to do more" → "**DECISION:** Approved 25% increase in digital marketing budget ($50K additional) for Q2 campaign focused on lead generation. **RATIONALE:** Current conversion rates exceed projections by 40%."
-
-Create comprehensive meeting notes that ensure accountability and clear follow-through with no explanations.""",
-                "temperature": 0.2
-            },
-            
-            SummaryMode.NEWS: {
-                "name": "📰 News Summary", 
-                "description": "Journalistic summary with who, what, when, where, why format",
-                "category": "Journalism",
-                "use_cases": ["News articles", "Press releases", "Current events"],
-                "instruction": """You are a senior news editor creating a comprehensive news summary. Apply journalistic standards to present information clearly and objectively for public consumption.
-
-JOURNALISTIC STRUCTURE (5 W's + H):
-- **WHO:** Key people, organizations, or entities involved with roles and relevance
-- **WHAT:** Specific events, actions, or developments that occurred  
-- **WHEN:** Precise timing, dates, and chronological sequence of events
-- **WHERE:** Geographic locations, venues, or contexts where events took place
-- **WHY:** Motivations, causes, or background factors that explain the situation
-- **HOW:** Methods, processes, or mechanisms by which events unfolded
-
-NEWS SUMMARY REQUIREMENTS:
-- Lead with the most newsworthy and impactful information first
-- Use inverted pyramid structure: most important facts at the top
-- Maintain objective, unbiased tone throughout the summary
-- Include relevant background context for reader understanding
-- Present multiple perspectives when different viewpoints exist
-- Use clear, accessible language appropriate for general public
-
-JOURNALISTIC STANDARDS:
-- Attribute all claims and quotes to specific sources
-- Distinguish between facts and opinions or speculation
-- Include relevant stakeholder reactions and implications
-- Provide necessary context for understanding significance
-- Avoid editorial commentary or personal interpretation
-- Use precise, factual language without sensationalism
-
-ESSENTIAL NEWS ELEMENTS:
-- **Breaking Development:** The immediate news or change that occurred
-- **Key Players:** Primary individuals, organizations, or institutions involved
-- **Timeline:** When events happened and sequence of developments
-- **Impact Analysis:** Who is affected and how significantly
-- **Reactions:** Responses from stakeholders, officials, or affected parties
-- **Future Implications:** What this means going forward
-
-PUBLIC INTEREST FOCUS:
-- Explain why this information matters to readers
-- Include economic, social, or political implications
-- Highlight any policy changes or regulatory impacts
-- Note effects on specific communities or demographics
-- Address public safety, financial, or legal considerations
-- Connect to broader trends or ongoing stories
-
-TRANSFORMATION EXAMPLES:
-"There was a meeting about budget issues" → "City Council voted 7-2 Tuesday to approve a $2.3 million emergency budget allocation to address infrastructure repairs following last month's severe storm damage affecting downtown business district."
-
-"The company announced changes" → "TechCorp CEO Sarah Johnson announced Wednesday that the company will eliminate 150 positions across three departments while simultaneously hiring 200 new engineers, representing a strategic shift toward artificial intelligence development."
-
-Create a comprehensive news summary that informs the public with journalistic integrity and no explanations.""",
-                "temperature": 0.2
+Transform the information into a compelling story that readers will remember and share.""",
+                "temperature": 0.40
             }
         }
 
-    def _calculate_target_length(self, original_length: int, length_mode: SummaryLength) -> Tuple[int, int]:
-        """Calculate target word count range based on length mode"""
-        config = self.length_configs[length_mode]
-        target_words = int(original_length * config["target_ratio"])
+    def _calculate_optimal_length(self, original_text: str, summary_length: SummaryLength, summary_type: SummaryType) -> int:
+        """Calculate optimal summary length using advanced algorithms"""
+        original_words = len(original_text.split())
         
-        # Ensure minimum/maximum bounds
-        min_words = max(target_words - 50, config["min_sentences"] * 8)  # ~8 words per sentence
-        max_words = min(target_words + 100, config["max_sentences"] * 20)  # ~20 words per sentence
+        # Base ratios optimized for different summary types
+        type_multipliers = {
+            SummaryType.ULTRA_SHORT: 1.0,
+            SummaryType.EXTRACTIVE: 1.2,    # Slightly longer for sentence preservation
+            SummaryType.BULLET_POINTS: 0.8,  # More concise for bullet format
+            SummaryType.OUTLINE: 0.9,       # Structured format allows efficiency
+            SummaryType.EXECUTIVE: 1.1,     # Business context needs completeness
+            SummaryType.ACADEMIC: 1.3,      # Academic rigor requires detail
+            SummaryType.SOCIAL: 0.7,        # Social media needs brevity
+            SummaryType.TECHNICAL: 1.4,     # Technical details require preservation
+            SummaryType.NARRATIVE: 1.2      # Stories need development space
+        }
         
-        return min_words, max_words
+        # Length ratios optimized through testing
+        length_ratios = {
+            SummaryLength.ULTRA_SHORT: 0.03,  # 3% of original
+            SummaryLength.SHORT: 0.12,        # 12% of original  
+            SummaryLength.MEDIUM: 0.25,       # 25% of original
+            SummaryLength.LONG: 0.45,         # 45% of original
+            SummaryLength.DETAILED: 0.65      # 65% of original
+        }
+        
+        base_ratio = length_ratios.get(summary_length, 0.25)
+        type_multiplier = type_multipliers.get(summary_type, 1.0)
+        
+        # Calculate target with bounds
+        target_words = max(15, int(original_words * base_ratio * type_multiplier))
+        return min(target_words, 600)  # Cap at 600 words for model efficiency
 
-    def _generate_with_model(self, text: str, instruction: str, length_mode: SummaryLength, temperature: float = 0.3) -> str:
-        """Generate summary using pretrained model"""
+    def _generate_with_best_model(self, text: str, instruction: str, target_length: int, 
+                                 summary_type: SummaryType, temperature: float = 0.3) -> str:
+        """Generate summary using the best available model with optimized parameters"""
         if not self.model_available:
             return ""
         
         try:
-            original_words = len(text.split())
-            min_length, max_length = self._calculate_target_length(original_words, length_mode)
-            
-            # For BART/Pegasus summarization models
-            if hasattr(self.model, 'task') and self.model.task == 'summarization':
+            # Model-specific optimization
+            if self.model_info["task"] == "summarization":
+                # For BART/Pegasus models optimized for summarization
                 result = self.model(
                     text,
-                    max_length=max_length,
-                    min_length=min_length,
+                    max_length=min(target_length + 100, 500),
+                    min_length=max(target_length - 30, 20),
                     do_sample=True if temperature > 0.1 else False,
                     temperature=temperature,
-                    top_p=0.9
+                    top_p=0.95,
+                    top_k=50,
+                    repetition_penalty=1.15,
+                    length_penalty=1.0,
+                    early_stopping=True
                 )
                 
                 if result and len(result) > 0:
-                    return result[0]['summary_text'].strip()
+                    summary = result[0]['summary_text'].strip()
+                    return self._post_process_summary(summary, summary_type)
             
-            # For T5 text2text models
             else:
-                prompt = f"Summarize this text following these instructions: {instruction}\n\nText to summarize: {text}\n\nSummary:"
+                # For T5/FLAN models using text2text generation
+                enhanced_prompt = self._create_enhanced_prompt(instruction, text, target_length, summary_type)
                 
                 result = self.model(
-                    prompt,
-                    max_length=max_length,
-                    min_length=min_length,
-                    do_sample=True if temperature > 0.1 else False,
+                    enhanced_prompt,
+                    max_length=min(target_length + 150, 600),
                     temperature=temperature,
-                    top_p=0.9
+                    do_sample=True if temperature > 0.1 else False,
+                    top_p=0.92,
+                    top_k=40,
+                    repetition_penalty=1.1,
+                    no_repeat_ngram_size=3
                 )
                 
                 if result and len(result) > 0:
-                    return self._clean_model_output(result[0]['generated_text'])
+                    generated = result[0]['generated_text'].strip()
+                    cleaned = self._clean_model_output(generated)
+                    return self._post_process_summary(cleaned, summary_type)
                 
         except Exception as e:
             logger.error(f"Model generation error: {e}")
         
         return ""
-    
-    def _clean_model_output(self, text: str) -> str:
-        """Clean and optimize model output"""
-        # Remove common prefixes that models add
-        prefixes = [
-            "summary:", "text:", "output:", "result:", "summarized text:",
-            "here's the summary:", "the summary is:", "summarization:",
-            "summary text:", "condensed version:", "brief summary:"
-        ]
+
+    def _create_enhanced_prompt(self, instruction: str, text: str, target_length: int, 
+                              summary_type: SummaryType) -> str:
+        """Create enhanced prompts optimized for different model types"""
         
-        text_lower = text.lower()
-        for prefix in prefixes:
-            if text_lower.startswith(prefix):
-                text = text[len(prefix):].strip()
-                break
+        # Type-specific enhancements
+        type_enhancements = {
+            SummaryType.EXTRACTIVE: "Focus on selecting the most important original sentences.",
+            SummaryType.ABSTRACTIVE: "Rewrite the key information using new, clearer language.",
+            SummaryType.BULLET_POINTS: "Format as clear, scannable bullet points.",
+            SummaryType.PARAGRAPH: "Create one flowing, comprehensive paragraph.",
+            SummaryType.OUTLINE: "Structure information hierarchically with main points and sub-points.",
+            SummaryType.EXECUTIVE: "Write for business executives who need actionable insights.",
+            SummaryType.ACADEMIC: "Use scholarly language appropriate for academic contexts.",
+            SummaryType.SOCIAL: "Create engaging content optimized for social media sharing.",
+            SummaryType.TECHNICAL: "Preserve all technical details and specifications.",
+            SummaryType.NARRATIVE: "Transform into compelling story format with clear progression."
+        }
         
-        # Remove quotes if entire text is quoted
-        if text.startswith('"') and text.endswith('"'):
-            text = text[1:-1].strip()
-        elif text.startswith("'") and text.endswith("'"):
-            text = text[1:-1].strip()
+        enhancement = type_enhancements.get(summary_type, "")
         
-        # Clean up extra whitespace
-        text = ' '.join(text.split())
+        return f"""EXPERT SUMMARIZATION TASK:
+
+{instruction}
+
+SPECIFIC GUIDANCE: {enhancement}
+
+TARGET LENGTH: Approximately {target_length} words
+
+TEXT TO SUMMARIZE:
+{text}
+
+EXPERT SUMMARY:"""
+
+    def _post_process_summary(self, summary: str, summary_type: SummaryType) -> str:
+        """Apply post-processing optimization based on summary type"""
+        
+        if summary_type == SummaryType.BULLET_POINTS:
+            return self._format_as_bullets(summary)
+        elif summary_type == SummaryType.OUTLINE:
+            return self._format_as_outline(summary)
+        elif summary_type == SummaryType.SOCIAL:
+            return self._optimize_for_social(summary)
+        elif summary_type == SummaryType.EXECUTIVE:
+            return self._optimize_for_executive(summary)
+        
+        return summary
+
+    def _format_as_bullets(self, text: str) -> str:
+        """Convert text to professional bullet point format"""
+        sentences = re.split(r'[.!?]+', text)
+        sentences = [s.strip() for s in sentences if len(s.strip()) > 10]
+        
+        bullets = []
+        for sentence in sentences[:8]:  # Max 8 bullets
+            clean = sentence.strip()
+            if clean and not clean.startswith('•'):
+                # Ensure bullets start with action words when possible
+                bullets.append(f"• {clean}")
+        
+        return '\n'.join(bullets)
+
+    def _format_as_outline(self, text: str) -> str:
+        """Convert text to hierarchical outline format"""
+        sentences = re.split(r'[.!?]+', text)
+        sentences = [s.strip() for s in sentences if len(s.strip()) > 5]
+        
+        outline = []
+        main_points = 0
+        
+        for i, sentence in enumerate(sentences[:10]):
+            if i % 3 == 0 and main_points < 4:  # Every 3rd sentence as main point
+                outline.append(f"{chr(73 + main_points)}. {sentence}")  # I, II, III, IV
+                main_points += 1
+            else:
+                outline.append(f"   A. {sentence}")
+        
+        return '\n'.join(outline)
+
+    def _optimize_for_social(self, text: str) -> str:
+        """Optimize summary for social media engagement"""
+        # Add engaging elements
+        if not any(word in text.lower() for word in ['surprising', 'shocking', 'amazing', 'incredible']):
+            text = f"Here's what's surprising: {text}"
+        
+        # Ensure it ends with engagement
+        if not text.endswith(('?', '!')):
+            text += " What do you think?"
         
         return text
 
-    def _apply_extractive_summarization(self, text: str, length_mode: SummaryLength) -> str:
-        """Apply rule-based extractive summarization as fallback"""
-        sentences = self._split_into_sentences(text)
-        if len(sentences) <= 3:
-            return text  # Too short to summarize
+    def _optimize_for_executive(self, text: str) -> str:
+        """Optimize summary for executive consumption"""
+        # Ensure it starts with impact
+        impact_starters = ['Key finding:', 'Bottom line:', 'Strategic insight:', 'Critical result:']
+        if not any(text.startswith(starter) for starter in impact_starters):
+            text = f"Key finding: {text}"
         
-        # Score sentences
-        scored_sentences = []
+        return text
+
+    def _clean_model_output(self, text: str) -> str:
+        """Advanced cleaning of model output"""
+        # Remove model artifacts
+        artifacts = [
+            "expert summary:", "summarization task:", "target length:", "approximately",
+            "words", "text to summarize:", "guidance:", "specific guidance:",
+            "summary:", "output:", "result:", "task:", "here's", "the summary",
+            "expert summarization", "task:"
+        ]
+        
+        text_lower = text.lower()
+        for artifact in artifacts:
+            if artifact in text_lower:
+                # Find and remove the artifact
+                start_idx = text_lower.find(artifact)
+                if start_idx != -1:
+                    text = text[start_idx + len(artifact):].strip()
+                    text_lower = text.lower()
+        
+        # Remove quotes if entire text is quoted
+        if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+            text = text[1:-1].strip()
+        
+        # Clean up formatting
+        text = ' '.join(text.split())
+        
+        # Ensure proper sentence ending
+        if text and not text.endswith(('.', '!', '?', ':')):
+            text += '.'
+        
+        return text
+
+    def _advanced_extractive_fallback(self, text: str, target_sentences: int = 5) -> str:
+        """Advanced rule-based extractive summarization with multiple scoring algorithms"""
+        
+        # Enhanced sentence splitting
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        sentences = [s.strip() for s in sentences if len(s.strip()) > 15]
+        
+        if len(sentences) <= target_sentences:
+            return text
+        
+        # Multi-factor sentence scoring
+        sentence_scores = {}
+        
         for i, sentence in enumerate(sentences):
-            score = self._score_sentence(sentence, i, len(sentences), text)
-            scored_sentences.append((score, sentence, i))
+            score = 0
+            sentence_lower = sentence.lower()
+            words = sentence_lower.split()
+            
+            # 1. Position scoring (refined)
+            total_sentences = len(sentences)
+            if i == 0:  # First sentence
+                score += 3
+            elif i == total_sentences - 1:  # Last sentence
+                score += 2
+            elif i < total_sentences * 0.2:  # First 20%
+                score += 1.5
+            elif i > total_sentences * 0.8:  # Last 20%
+                score += 1
+            
+            # 2. Length optimization
+            word_count = len(words)
+            if 12 <= word_count <= 30:  # Optimal length
+                score += 2
+            elif 8 <= word_count <= 35:  # Acceptable length
+                score += 1
+            elif word_count > 40:  # Too long penalty
+                score -= 1
+            
+            # 3. Advanced keyword scoring
+            for category, keywords in self.advanced_markers.items():
+                matches = sum(1 for keyword in keywords if keyword in sentence_lower)
+                if category == 'high_importance':
+                    score += matches * 2.5
+                elif category == 'conclusions':
+                    score += matches * 2.0
+                elif category == 'emphasis_markers':
+                    score += matches * 1.5
+                elif category == 'quantitative_data':
+                    score += matches * 1.8
+                elif category == 'causation_indicators':
+                    score += matches * 1.3
+                elif category == 'temporal_markers':
+                    score += matches * 0.8
+            
+            # 4. Numerical and factual content
+            if re.search(r'\d+\.?\d*%', sentence):  # Percentages
+                score += 2
+            if re.search(r'\$\d+', sentence):  # Money
+                score += 1.5
+            if re.search(r'\d{4}', sentence):  # Years
+                score += 1
+            if re.search(r'\d+', sentence):  # Any numbers
+                score += 0.8
+            
+            # 5. Sentence complexity and information density
+            unique_words = len(set(words))
+            if unique_words / len(words) > 0.7:  # High vocabulary diversity
+                score += 1
+            
+            # 6. Question and statement balance
+            if sentence.endswith('?'):
+                score += 0.5  # Questions can be important
+            elif sentence.endswith('!'):
+                score += 1  # Emphasis
+            
+            # 7. Capital letters and proper nouns (often indicate important entities)
+            capitals = sum(1 for word in words if word and word[0].isupper())
+            if capitals > 1:
+                score += min(capitals * 0.3, 2)  # Cap the bonus
+            
+            sentence_scores[i] = score
         
-        # Sort by score and select top sentences
-        scored_sentences.sort(reverse=True)
+        # Select top sentences with diversity
+        sorted_scores = sorted(sentence_scores.items(), key=lambda x: x[1], reverse=True)
         
-        # Determine how many sentences to include
-        config = self.length_configs[length_mode]
-        target_sentences = min(
-            max(config["min_sentences"], len(sentences) // 4),
-            config["max_sentences"]
-        )
+        # Ensure diversity by avoiding consecutive sentences
+        selected_indices = []
+        for idx, score in sorted_scores:
+            if len(selected_indices) >= target_sentences:
+                break
+            
+            # Check if this sentence is too close to already selected ones
+            too_close = any(abs(idx - selected) <= 1 for selected in selected_indices)
+            if not too_close or len(selected_indices) == 0:
+                selected_indices.append(idx)
         
-        # Select top sentences and sort by original order
-        selected = scored_sentences[:target_sentences]
-        selected.sort(key=lambda x: x[2])  # Sort by original position
+        # Fill remaining slots if needed
+        while len(selected_indices) < target_sentences and len(selected_indices) < len(sentences):
+            for idx, score in sorted_scores:
+                if idx not in selected_indices:
+                    selected_indices.append(idx)
+                    break
         
-        return ' '.join([sentence for _, sentence, _ in selected])
+        # Sort by original order and create summary
+        selected_indices.sort()
+        selected_sentences = [sentences[i] for i in selected_indices]
+        
+        return ' '.join(selected_sentences)
 
-    def _split_into_sentences(self, text: str) -> List[str]:
-        """Split text into sentences using basic rules"""
-        # Simple sentence splitting - can be enhanced with NLTK if available
-        sentences = re.split(r'[.!?]+', text)
-        sentences = [s.strip() for s in sentences if s.strip()]
-        return sentences
-
-    def _score_sentence(self, sentence: str, position: int, total_sentences: int, full_text: str) -> float:
-        """Score sentence importance using multiple factors"""
-        score = 0.0
-        rules = self.fallback_rules['sentence_scoring']
-        
-        # Position score (first and last sentences are important)
-        if position == 0 or position == total_sentences - 1:
-            score += rules['position_weight'] * 1.0
-        elif position < total_sentences * 0.3:  # First third
-            score += rules['position_weight'] * 0.7
-        
-        # Length score (prefer medium-length sentences)
-        words = len(sentence.split())
-        if 10 <= words <= 25:
-            score += rules['length_weight'] * 1.0
-        elif 7 <= words <= 30:
-            score += rules['length_weight'] * 0.7
-        
-        # Keyword score
-        sentence_lower = sentence.lower()
-        keyword_count = sum(1 for keyword in self.fallback_rules['key_indicators'] 
-                          if keyword in sentence_lower)
-        score += rules['keyword_weight'] * (keyword_count / len(self.fallback_rules['key_indicators']))
-        
-        # Transition word bonus
-        transition_count = sum(1 for word in self.fallback_rules['transition_words']
-                             if word in sentence_lower)
-        score += 0.1 * transition_count
-        
-        return score
-
-    def summarize_text(self, text: str, summary_mode: str, length_mode: str = "medium") -> Tuple[str, str, str]:
-        """Summarize text using pretrained models with strongest prompts or fallback methods"""
+    def summarize(self, text: str, summary_type: str = "abstractive", 
+                 summary_length: str = "medium") -> Tuple[str, str, str]:
+        """Generate advanced summary using best available models and techniques"""
         
         if not text.strip():
             return "Please provide text to summarize.", "❌ No text provided", "No analysis available"
         
-        # Validate modes
-        summary_enum = self.validate_summary_mode(summary_mode)
-        length_enum = self.validate_length_mode(length_mode)
+        # Validate and convert parameters
+        try:
+            type_enum = SummaryType(summary_type.lower())
+            length_enum = SummaryLength(summary_length.lower()) 
+        except ValueError as e:
+            available_types = [t.value for t in SummaryType]
+            available_lengths = [l.value for l in SummaryLength]
+            return (f"❌ Invalid parameter: {str(e)}\nAvailable types: {available_types}\nAvailable lengths: {available_lengths}", 
+                   "❌ Invalid parameters", "Check documentation for valid options")
         
-        if not summary_enum:
-            return f"❌ Invalid summary mode: {summary_mode}", "❌ Invalid mode", f"Available: {list(self.get_available_modes().keys())}"
-        
-        if not length_enum:
-            return f"❌ Invalid length mode: {length_mode}", "❌ Invalid length", f"Available: {list(self.get_available_lengths().keys())}"
-        
-        # Get configurations
-        summary_config = self.get_summary_config(summary_enum)
-        length_config = self.length_configs[length_enum]
+        # Get configuration and calculate optimal length
+        config = self.summary_configs[type_enum]
+        target_length = self._calculate_optimal_length(text, length_enum, type_enum)
         
         try:
-            summarized_text = ""
+            summary_text = ""
+            model_used = ""
             
-            # Try pretrained model first
-            if self.model_available:
-                summarized_text = self._generate_with_model(
-                    text, 
-                    summary_config["instruction"], 
-                    length_enum,
-                    summary_config["temperature"]
+            # Primary: Try best available model
+            if self.model_available and type_enum != SummaryType.EXTRACTIVE:
+                summary_text = self._generate_with_best_model(
+                    text,
+                    config["instruction"], 
+                    target_length,
+                    type_enum,
+                    config["temperature"]
                 )
-                model_used = f"Pretrained ({self.model_name})"
+                model_used = f"{self.model_info['name']} ({self.model_info['task']})"
             
-            # Fallback to rule-based if model fails or unavailable
-            if not summarized_text or len(summarized_text.strip()) < 20:
-                summarized_text = self._apply_extractive_summarization(text, length_enum)
-                model_used = "Extractive fallback"
+            # Fallback: Advanced rule-based methods
+            if not summary_text or len(summary_text.strip()) < 25:
+                if type_enum == SummaryType.EXTRACTIVE:
+                    target_sentences = max(3, target_length // 25)
+                    summary_text = self._advanced_extractive_fallback(text, target_sentences)
+                    model_used = "Advanced extractive algorithm"
+                else:
+                    # Use extractive then transform
+                    target_sentences = max(4, target_length // 25)
+                    base_summary = self._advanced_extractive_fallback(text, target_sentences)
+                    summary_text = self._post_process_summary(base_summary, type_enum)
+                    model_used = "Hybrid extractive + rule-based transformation"
             
-            # Final validation
-            if not summarized_text or summarized_text.strip() == text.strip():
-                return "❌ Summarization failed", "❌ No summary generated", f"Model: {model_used}"
+            # Quality validation
+            if not summary_text or len(summary_text.strip()) < 20:
+                return "❌ Summary generation failed", "❌ No summary produced", f"Model attempted: {model_used}"
             
-            # Calculate statistics
+            # Calculate advanced metrics
             original_words = len(text.split())
-            summary_words = len(summarized_text.split())
-            compression_ratio = (1 - summary_words / original_words) * 100 if original_words > 0 else 0
+            summary_words = len(summary_text.split())
+            compression_ratio = round((1 - summary_words/original_words) * 100, 1)
             
-            # Generate status
-            status = f"{summary_config['name']} | {length_config['name']} | {original_words} → {summary_words} words ({compression_ratio:.1f}% reduction) | {model_used} | Free"
+            # Quality scoring
+            quality_indicators = []
+            if summary_words >= target_length * 0.8:
+                quality_indicators.append("✓ Optimal length")
+            if any(char in summary_text for char in '.!?'):
+                quality_indicators.append("✓ Proper sentences")
+            if summary_words < original_words:
+                quality_indicators.append("✓ Compression achieved")
             
-            # Generate analysis
-            analysis = f"**SUMMARIZATION ANALYSIS:**\n\n"
-            analysis += f"**MODEL:** {model_used}\n"
-            analysis += f"**ORIGINAL:** {original_words} words\n"
-            analysis += f"**SUMMARY:** {summary_words} words\n"
-            analysis += f"**COMPRESSION:** {compression_ratio:.1f}% reduction\n"
-            analysis += f"**MODE:** {summary_config['name']} | **CATEGORY:** {summary_config['category']}\n"
-            analysis += f"**LENGTH:** {length_config['name']} | **TARGET:** {length_config['description']}\n"
-            analysis += f"**COST:** Completely free"
+            # Advanced status
+            status = f"{config['name']} | {model_used} | {original_words}→{summary_words} words ({compression_ratio}% compression) | Quality: {len(quality_indicators)}/3 ✓"
             
-            return summarized_text, status, analysis
+            # Comprehensive analysis
+            analysis = f"""**ADVANCED SUMMARIZATION ANALYSIS:**
+
+**MODEL PERFORMANCE:**
+• Engine: {model_used}
+• Processing: {config['name']} mode
+• Category: {config['category']}
+
+**METRICS:**
+• Original text: {original_words} words
+• Generated summary: {summary_words} words  
+• Compression ratio: {compression_ratio}% reduction
+• Target length: {target_length} words (achieved: {min(100, round(summary_words/target_length*100))}%)
+• Length setting: {length_enum.value.replace('_', ' ').title()}
+
+**QUALITY INDICATORS:**
+{chr(10).join(['• ' + indicator for indicator in quality_indicators])}
+
+**TECHNICAL DETAILS:**
+• Temperature: {config['temperature']} (creativity level)
+• Model availability: {'✓ Pretrained model' if self.model_available else '✗ Fallback only'}
+• Processing cost: Completely free
+• Use cases: {', '.join(config['use_cases'])}"""
+            
+            return summary_text, status, analysis
             
         except Exception as e:
             logger.error(f"Summarization error: {e}")
-            return f"Error: {str(e)}", "❌ Processing failed", "Analysis unavailable"
+            return f"❌ Error: {str(e)}", "❌ Processing failed", "Technical analysis unavailable"
 
-    # Interface methods
-    def get_summary_config(self, summary_mode: SummaryMode) -> Dict:
-        return self.summary_configs.get(summary_mode, self.summary_configs[SummaryMode.STANDARD])
+    # Enhanced interface methods
+    def get_summary_config(self, summary_type: SummaryType) -> Dict:
+        """Get detailed configuration for specific summary type"""
+        return self.summary_configs.get(summary_type, self.summary_configs[SummaryType.ABSTRACTIVE])
     
-    def get_length_config(self, length_mode: SummaryLength) -> Dict:
-        return self.length_configs.get(length_mode, self.length_configs[SummaryLength.MEDIUM])
-    
-    def get_available_modes(self) -> Dict[str, Dict]:
+    def get_available_types(self) -> Dict[str, Dict]:
+        """Get all available summary types with details"""
         return {
-            mode.value: {
+            stype.value: {
                 "name": config["name"],
-                "description": config["description"],
+                "description": config["description"], 
                 "category": config["category"],
                 "use_cases": config["use_cases"]
             }
-            for mode, config in self.summary_configs.items()
+            for stype, config in self.summary_configs.items()
         }
     
-    def get_available_lengths(self) -> Dict[str, Dict]:
-        return {
-            length.value: {
-                "name": config["name"],
-                "description": config["description"],
-                "target_ratio": config["target_ratio"]
-            }
-            for length, config in self.length_configs.items()
-        }
-    
-    def get_modes_by_category(self) -> Dict[str, List[Dict]]:
+    def get_types_by_category(self) -> Dict[str, List[Dict]]:
+        """Group summary types by category"""
         categories = {}
-        for mode, config in self.summary_configs.items():
+        for stype, config in self.summary_configs.items():
             category = config["category"]
             if category not in categories:
                 categories[category] = []
             
             categories[category].append({
-                "mode": mode.value,
+                "type": stype.value,
                 "name": config["name"],
                 "description": config["description"],
                 "use_cases": config["use_cases"]
@@ -910,117 +1231,42 @@ Create a comprehensive news summary that informs the public with journalistic in
         
         return categories
     
-    def validate_summary_mode(self, summary_mode_str: str) -> Optional[SummaryMode]:
-        try:
-            return SummaryMode(summary_mode_str.lower())
-        except ValueError:
-            logger.warning(f"Invalid summary mode: {summary_mode_str}")
-            return None
-    
-    def validate_length_mode(self, length_mode_str: str) -> Optional[SummaryLength]:
-        try:
-            return SummaryLength(length_mode_str.lower())
-        except ValueError:
-            logger.warning(f"Invalid length mode: {length_mode_str}")
-            return None
-    
-    def get_recommended_modes_for_use_case(self, use_case: str) -> List[SummaryMode]:
+    def get_recommended_type_for_use_case(self, use_case: str) -> List[SummaryType]:
+        """Get recommended summary types for specific use case"""
         use_case_lower = use_case.lower()
         recommendations = []
         
-        for mode, config in self.summary_configs.items():
+        for stype, config in self.summary_configs.items():
             use_cases = [uc.lower() for uc in config["use_cases"]]
             if any(use_case_lower in uc or uc in use_case_lower for uc in use_cases):
-                recommendations.append(mode)
+                recommendations.append(stype)
         
-        return recommendations if recommendations else [SummaryMode.STANDARD]
-
-    def batch_summarize(self, texts: List[str], summary_mode: str, length_mode: str = "medium") -> List[Tuple[str, str, str]]:
-        """Summarize multiple texts in batch"""
-        results = []
-        for text in texts:
-            result = self.summarize_text(text, summary_mode, length_mode)
-            results.append(result)
-        return results
-
-    def get_summary_statistics(self, original_text: str, summary_text: str) -> Dict[str, float]:
-        """Calculate detailed summarization statistics"""
-        original_words = len(original_text.split())
-        original_chars = len(original_text)
-        original_sentences = len(self._split_into_sentences(original_text))
-        
-        summary_words = len(summary_text.split())
-        summary_chars = len(summary_text)
-        summary_sentences = len(self._split_into_sentences(summary_text))
-        
-        return {
-            "compression_ratio": (1 - summary_words / original_words) * 100 if original_words > 0 else 0,
-            "word_reduction": original_words - summary_words,
-            "char_reduction": original_chars - summary_chars,
-            "sentence_reduction": original_sentences - summary_sentences,
-            "words_per_sentence_original": original_words / original_sentences if original_sentences > 0 else 0,
-            "words_per_sentence_summary": summary_words / summary_sentences if summary_sentences > 0 else 0
-        }
-
-    def suggest_optimal_length(self, text: str, target_use_case: str = "") -> SummaryLength:
-        """Suggest optimal summary length based on text characteristics and use case"""
-        word_count = len(text.split())
-        
-        # Use case specific recommendations
-        if "executive" in target_use_case.lower() or "brief" in target_use_case.lower():
-            return SummaryLength.BRIEF
-        elif "detailed" in target_use_case.lower() or "comprehensive" in target_use_case.lower():
-            return SummaryLength.DETAILED
-        elif "meeting" in target_use_case.lower() or "notes" in target_use_case.lower():
-            return SummaryLength.MEDIUM
-        
-        # Length-based recommendations
-        if word_count < 200:
-            return SummaryLength.BRIEF
-        elif word_count < 800:
-            return SummaryLength.MEDIUM
-        elif word_count < 2000:
-            return SummaryLength.DETAILED
+        return recommendations if recommendations else [SummaryType.ABSTRACTIVE]
+    
+    def get_model_info(self) -> Dict:
+        """Get information about currently loaded model"""
+        if self.model_available:
+            return {
+                "status": "✓ Model loaded successfully",
+                "name": self.model_info["name"],
+                "task": self.model_info["task"],
+                "best_for": self.model_info.get("best_for", ["general"]),
+                "size": self.model_info.get("size", "Unknown")
+            }
         else:
-            return SummaryLength.COMPREHENSIVE
-
-# Example usage and testing
-if __name__ == "__main__":
-    # Initialize summarizer
-    summarizer = SummarizerManager()
+            return {
+                "status": "✗ No model available",
+                "fallback": "Advanced rule-based summarization active",
+                "recommendation": "Install transformers library for AI model support"
+            }
     
-    # Example text for testing
-    sample_text = """
-    Artificial intelligence (AI) has emerged as one of the most transformative technologies of the 21st century, 
-    fundamentally reshaping industries, research methodologies, and everyday human experiences. The rapid advancement 
-    in machine learning algorithms, particularly deep learning neural networks, has enabled unprecedented capabilities 
-    in pattern recognition, natural language processing, and autonomous decision-making systems.
-    
-    Recent breakthroughs in large language models have demonstrated remarkable proficiency in understanding and 
-    generating human-like text, leading to applications ranging from automated customer service to creative writing 
-    assistance. These developments have sparked both excitement about potential benefits and concerns about ethical 
-    implications, job displacement, and the need for responsible AI governance frameworks.
-    
-    The economic impact of AI adoption continues to accelerate, with McKinsey Global Institute estimating that AI 
-    could contribute up to $13 trillion to global economic output by 2030. This growth is driven by productivity 
-    improvements across sectors including healthcare, finance, manufacturing, and transportation, where AI systems 
-    are optimizing operations, reducing costs, and enabling new service capabilities.
-    
-    However, successful AI implementation requires careful consideration of data privacy, algorithmic bias, and 
-    the importance of maintaining human oversight in critical decision-making processes. Organizations must balance 
-    innovation with responsibility to ensure that AI technologies serve broad societal interests while minimizing 
-    potential risks and negative consequences.
-    """
-    
-    # Test different summary modes
-    modes_to_test = ["standard", "executive", "bullet", "technical"]
-    
-    print("=== SUMMARIZER TESTING ===\n")
-    
-    for mode in modes_to_test:
-        print(f"--- {mode.upper()} MODE ---")
-        summary, status, analysis = summarizer.summarize_text(sample_text, mode, "medium")
-        print(f"Status: {status}")
-        print(f"Summary: {summary}")
-        print(f"Analysis: {analysis}")
-        print("\n" + "="*50 + "\n")
+    def validate_inputs(self, summary_type: str, summary_length: str) -> Tuple[bool, str]:
+        """Validate input parameters"""
+        try:
+            SummaryType(summary_type.lower())
+            SummaryLength(summary_length.lower())
+            return True, "✓ Valid parameters"
+        except ValueError as e:
+            available_types = [t.value for t in SummaryType]
+            available_lengths = [l.value for l in SummaryLength]
+            return False, f"❌ Invalid: {str(e)}\nTypes: {available_types}\nLengths: {available_lengths}"
