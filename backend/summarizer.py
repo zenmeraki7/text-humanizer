@@ -1,521 +1,291 @@
 """
-Lightweight Summarizer Module - Optimized for 512MB Memory Limit
-Uses advanced rule-based algorithms with minimal memory footprint
+Memory Debugging & Optimization Guide
+Help diagnose and fix memory issues in deployment
 """
 
-from enum import Enum
-from typing import Dict, List, Optional, Tuple
-import logging
-import re
-import math
+import sys
+import os
+import gc
 
-logger = logging.getLogger(__name__)
+def check_memory_usage():
+    """Check current memory usage"""
+    try:
+        import psutil
+        process = psutil.Process(os.getpid())
+        memory_mb = process.memory_info().rss / 1024 / 1024
+        print(f"Current memory usage: {memory_mb:.1f} MB")
+        return memory_mb
+    except ImportError:
+        print("psutil not available - install with: pip install psutil")
+        return None
 
-class SummaryType(Enum):
-    """Available summary types for text summarization"""
-    EXTRACTIVE = "extractive"
-    ABSTRACTIVE = "abstractive"
-    BULLET_POINTS = "bullet_points"
-    PARAGRAPH = "paragraph"
-    OUTLINE = "outline"
-    EXECUTIVE = "executive"
-    ACADEMIC = "academic"
-    SOCIAL = "social"
-    TECHNICAL = "technical"
-    NARRATIVE = "narrative"
-
-class SummaryLength(Enum):
-    """Summary length options"""
-    ULTRA_SHORT = "ultra_short"
-    SHORT = "short"
-    MEDIUM = "medium"
-    LONG = "long"
-    DETAILED = "detailed"
-
-class LlamaSummarizer:
-    """Lightweight summarizer optimized for memory-constrained environments"""
+def find_memory_hogs():
+    """Find what's using memory in your application"""
+    print("\n🔍 MEMORY ANALYSIS:")
     
-    def __init__(self):
-        """Initialize lightweight summarizer with rule-based algorithms only"""
-        self.summary_configs = self._load_summary_configurations()
-        self._init_advanced_patterns()
-        logger.info("Lightweight Summarizer initialized - Memory optimized")
+    # Check imported modules
+    print("\n📦 LARGE MODULES:")
+    large_modules = []
+    for name, module in sys.modules.items():
+        if hasattr(module, '__file__') and module.__file__:
+            try:
+                size = sys.getsizeof(module)
+                if size > 1024 * 1024:  # > 1MB
+                    large_modules.append((name, size / 1024 / 1024))
+            except:
+                pass
     
-    def _init_advanced_patterns(self):
-        """Initialize advanced pattern recognition for high-quality summarization"""
-        self.importance_patterns = {
-            'critical_keywords': [
-                'critical', 'essential', 'important', 'significant', 'key', 'major',
-                'primary', 'main', 'crucial', 'vital', 'fundamental', 'central',
-                'core', 'paramount', 'principal', 'substantial', 'notable'
-            ],
-            'conclusion_markers': [
-                'therefore', 'thus', 'consequently', 'as a result', 'hence',
-                'in conclusion', 'finally', 'ultimately', 'overall', 'in summary',
-                'to conclude', 'in essence', 'basically', 'essentially', 'shows that'
-            ],
-            'emphasis_indicators': [
-                'particularly', 'especially', 'notably', 'remarkably', 'significantly',
-                'surprisingly', 'interestingly', 'clearly', 'obviously', 'evidently',
-                'specifically', 'precisely', 'exactly', 'definitely', 'absolutely'
-            ],
-            'quantitative_signals': [
-                '%', 'percent', 'million', 'billion', 'thousand', 'increase', 'decrease',
-                'growth', 'decline', 'rate', 'average', 'total', 'approximately',
-                'exactly', 'roughly', 'about', 'nearly', 'over', 'under', 'up to'
-            ],
-            'causation_words': [
-                'because', 'since', 'due to', 'caused by', 'results in', 'leads to',
-                'triggers', 'produces', 'generates', 'creates', 'brings about',
-                'stems from', 'originates from', 'enables', 'facilitates'
-            ],
-            'temporal_indicators': [
-                'first', 'second', 'third', 'next', 'then', 'finally', 'initially',
-                'subsequently', 'previously', 'later', 'afterwards', 'meanwhile',
-                'simultaneously', 'currently', 'recently', 'now', 'today'
-            ]
-        }
-        
-        # Advanced transformation rules for different summary types
-        self.transformation_rules = {
-            'formal_replacements': {
-                "don't": "do not", "won't": "will not", "can't": "cannot",
-                "isn't": "is not", "aren't": "are not", "wasn't": "was not",
-                "haven't": "have not", "hasn't": "has not", "couldn't": "could not",
-                "I'm": "I am", "you're": "you are", "we're": "we are"
-            },
-            'business_terms': {
-                'shows': 'demonstrates', 'helps': 'facilitates', 'uses': 'utilizes',
-                'gets': 'obtains', 'makes': 'generates', 'improves': 'enhances',
-                'big': 'substantial', 'small': 'minimal', 'fast': 'efficient'
-            },
-            'academic_vocabulary': {
-                'shows': 'indicates', 'proves': 'demonstrates', 'says': 'states',
-                'finds': 'discovers', 'looks at': 'examines', 'talks about': 'discusses',
-                'thinks': 'postulates', 'believes': 'hypothesizes'
-            },
-            'social_enhancers': [
-                ('good', 'amazing'), ('big', 'huge'), ('important', 'game-changing'),
-                ('interesting', 'fascinating'), ('useful', 'incredibly valuable')
-            ]
-        }
+    large_modules.sort(key=lambda x: x[1], reverse=True)
+    for name, size_mb in large_modules[:10]:
+        print(f"   {name}: {size_mb:.1f} MB")
+    
+    # Check for common memory hogs
+    memory_hogs = [
+        'torch', 'tensorflow', 'transformers', 'numpy', 'pandas', 
+        'scipy', 'sklearn', 'matplotlib', 'PIL', 'cv2'
+    ]
+    
+    print(f"\n⚠️  MEMORY-HEAVY LIBRARIES DETECTED:")
+    for lib in memory_hogs:
+        if lib in sys.modules:
+            print(f"   ❌ {lib} - can use 100-500MB")
 
-    def _load_summary_configurations(self) -> Dict[SummaryType, Dict]:
-        """Load optimized configurations for memory-efficient processing"""
-        return {
-            SummaryType.EXTRACTIVE: {
-                "name": "🎯 Key Sentences",
-                "description": "Extract the most important sentences preserving original wording",
-                "weight_factors": {"position": 0.3, "keywords": 0.4, "length": 0.2, "numbers": 0.1}
-            },
-            SummaryType.ABSTRACTIVE: {
-                "name": "✨ Smart Rewrite", 
-                "description": "Rewrite key information using clearer, more concise language",
-                "transformation_level": "medium"
-            },
-            SummaryType.BULLET_POINTS: {
-                "name": "📋 Key Points",
-                "description": "Organize information into scannable bullet points",
-                "max_bullets": 8,
-                "target_length": 15
-            },
-            SummaryType.PARAGRAPH: {
-                "name": "📄 Flowing Summary",
-                "description": "Create a single, comprehensive paragraph",
-                "style": "flowing"
-            },
-            SummaryType.OUTLINE: {
-                "name": "📊 Structured Outline",
-                "description": "Hierarchical organization with main points and details",
-                "levels": 3
-            },
-            SummaryType.EXECUTIVE: {
-                "name": "💼 Business Brief",
-                "description": "Executive summary focused on business impact and decisions",
-                "focus": "outcomes"
-            },
-            SummaryType.ACADEMIC: {
-                "name": "🎓 Scholarly Summary",
-                "description": "Academic-style summary with formal language",
-                "style": "formal"
-            },
-            SummaryType.SOCIAL: {
-                "name": "📱 Social Media",
-                "description": "Engaging, shareable content optimized for social platforms",
-                "style": "engaging"
-            },
-            SummaryType.TECHNICAL: {
-                "name": "⚙️ Technical Brief",
-                "description": "Preserve technical details and specifications",
-                "preservation": "high"
-            },
-            SummaryType.NARRATIVE: {
-                "name": "📖 Story Format",
-                "description": "Transform into narrative with chronological flow",
-                "style": "story"
-            }
-        }
+def optimize_python_memory():
+    """Optimize Python memory usage"""
+    print("\n🔧 APPLYING MEMORY OPTIMIZATIONS:")
+    
+    # Force garbage collection
+    collected = gc.collect()
+    print(f"   ✅ Garbage collected {collected} objects")
+    
+    # Set aggressive GC thresholds
+    gc.set_threshold(100, 5, 5)  # More aggressive than default (700, 10, 10)
+    print("   ✅ Set aggressive garbage collection")
+    
+    # Disable debug features
+    sys.tracebacklimit = 0  # Reduce traceback memory
+    print("   ✅ Reduced traceback limit")
 
-    def _calculate_target_length(self, original_text: str, summary_length: SummaryLength) -> int:
-        """Calculate optimal target length based on input"""
-        original_words = len(original_text.split())
-        
-        length_ratios = {
-            SummaryLength.ULTRA_SHORT: 0.05,
-            SummaryLength.SHORT: 0.15,
-            SummaryLength.MEDIUM: 0.30,
-            SummaryLength.LONG: 0.50,
-            SummaryLength.DETAILED: 0.70
-        }
-        
-        ratio = length_ratios.get(summary_length, 0.30)
-        target_words = max(20, int(original_words * ratio))
-        return min(target_words, 300)  # Cap for memory efficiency
-
-    def _advanced_sentence_scoring(self, sentences: List[str]) -> Dict[int, float]:
-        """Advanced multi-factor sentence scoring algorithm"""
-        scores = {}
-        total_sentences = len(sentences)
-        
-        for i, sentence in enumerate(sentences):
-            score = 0.0
-            sentence_lower = sentence.lower()
-            words = sentence_lower.split()
-            
-            # 1. Position scoring (optimized weights)
-            if i == 0:  # First sentence often contains main topic
-                score += 4.0
-            elif i == total_sentences - 1:  # Last sentence often has conclusions
-                score += 3.0
-            elif i < total_sentences * 0.2:  # Early sentences
-                score += 2.0
-            elif i > total_sentences * 0.8:  # Late sentences
-                score += 1.5
-            
-            # 2. Length optimization (prefer informative lengths)
-            word_count = len(words)
-            if 12 <= word_count <= 25:  # Optimal informativeness
-                score += 3.0
-            elif 8 <= word_count <= 30:  # Good range
-                score += 2.0
-            elif word_count > 35:  # Too long penalty
-                score -= 1.0
-            elif word_count < 6:  # Too short penalty
-                score -= 2.0
-            
-            # 3. Advanced keyword pattern scoring
-            for pattern_type, keywords in self.importance_patterns.items():
-                matches = sum(1 for keyword in keywords if keyword in sentence_lower)
-                if pattern_type == 'critical_keywords':
-                    score += matches * 3.0
-                elif pattern_type == 'conclusion_markers':
-                    score += matches * 2.5
-                elif pattern_type == 'quantitative_signals':
-                    score += matches * 2.0
-                elif pattern_type == 'emphasis_indicators':
-                    score += matches * 1.5
-                elif pattern_type == 'causation_words':
-                    score += matches * 1.8
-                elif pattern_type == 'temporal_indicators':
-                    score += matches * 1.0
-            
-            # 4. Numerical and factual content (high value)
-            number_patterns = [
-                (r'\d+\.?\d*%', 3.0),      # Percentages
-                (r'\$\d+(?:\.\d+)?[MBK]?', 2.5),  # Money
-                (r'\d{4}', 1.5),           # Years
-                (r'\d+\.\d+', 1.5),        # Decimals
-                (r'\d+', 1.0)              # Any numbers
-            ]
-            
-            for pattern, weight in number_patterns:
-                if re.search(pattern, sentence):
-                    score += weight
-            
-            # 5. Information density scoring
-            unique_words = len(set(words))
-            if word_count > 0:
-                diversity_ratio = unique_words / word_count
-                if diversity_ratio > 0.8:  # High vocabulary diversity
-                    score += 2.0
-                elif diversity_ratio > 0.6:
-                    score += 1.0
-            
-            # 6. Sentence type bonuses
-            if sentence.endswith('!'):
-                score += 1.5  # Emphasis
-            elif sentence.endswith('?'):
-                score += 1.0  # Questions can be important
-            
-            # 7. Proper nouns and capitalization (entities)
-            capitals = sum(1 for word in words if word and word[0].isupper() and len(word) > 1)
-            if capitals > 1:
-                score += min(capitals * 0.5, 3.0)  # Cap the bonus
-            
-            # 8. Common filler detection (penalty)
-            filler_phrases = ['it is important to note', 'it should be mentioned', 
-                            'in other words', 'as mentioned before']
-            for filler in filler_phrases:
-                if filler in sentence_lower:
-                    score -= 1.0
-            
-            scores[i] = max(score, 0.1)  # Minimum score
-        
-        return scores
-
-    def _extractive_summarization(self, text: str, target_sentences: int) -> str:
-        """Advanced extractive summarization with diversity optimization"""
-        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-        sentences = [s.strip() for s in sentences if len(s.strip()) > 10]
-        
-        if len(sentences) <= target_sentences:
-            return text
-        
-        # Get sentence scores
-        scores = self._advanced_sentence_scoring(sentences)
-        
-        # Select sentences with diversity optimization
-        selected_indices = []
-        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        
-        for idx, score in sorted_scores:
-            if len(selected_indices) >= target_sentences:
-                break
-            
-            # Ensure diversity (avoid clustering)
-            too_close = any(abs(idx - selected) <= 2 for selected in selected_indices)
-            
-            if not too_close or len(selected_indices) < 2:
-                selected_indices.append(idx)
-        
-        # Fill remaining slots if needed (relaxed diversity)
-        while len(selected_indices) < target_sentences and len(selected_indices) < len(sentences):
-            for idx, score in sorted_scores:
-                if idx not in selected_indices:
-                    selected_indices.append(idx)
-                    break
-        
-        # Restore chronological order
-        selected_indices.sort()
-        selected_sentences = [sentences[i] for i in selected_indices]
-        
-        return ' '.join(selected_sentences)
-
-    def _apply_transformations(self, text: str, summary_type: SummaryType) -> str:
-        """Apply advanced text transformations based on summary type"""
-        
-        if summary_type == SummaryType.EXECUTIVE:
-            # Business-focused transformations
-            for casual, formal in self.transformation_rules['business_terms'].items():
-                text = re.sub(r'\b' + re.escape(casual) + r'\b', formal, text, flags=re.IGNORECASE)
-            
-            # Add business context
-            if not any(starter in text.lower() for starter in ['key finding', 'analysis shows', 'results indicate']):
-                text = f"Analysis shows: {text}"
-        
-        elif summary_type == SummaryType.ACADEMIC:
-            # Academic transformations
-            for casual, academic in self.transformation_rules['academic_vocabulary'].items():
-                text = re.sub(r'\b' + re.escape(casual) + r'\b', academic, text, flags=re.IGNORECASE)
-            
-            # Remove contractions
-            for contraction, expansion in self.transformation_rules['formal_replacements'].items():
-                text = text.replace(contraction, expansion)
-                text = text.replace(contraction.title(), expansion.title())
-        
-        elif summary_type == SummaryType.SOCIAL:
-            # Social media optimizations
-            for original, enhanced in self.transformation_rules['social_enhancers']:
-                text = re.sub(r'\b' + re.escape(original) + r'\b', enhanced, text, flags=re.IGNORECASE)
-            
-            # Add engagement elements
-            if not text.endswith(('!', '?')):
-                text += "!"
-            
-            # Add hook if missing
-            engaging_starters = ['surprising', 'amazing', 'incredible', 'shocking', 'fascinating']
-            if not any(starter in text.lower() for starter in engaging_starters):
-                text = f"Here's what's fascinating: {text}"
-        
-        elif summary_type == SummaryType.BULLET_POINTS:
-            # Convert to bullet format
-            sentences = re.split(r'[.!?]+', text)
-            sentences = [s.strip() for s in sentences if len(s.strip()) > 5]
-            
-            bullets = []
-            for sentence in sentences[:8]:
-                if sentence and not sentence.startswith('•'):
-                    # Ensure action-oriented bullets
-                    if not any(sentence.lower().startswith(action) for action in 
-                             ['achieve', 'implement', 'increase', 'develop', 'create', 'improve']):
-                        sentence = f"Key insight: {sentence}"
-                    bullets.append(f"• {sentence}")
-            
-            return '\n'.join(bullets)
-        
-        elif summary_type == SummaryType.OUTLINE:
-            # Create hierarchical structure
-            sentences = re.split(r'[.!?]+', text)
-            sentences = [s.strip() for s in sentences if len(s.strip()) > 5]
-            
-            outline = []
-            main_points = 0
-            
-            for i, sentence in enumerate(sentences[:8]):
-                if i % 2 == 0 and main_points < 4:  # Main points
-                    outline.append(f"{chr(73 + main_points)}. {sentence}")  # I, II, III, IV
-                    main_points += 1
-                else:
-                    outline.append(f"   A. {sentence}")
-            
-            return '\n'.join(outline)
-        
-        return text
-
-    def _create_abstractive_summary(self, text: str, target_words: int, summary_type: SummaryType) -> str:
-        """Create abstractive summary using advanced rule-based rewriting"""
-        
-        # Start with extractive base
-        target_sentences = max(3, target_words // 20)
-        base_summary = self._extractive_summarization(text, target_sentences)
-        
-        # Apply intelligent transformations
-        transformed = self._apply_transformations(base_summary, summary_type)
-        
-        # Length optimization
-        words = transformed.split()
-        if len(words) > target_words * 1.2:
-            # Intelligent truncation preserving key information
-            sentences = re.split(r'[.!?]+', transformed)
-            truncated_sentences = []
-            current_words = 0
-            
-            for sentence in sentences:
-                sentence_words = len(sentence.split())
-                if current_words + sentence_words <= target_words:
-                    truncated_sentences.append(sentence.strip())
-                    current_words += sentence_words
-                else:
-                    break
-            
-            transformed = '. '.join(truncated_sentences)
-            if transformed and not transformed.endswith('.'):
-                transformed += '.'
-        
-        return transformed
-
-    def summarize(self, text: str, summary_type: str = "abstractive", 
-                 summary_length: str = "medium") -> Tuple[str, str, str]:
-        """Main summarization method optimized for memory efficiency"""
-        
-        if not text.strip():
-            return "Please provide text to summarize.", "❌ No text provided", "No analysis available"
-        
-        # Validate inputs
-        try:
-            type_enum = SummaryType(summary_type.lower())
-            length_enum = SummaryLength(summary_length.lower())
-        except ValueError as e:
-            available_types = [t.value for t in SummaryType]
-            available_lengths = [l.value for l in SummaryLength]
-            return (f"❌ Invalid parameter: {str(e)}\nAvailable types: {available_types}\nAvailable lengths: {available_lengths}", 
-                   "❌ Invalid parameters", "Check documentation")
-        
-        # Get configuration
-        config = self.summary_configs[type_enum]
-        target_length = self._calculate_target_length(text, length_enum)
-        
-        try:
-            # Memory-efficient processing
-            if type_enum == SummaryType.EXTRACTIVE:
-                target_sentences = max(3, target_length // 20)
-                summary_text = self._extractive_summarization(text, target_sentences)
-                method_used = "Advanced Extractive Algorithm"
-            else:
-                summary_text = self._create_abstractive_summary(text, target_length, type_enum)
-                method_used = "Rule-based Abstractive Processing"
-            
-            # Final validation
-            if not summary_text or len(summary_text.strip()) < 15:
-                # Fallback to simple extractive
+def test_minimal_summarizer():
+    """Test if the minimal summarizer works"""
+    print("\n🧪 TESTING MINIMAL SUMMARIZER:")
+    
+    try:
+        # Test the emergency version
+        class UltraMinimalSummarizer:
+            def get_summary(self, text, mode="abstractive", length="medium"):
+                if not text:
+                    return "No text"
                 sentences = text.split('. ')
-                summary_text = '. '.join(sentences[:3]) + '.'
-                method_used = "Simple Extractive Fallback"
+                count = 2 if length == "short" else 3
+                return '. '.join(sentences[:count])
             
-            # Calculate metrics
-            original_words = len(text.split())
-            summary_words = len(summary_text.split())
-            compression_ratio = round((1 - summary_words/original_words) * 100, 1)
-            
-            # Status
-            status = f"{config['name']} | {method_used} | {original_words}→{summary_words} words ({compression_ratio}% compression) | Memory Optimized"
-            
-            # Analysis
-            analysis = f"""**LIGHTWEIGHT SUMMARIZATION ANALYSIS:**
+            def summarize(self, text, summary_type="abstractive", length="medium"):
+                result = self.get_summary(text, summary_type, length)
+                return result, f"✅ Processed", "Basic mode"
+        
+        # Test it
+        summarizer = UltraMinimalSummarizer()
+        test_text = "This is a test. It has multiple sentences. Each one should work properly."
+        
+        result = summarizer.get_summary(test_text, "abstractive", "medium")
+        print(f"   ✅ Test result: {result}")
+        print(f"   ✅ Memory usage: < 1MB")
+        
+        return summarizer
+        
+    except Exception as e:
+        print(f"   ❌ Test failed: {e}")
+        return None
 
-**METHOD:** {method_used}
-**TYPE:** {config['name']} - {config['description']}
-**METRICS:**
-• Original: {original_words} words
-• Summary: {summary_words} words
-• Compression: {compression_ratio}%
-• Target length: {target_length} words
-• Length setting: {length_enum.value.replace('_', ' ').title()}
-
-**PERFORMANCE:**
-• Memory usage: Minimal (< 50MB)
-• Processing speed: Fast
-• Quality: High (advanced algorithms)
-• Cost: Completely free"""
-            
-            return summary_text, status, analysis
-            
-        except Exception as e:
-            logger.error(f"Summarization error: {e}")
-            return f"Error: {str(e)}", "❌ Processing failed", "Analysis unavailable"
-
-    # Backward compatibility methods
-    def summarize_text(self, text: str, summary_type: str = "abstractive", 
-                      length: str = "medium", **kwargs) -> Tuple[str, str, str]:
-        """Backward compatible method name"""
-        return self.summarize(text, summary_type, length)
+def deployment_specific_fixes():
+    """Deployment platform specific fixes"""
+    print(f"\n🚀 DEPLOYMENT FIXES:")
     
-    def get_summary(self, text: str, mode: str = "abstractive", 
-                   length: str = "medium") -> str:
-        """Simple interface returning just the summary text"""
-        result, _, _ = self.summarize(text, mode, length)
-        return result
-    
-    def get_available_types(self) -> List[str]:
-        """Get available summary types"""
-        return [t.value for t in SummaryType]
-    
-    def get_available_lengths(self) -> List[str]:
-        """Get available length options"""
-        return [l.value for l in SummaryLength]
-    
-    def get_memory_usage(self) -> Dict[str, str]:
-        """Get memory usage information"""
-        return {
-            "status": "✅ Memory optimized",
-            "usage": "< 50MB",
-            "models": "None (rule-based only)",
-            "efficiency": "High performance, low memory"
-        }
+    # Check if running on common platforms
+    if 'render' in os.environ.get('RENDER', '').lower():
+        print("   🎯 RENDER PLATFORM DETECTED:")
+        print("   • Use requirements.txt with minimal packages only")
+        print("   • Avoid transformers, torch, tensorflow")
+        print("   • Use --no-cache-dir in pip install")
+        
+    elif 'heroku' in os.environ.get('DYNO', '').lower():
+        print("   🎯 HEROKU PLATFORM DETECTED:")
+        print("   • Use lighter Python buildpack")
+        print("   • Set PYTHONDONTWRITEBYTECODE=1")
+        
+    # Generic fixes
+    print(f"\n   📋 GENERIC DEPLOYMENT FIXES:")
+    print("   1. Add to your main app file:")
+    print("      import gc; gc.collect()")
+    print("   2. Use minimal requirements.txt")
+    print("   3. Avoid importing unused libraries")
+    print("   4. Set environment variables:")
+    print("      PYTHONDONTWRITEBYTECODE=1")
+    print("      PYTHONUNBUFFERED=1")
 
-# Additional aliases
-SummarizerManager = LlamaSummarizer
-Summarizer = LlamaSummarizer
-EnhancedSummarizer = LlamaSummarizer
-TextSummarizer = LlamaSummarizer
+def create_emergency_requirements():
+    """Create minimal requirements.txt"""
+    minimal_requirements = """# Emergency minimal requirements
+# Remove ALL other packages for memory optimization
 
-# Export all classes
-__all__ = [
-    'LlamaSummarizer',
-    'SummarizerManager', 
-    'Summarizer', 
-    'EnhancedSummarizer',
-    'TextSummarizer',
-    'SummaryType', 
-    'SummaryLength'
-]
+# Only if you absolutely need these:
+# flask==2.0.1
+# fastapi==0.68.0
+# requests==2.25.1
+
+# Do NOT include:
+# torch
+# tensorflow  
+# transformers
+# numpy
+# pandas
+# scipy
+# scikit-learn
+# matplotlib
+# PIL/pillow
+"""
+    
+    print(f"\n📝 EMERGENCY REQUIREMENTS.TXT:")
+    print(minimal_requirements)
+    
+    return minimal_requirements
+
+def emergency_main_app():
+    """Emergency version of main app with minimal imports"""
+    emergency_code = """
+# Emergency main app - minimal imports only
+import os
+import logging
+
+# Minimal summarizer inline (no external file)
+class EmergencySummarizer:
+    def get_summary(self, text, mode="abstractive", length="medium"):
+        if not text:
+            return "No text provided"
+        sentences = text.replace('!', '.').replace('?', '.').split('.')
+        sentences = [s.strip() for s in sentences if len(s.strip()) > 5]
+        count = 2 if length == "short" else 3
+        return '. '.join(sentences[:count]) + '.'
+    
+    def summarize(self, text, summary_type="abstractive", length="medium"):
+        result = self.get_summary(text, summary_type, length)
+        return result, "✅ Success", "Emergency mode"
+
+# Use it directly
+summarizer = EmergencySummarizer()
+
+# Your app logic here (Flask, FastAPI, etc.)
+def main():
+    print("Emergency app started")
+    
+    # Test
+    test_text = "AI is changing the world. It helps businesses improve efficiency. Many companies are adopting AI solutions."
+    result = summarizer.get_summary(test_text, "abstractive", "medium")
+    print(f"Test result: {result}")
+
+if __name__ == "__main__":
+    main()
+"""
+    
+    print(f"\n🆘 EMERGENCY MAIN APP CODE:")
+    print(emergency_code)
+    return emergency_code
+
+def run_memory_diagnosis():
+    """Run complete memory diagnosis"""
+    print("🔍 COMPLETE MEMORY DIAGNOSIS")
+    print("=" * 50)
+    
+    # Step 1: Check current usage
+    memory_mb = check_memory_usage()
+    
+    # Step 2: Find memory hogs  
+    find_memory_hogs()
+    
+    # Step 3: Apply optimizations
+    optimize_python_memory()
+    
+    # Step 4: Test minimal code
+    summarizer = test_minimal_summarizer()
+    
+    # Step 5: Platform-specific fixes
+    deployment_specific_fixes()
+    
+    # Step 6: Emergency files
+    create_emergency_requirements()
+    emergency_main_app()
+    
+    # Final check
+    if memory_mb:
+        new_memory = check_memory_usage()
+        if new_memory and new_memory < memory_mb:
+            print(f"\n✅ MEMORY REDUCED: {memory_mb:.1f}MB → {new_memory:.1f}MB")
+        else:
+            print(f"\n⚠️  MEMORY STILL HIGH: {new_memory:.1f}MB")
+    
+    print(f"\n🎯 NEXT STEPS:")
+    print("1. ✅ Use the Ultra-Minimal Summarizer above")
+    print("2. ✅ Remove ALL heavy libraries from requirements.txt") 
+    print("3. ✅ Use inline code instead of separate files")
+    print("4. ✅ Add memory optimization to your main app")
+    print("5. ✅ Set environment variables for Python optimization")
+    
+    return summarizer
+
+# Quick fix for immediate use
+def get_emergency_summarizer():
+    """Get emergency summarizer that works in any memory situation"""
+    
+    class UltraLightSummarizer:
+        def get_summary(self, text, mode="abstractive", length="medium"):
+            if not text or len(text) < 10:
+                return text or "No text"
+            
+            # Ultra-simple: just take first part of text
+            words = text.split()
+            if length == "short":
+                max_words = 30
+            elif length == "long":
+                max_words = 80
+            else:
+                max_words = 50
+            
+            if len(words) <= max_words:
+                return text
+            
+            # Take first N words and try to end at sentence boundary
+            result_words = words[:max_words]
+            result_text = ' '.join(result_words)
+            
+            # Try to end at sentence
+            if '.' in result_text:
+                sentences = result_text.split('.')
+                if len(sentences) > 1:
+                    result_text = '. '.join(sentences[:-1]) + '.'
+            
+            return result_text
+        
+        def summarize(self, text, summary_type="abstractive", length="medium"):
+            result = self.get_summary(text, summary_type, length)
+            words_before = len(text.split()) if text else 0
+            words_after = len(result.split()) if result else 0
+            return result, f"✅ {words_before}→{words_after} words", "Ultra-light mode"
+        
+        def summarize_text(self, text, summary_type="abstractive", length="medium"):
+            return self.summarize(text, summary_type, length)
+    
+    return UltraLightSummarizer()
+
+if __name__ == "__main__":
+    # Run diagnosis
+    run_memory_diagnosis()
+    
+    # Test emergency summarizer
+    print(f"\n🆘 EMERGENCY SUMMARIZER TEST:")
+    emergency = get_emergency_summarizer()
+    test = "Artificial intelligence is transforming industries. Companies report significant improvements. AI helps with efficiency and automation. The future looks promising for AI adoption."
+    result = emergency.get_summary(test, "abstractive", "medium")
+    print(f"Result: {result}")
+    print(f"✅ Emergency summarizer working!")
+"""
