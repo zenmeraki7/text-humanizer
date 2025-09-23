@@ -40,7 +40,7 @@ class SummaryLength(Enum):
     LONG = "long"                 # 11-15 sentences
     DETAILED = "detailed"         # 16+ sentences
 
-class SummarizerManager:
+class LlamaSummarizer:
     """Manages text summarization using best pretrained models with strongest prompts"""
     
     def __init__(self, model_preference="auto"):
@@ -1270,3 +1270,32 @@ EXPERT SUMMARY:"""
             available_types = [t.value for t in SummaryType]
             available_lengths = [l.value for l in SummaryLength]
             return False, f"❌ Invalid: {str(e)}\nTypes: {available_types}\nLengths: {available_lengths}"
+    
+    def summarize_text(self, text: str, summary_type: str = "abstractive", 
+                      length: str = "medium", **kwargs) -> Tuple[str, str, str]:
+        """Backward compatible method name"""
+        return self.summarize(text, summary_type, length)
+    
+    def get_summary(self, text: str, mode: str = "abstractive", 
+                   length: str = "medium") -> str:
+        """Simple interface returning just the summary text"""
+        result, _, _ = self.summarize(text, mode, length)
+        return result
+
+
+# Additional aliases for different naming preferences
+SummarizerManager = LlamaSummarizer
+Summarizer = LlamaSummarizer
+EnhancedSummarizer = LlamaSummarizer
+TextSummarizer = LlamaSummarizer
+
+# Export all classes for different import patterns
+__all__ = [
+    'LlamaSummarizer',
+    'SummarizerManager', 
+    'Summarizer', 
+    'EnhancedSummarizer',
+    'TextSummarizer',
+    'SummaryType', 
+    'SummaryLength'
+]
