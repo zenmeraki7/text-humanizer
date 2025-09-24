@@ -105,7 +105,35 @@ class ToneManager:
                 "name": "Humanize",
                 "instruction": "Rewrite to sound human, natural, and spontaneous.",
                 "temperature": 0.5
+            },
+            ToneMode.ACADEMIC: {
+                "name": "Academic",
+                "instruction": "Rewrite in scholarly, academic style.",
+                "temperature": 0.3
+            },
+            ToneMode.EXPAND: {
+                "name": "Expand",
+                "instruction": "Expand the text with more detail and explanation.",
+                "temperature": 0.4
+            },
+            ToneMode.SHORTEN: {
+                "name": "Shorten",
+                "instruction": "Make the text more concise and brief.",
+                "temperature": 0.2
             }
+        }
+
+    def get_available_modes(self) -> List[str]:
+        """Return list of available tone mode names"""
+        return [mode.value for mode in ToneMode]
+
+    def get_modes_by_category(self) -> Dict[str, List[str]]:
+        """Return modes organized by category"""
+        return {
+            "writing_style": ["standard", "fluency", "creative"],
+            "formality": ["formal", "simple", "academic"],
+            "length": ["expand", "shorten"],
+            "humanization": ["humanize"]
         }
 
     def _apply_rule_based_changes(self, text: str, tone_mode: str) -> str:
@@ -174,3 +202,7 @@ if __name__ == "__main__":
     print(changed)
     print(status)
     print(analysis)
+    
+    # Test new methods
+    print("Available modes:", tm.get_available_modes())
+    print("Modes by category:", tm.get_modes_by_category())

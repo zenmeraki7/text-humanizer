@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { FileText, Upload, Copy, Download, RefreshCw, Wand2 } from 'lucide-react';
 import { 
   actionButtonsStyles, 
@@ -34,6 +34,11 @@ import {
 } from './styles';
 import { processFile } from '../MainContentComponents/utils';
 
+// Dynamic API URL based on environment
+const API_BASE_URL = process.env.NODE_ENV === 'development' 
+  ? "http://127.0.0.1:8000"  // Local development
+  : "https://test-finam.onrender.com";  // Production
+
 export default function Mode() {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
@@ -42,76 +47,162 @@ export default function Mode() {
   const [selectedMode, setSelectedMode] = useState('Standard');
   const [isProcessing, setIsProcessing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-
-  const modes = [
+  const [availableModes, setAvailableModes] = useState([]);
+  const [error, setError] = useState('');
+  
+  const defaultModes = [
     { 
-      name: 'Standard', 
+      name: 'standard', 
+      displayName: 'Standard',
       description: 'Balanced processing for general content with natural flow', 
       icon: '⚖️',
       features: ['Natural language patterns', 'Reduced AI signatures', 'Maintained context']
     },
     { 
-      name: 'Fluency', 
-      description: 'Corporate and business communication style', 
+      name: 'fluency', 
+      displayName: 'Fluency',
+      description: 'Enhanced readability and smooth flow', 
       icon: '💼',
-      features: ['Formal tone', 'Business terminology', 'Professional structure']
+      features: ['Improved readability', 'Better flow', 'Clear structure']
     },
     { 
-      name: 'Academic', 
+      name: 'academic', 
+      displayName: 'Academic',
       description: 'Scholarly and research writing standards', 
       icon: '🎓',
       features: ['Academic vocabulary', 'Research formatting', 'Citation ready']
     },
     { 
-      name: 'Creative', 
+      name: 'creative', 
+      displayName: 'Creative',
       description: 'Artistic and expressive content enhancement', 
       icon: '🎨',
       features: ['Creative expressions', 'Varied sentence structure', 'Engaging tone']
     },
     { 
-      name: 'Simple', 
+      name: 'simple', 
+      displayName: 'Simple',
       description: 'Clear and easy-to-understand language for all readers', 
       icon: '📝',
       features: ['Plain vocabulary', 'Short sentences', 'Beginner-friendly tone']
     },
     { 
-      name: 'Formal', 
+      name: 'formal', 
+      displayName: 'Formal',
       description: 'Polished and respectful communication style', 
       icon: '🏛️',
       features: ['Sophisticated vocabulary', 'Polite phrasing', 'Structured flow']
     },
     { 
-      name: 'Expand', 
+      name: 'expand', 
+      displayName: 'Expand',
       description: 'Elaborates on ideas with more detail and explanation', 
       icon: '🔎',
       features: ['Detailed sentences', 'Added context', 'Extended explanations']
     },
     { 
-      name: 'Shorten', 
+      name: 'shorten', 
+      displayName: 'Shorten',
       description: 'Condenses content to be brief and to the point', 
       icon: '✂️',
       features: ['Concise wording', 'Key points only', 'Minimal fluff']
     },
+    { 
+      name: 'humanize', 
+      displayName: 'Humanize',
+      description: 'Makes text sound more natural and human-like', 
+      icon: '👤',
+      features: ['Natural tone', 'Human-like patterns', 'Reduced AI signatures']
+    },
   ];
 
+  useEffect(() => {
+    const loadToneModes = async () => {
+      try {
+        console.log('Fetching tone modes from:', `${API_BASE_URL}/tone-modes`);
+        const response = await fetch(`${API_BASE_URL}/tone-modes`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Backend response:', data);
+          
+          // Map backend modes to frontend format
+          const backendModes = data.available_modes || [];
+          if (backendModes.length > 0) {
+            const mappedModes = backendModes.map(mode => {
+              const defaultMode = defaultModes.find(d => d.name.toLowerCase() === mode.toLowerCase());
+              return defaultMode || {
+                name: mode.toLowerCase(),
+                displayName: mode.charAt(0).toUpperCase() + mode.slice(1),
+                description: `${mode} tone processing`,
+                icon: '🔧',
+                features: ['Tone adjustment', 'Style enhancement', 'Content optimization']
+              };
+            });
+            setAvailableModes(mappedModes);
+            console.log('Loaded modes from backend:', mappedModes.length);
+          } else {
+            setAvailableModes(defaultModes);
+            console.log('Using default modes');
+          }
+        } else {
+          console.error('Backend response not ok:', response.status);
+          setAvailableModes(defaultModes);
+        }
+      } catch (err) {
+        console.warn('Failed to load tone modes from backend, using defaults:', err);
+        setError(`Failed to connect to backend: ${err.message}`);
+        setAvailableModes(defaultModes);
+      }
+    };
+
+    loadToneModes();
+  }, []);
+  
   // Stats
   const inputWordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const inputCharCount = inputText.length;
   const outputWordCount = outputText.trim() ? outputText.trim().split(/\s+/).length : 0;
   const outputCharCount = outputText.length;
-
+ 
   const handleProcess = async () => {
     if (!inputText.trim()) return;
     
     setIsProcessing(true);
+    setError('');
     
-    // Simulate API call
-    setTimeout(() => {
-      const processedText = `[${selectedMode} Mode Processing Complete]\n\n${inputText}\n\nThis content has been processed through our ${selectedMode.toLowerCase()} mode to enhance readability, reduce AI detection patterns, and ensure originality. The text maintains its core meaning while improving natural language flow and authenticity markers.`;
+    try {
+      console.log('Processing with mode:', selectedMode);
+      const response = await fetch(`${API_BASE_URL}/change-tone`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: inputText,
+          tone_mode: selectedMode.toLowerCase(), // Ensure lowercase
+          pattern_info: ''
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Backend response:', data);
+        setOutputText(data.changed_text || data.text || 'Processing completed but no output received.');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+    } catch (err) {
+      console.error('Processing failed:', err);
+      setError(`Failed to process text: ${err.message}`);
       
-      setOutputText(processedText);
+      // Fallback processing
+      const fallbackText = `[${selectedMode.toUpperCase()} Mode - Offline Processing]\n\n${inputText}\n\nNote: Backend unavailable. This is a basic transformation. The text has been processed locally with minimal changes for demonstration purposes.`;
+      setOutputText(fallbackText);
+    } finally {
       setIsProcessing(false);
-    }, 2500);
+    }
   };
 
   const handleCopy = async () => {
@@ -154,22 +245,40 @@ export default function Mode() {
 
   return (
     <>
+      {/* Error Display */}
+      {error && (
+        <div style={{
+          backgroundColor: '#fee2e2',
+          border: '1px solid #fecaca',
+          borderRadius: '8px',
+          padding: '12px',
+          marginBottom: '20px',
+          color: '#991b1b',
+          fontSize: '14px'
+        }}>
+          {error}
+          <div style={{ fontSize: '12px', marginTop: '4px', color: '#666' }}>
+            API URL: {API_BASE_URL}
+          </div>
+        </div>
+      )}
+      
       {/* Mode Selection */}
       <div style={modeSelectionStyles}>
         <label style={sectionHeaderStyles}>
           <Wand2 size={18} style={{ marginRight: '8px' }} />
-          Processing Mode
+          Processing Mode ({availableModes.length} available)
         </label>
         <div style={modeGridStyles}>
-          {modes.map((mode) => (
+          {availableModes.map((mode) => (
             <button
               key={mode.name}
               onClick={() => setSelectedMode(mode.name)}
               style={getModeButtonStyles(selectedMode === mode.name)}
             >
               <div style={modeHeaderStyles}>
-                <span style={modeSelectionStyles}>{mode.icon}</span>
-                <div style={modeNameStyles}>{mode.name}</div>
+                <span style={{ fontSize: '20px' }}>{mode.icon}</span>
+                <div style={modeNameStyles}>{mode.displayName}</div>
               </div>
               <div style={modeDescStyles}>{mode.description}</div>
               <div style={featuresStyles}>
@@ -211,7 +320,7 @@ export default function Mode() {
             onFocus={() => setIsInputFocused(true)}
             onBlur={() => setIsInputFocused(false)}
             style={getTextareaStyles(isInputFocused)}
-            placeholder={`Paste your content here for ${selectedMode.toLowerCase()} mode processing (humanization & plagiarism check)...`}
+            placeholder={`Paste your content here for ${selectedMode.toLowerCase()} mode processing...`}
           />
 
           <div style={statsStyles}>
@@ -265,7 +374,7 @@ export default function Mode() {
             onFocus={() => setIsOutputFocused(true)}
             onBlur={() => setIsOutputFocused(false)}
             style={getOutputTextareaStyles(isOutputFocused)}
-            placeholder={`Your ${selectedMode.toLowerCase()} processed content will appear here...`}
+            placeholder={`Your ${availableModes.find(m => m.name === selectedMode)?.displayName || selectedMode} processed content will appear here...`}
           />
 
           <div style={outputStatsStyles}>
@@ -311,7 +420,7 @@ export default function Mode() {
           ) : (
             <>
               <Wand2 size={18} />
-              Process ({selectedMode})
+              Process ({availableModes.find(m => m.name === selectedMode)?.displayName || selectedMode})
             </>
           )}
         </button>
