@@ -458,8 +458,8 @@ export const processFile = async (file) => {
 };
 
 // ✅ FIXED: Updated API base URL to use your production backend
-// export const API_BASE_URL = "https://test-3p0b.onrender.com";
-export const API_BASE_URL ="http://localhost:8000"
+export const API_BASE_URL = "https://test-3p0b.onrender.com";
+// export const API_BASE_URL ="http://localhost:8000"
 export const humanizeText = async (text) => {
   const response = await fetch(`${API_BASE_URL}/humanize`, {
     method: 'POST',
