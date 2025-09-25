@@ -873,14 +873,17 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Text Detector & Humanizer API (Lightweight)")
 
-# CORS setup
+# Fixed CORS setup - include both localhost and 127.0.0.1
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://test-finam.onrender.com",
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://127.0.0.1:8000"
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:5173", 
+        "http://127.0.0.1:3000",
+        "http://localhost:8000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -912,23 +915,44 @@ summarizer = None
 def load_tone_manager():
     global tone_manager
     if not tone_manager:
-        from tone import ToneManager
-        tone_manager = ToneManager()
+        try:
+            from tone import ToneManager
+            tone_manager = ToneManager()
+        except ImportError as e:
+            logger.error(f"Failed to import ToneManager: {e}")
+            raise HTTPException(status_code=500, detail="ToneManager not available")
     return tone_manager
 
 def load_summarizer():
     global summarizer
     if not summarizer:
-        from summarizer import LlamaSummarizer
-        summarizer = LlamaSummarizer("llama2")
+        try:
+            from summarizer import LlamaSummarizer
+            summarizer = LlamaSummarizer()  # Fixed: removed parameter
+        except ImportError as e:
+            logger.error(f"Failed to import LlamaSummarizer: {e}")
+            raise HTTPException(status_code=500, detail="Summarizer not available")
     return summarizer
 
 # Request models
-class TextAnalysisRequest(BaseModel): text: str
-class HumanizeRequest(BaseModel): text: str
-class PlagiarismRequest(BaseModel): text: str
-class ToneChangeRequest(BaseModel): text: str; tone_mode: str = "standard"; pattern_info: Optional[str] = ""
-class SummarizeRequest(BaseModel): text: str; mode: str = "quick"; length: Optional[str] = None
+class TextAnalysisRequest(BaseModel): 
+    text: str
+
+class HumanizeRequest(BaseModel): 
+    text: str
+
+class PlagiarismRequest(BaseModel): 
+    text: str
+
+class ToneChangeRequest(BaseModel): 
+    text: str
+    tone_mode: str = "standard"
+    pattern_info: Optional[str] = ""
+
+class SummarizeRequest(BaseModel): 
+    text: str
+    mode: str = "abstractive"  # Changed default to match your summarizer
+    length: str = "medium"     # Made required with default
 
 @app.get("/")
 def root():
@@ -936,27 +960,60 @@ def root():
 
 @app.post("/change-tone")
 def change_tone(request: ToneChangeRequest):
-    if not request.text.strip(): raise HTTPException(status_code=400, detail="Text cannot be empty")
-    tm = load_tone_manager()
-    changed_text, status, analysis = tm.change_tone(request.text, request.tone_mode)
-    return {"changed_text": changed_text, "status": status, "analysis": analysis, "tone_mode": request.tone_mode}
+    if not request.text.strip(): 
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    try:
+        tm = load_tone_manager()
+        changed_text, status, analysis = tm.change_tone(request.text, request.tone_mode)
+        return {"changed_text": changed_text, "status": status, "analysis": analysis, "tone_mode": request.tone_mode}
+    except Exception as e:
+        logger.error(f"Tone change error: {e}")
+        raise HTTPException(status_code=500, detail=f"Tone change failed: {str(e)}")
 
 @app.get("/tone-modes")
 def get_tone_modes():
-    tm = load_tone_manager()
-    return {"available_modes": tm.get_available_modes(), "modes_by_category": tm.get_modes_by_category()}
+    try:
+        tm = load_tone_manager()
+        return {"available_modes": tm.get_available_modes(), "modes_by_category": tm.get_modes_by_category()}
+    except Exception as e:
+        logger.error(f"Get tone modes error: {e}")
+        # Fallback response
+        return {"available_modes": ["standard", "formal", "casual"], "modes_by_category": {"Basic": ["standard", "formal", "casual"]}}
 
 @app.post("/summarize")
 def summarize_text(request: SummarizeRequest):
-    if not request.text.strip(): raise HTTPException(status_code=400, detail="Text cannot be empty")
-    sm = load_summarizer()
-    summary, status, analysis = sm.summarize(request.text, request.mode, request.length)
-    return {"summary": summary, "status": status, "analysis": analysis, "mode": request.mode}
+    if not request.text.strip(): 
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    try:
+        sm = load_summarizer()
+        summary, status, analysis = sm.summarize(request.text, request.mode, request.length)
+        return {"summary": summary, "status": status, "analysis": analysis, "mode": request.mode}
+    except Exception as e:
+        logger.error(f"Summarize error: {e}")
+        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
 
 @app.get("/summary-options")
 def get_summary_options():
-    sm = load_summarizer()
-    return {"available_modes": sm.get_available_modes(), "available_lengths": sm.get_available_lengths()}
+    try:
+        sm = load_summarizer()
+        return {
+            "available_modes": sm.get_available_types(), 
+            "available_lengths": sm.get_available_lengths()
+        }
+    except Exception as e:
+        logger.error(f"Get summary options error: {e}")
+        # Fallback response that matches your frontend expectations
+        return {
+            "available_modes": [
+                "abstractive", "extractive", "bullet_points", "executive", 
+                "academic", "social", "technical", "outline", "paragraph", "narrative"
+            ],
+            "available_lengths": [
+                "ultra_short", "short", "medium", "long", "detailed"
+            ]
+        }
 
 @app.get("/health")
 def health_check():

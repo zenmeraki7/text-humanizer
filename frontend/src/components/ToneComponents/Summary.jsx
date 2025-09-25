@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Upload, Copy, Download, RefreshCw, Brain, Settings, BookOpen } from 'lucide-react';
 import { 
   actionButtonsStyles,
@@ -40,170 +40,222 @@ export default function Summary() {
   const [isOutputFocused, setIsOutputFocused] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [selectedMode, setSelectedMode] = useState('QUICK');
-  const [selectedLength, setSelectedLength] = useState('SHORT');
+  const [selectedMode, setSelectedMode] = useState('abstractive');
+  const [selectedLength, setSelectedLength] = useState('medium');
+  const [error, setError] = useState('');
 
-  // Summary Modes
-  const summaryModes = [
+  // API Configuration
+// Dynamic API URL based on environment
+const API_BASE_URL = process.env.NODE_ENV === 'development' 
+  ? "http://127.0.0.1:8000"  // Local development
+  : "https://test-finam.onrender.com";  // Production
+  
+  // Available modes and lengths from Python backend
+  const [availableModes, setAvailableModes] = useState([]);
+  const [availableLengths, setAvailableLengths] = useState([]);
+
+  // Default modes if API is unavailable
+  const defaultModes = [
     { 
-      name: 'QUICK', 
-      description: 'Fast summary generation with key points extraction', 
-      icon: '⚡',
-      features: ['Rapid processing', 'Main points only', 'Basic structure']
-    },
-    { 
-      name: 'DETAILED', 
-      description: 'Comprehensive analysis with detailed insights', 
-      icon: '📋',
-      features: ['In-depth analysis', 'Context preservation', 'Detailed explanations']
-    },
-    { 
-      name: 'BULLETS', 
-      description: 'Structured bullet points for easy scanning', 
-      icon: '🔸',
-      features: ['Bullet format', 'Easy scanning', 'Organized points']
-    },
-    { 
-      name: 'EXECUTIVE', 
-      description: 'Executive summary for business and reports', 
-      icon: '💼',
-      features: ['Business focused', 'Key decisions', 'Action items']
-    },
-    { 
-      name: 'ABSTRACT', 
-      description: 'Academic abstract style summary', 
-      icon: '🎓',
-      features: ['Academic format', 'Research style', 'Formal tone']
-    },
-    { 
-      name: 'KEY SENTANCES', 
-      description: 'Extract most important sentences from text', 
-      icon: '🔑',
-      features: ['Key sentences', 'Original wording', 'Context maintained']
-    },
-    { 
-      name: 'OUTLINE', 
-      description: 'Hierarchical outline format', 
-      icon: '📝',
-      features: ['Structured outline', 'Hierarchical', 'Easy navigation']
-    },
-    { 
-      name: 'HIGHLIGHTS', 
-      description: 'Important highlights and takeaways', 
+      name: 'abstractive', 
+      description: 'Rewrites key information clearly', 
       icon: '✨',
-      features: ['Key highlights', 'Important takeaways', 'Quick insights']
+      features: ['Rewritten content', 'Clear language', 'Professional']
     },
     { 
-      name: 'PARAGRAPH', 
-      description: 'Single paragraph comprehensive summary', 
-      icon: '📄',
-      features: ['Paragraph format', 'Flowing text', 'Comprehensive']
+      name: 'extractive', 
+      description: 'Selects most important original sentences', 
+      icon: '🎯',
+      features: ['Original sentences', 'Key points', 'Preservation']
     },
     { 
-      name: 'SHORT', 
-      description: 'Brief and concise summary', 
+      name: 'bullet_points', 
+      description: 'Organizes into scannable bullets', 
       icon: '📋',
-      features: ['Very brief', 'Essential only', 'Quick read']
+      features: ['Bullet format', 'Easy scanning', 'Organized']
     },
+    { 
+      name: 'executive', 
+      description: 'Business-focused for decision makers', 
+      icon: '💼',
+      features: ['Business focused', 'Decision making', 'Professional']
+    },
+    { 
+      name: 'academic', 
+      description: 'Scholarly with formal language', 
+      icon: '🎓',
+      features: ['Academic style', 'Formal tone', 'Scholarly']
+    },
+    { 
+      name: 'social', 
+      description: 'Engaging content for social media', 
+      icon: '📱',
+      features: ['Social media', 'Engaging', 'Shareable']
+    },
+    { 
+      name: 'technical', 
+      description: 'Preserves technical specifications', 
+      icon: '⚙️',
+      features: ['Technical details', 'Precision', 'Specifications']
+    },
+    { 
+      name: 'outline', 
+      description: 'Hierarchical structure with main points', 
+      icon: '📊',
+      features: ['Hierarchical', 'Structured', 'Outline format']
+    },
+    { 
+      name: 'paragraph', 
+      description: 'Creates flowing paragraph summary', 
+      icon: '📄',
+      features: ['Paragraph form', 'Flowing text', 'Narrative']
+    },
+    { 
+      name: 'narrative', 
+      description: 'Story format with chronological flow', 
+      icon: '📖',
+      features: ['Story format', 'Chronological', 'Narrative']
+    }
   ];
 
-  // Summary Length Options
-  const summaryLengths = [
+  const defaultLengths = [
     { 
-      name: 'ULTRA_SHORT', 
+      name: 'ultra_short', 
       description: 'Extremely brief - just the essentials', 
       icon: '⚡',
       features: ['1-2 sentences', 'Core message', 'Ultra brief']
     },
     { 
-      name: 'SHORT', 
+      name: 'short', 
       description: 'Short and to the point', 
       icon: '📝',
       features: ['3-5 sentences', 'Key points', 'Quick read']
     },
     { 
-      name: 'MEDIUM', 
+      name: 'medium', 
       description: 'Balanced length with good detail', 
       icon: '📄',
       features: ['1-2 paragraphs', 'Good detail', 'Balanced']
     },
     { 
-      name: 'LONG', 
+      name: 'long', 
       description: 'Comprehensive summary with full context', 
       icon: '📚',
       features: ['Multiple paragraphs', 'Full context', 'Detailed']
     },
+    { 
+      name: 'detailed', 
+      description: 'Maximum detail with comprehensive analysis', 
+      icon: '🔍',
+      features: ['Comprehensive', 'Maximum detail', 'Complete analysis']
+    }
   ];
 
-  // Stats
+  // Load available options from API on component mount
+  useEffect(() => {
+    const loadSummaryOptions = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/summary-options`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Map API modes to our format
+          const modesWithMetadata = data.available_modes.map(mode => {
+            const defaultMode = defaultModes.find(m => m.name === mode) || {
+              name: mode,
+              description: `${mode.charAt(0).toUpperCase() + mode.slice(1)} summarization`,
+              icon: '📝',
+              features: ['AI-powered', 'Professional', 'Quality']
+            };
+            return defaultMode;
+          });
+          
+          const lengthsWithMetadata = data.available_lengths.map(length => {
+            const defaultLength = defaultLengths.find(l => l.name === length) || {
+              name: length,
+              description: `${length.charAt(0).toUpperCase() + length.slice(1)} length summary`,
+              icon: '📄',
+              features: ['Professional', 'Optimized', 'Quality']
+            };
+            return defaultLength;
+          });
+          
+          setAvailableModes(modesWithMetadata);
+          setAvailableLengths(lengthsWithMetadata);
+        } else {
+          // Fallback to default options
+          setAvailableModes(defaultModes);
+          setAvailableLengths(defaultLengths);
+        }
+      } catch (error) {
+        console.error('Failed to load summary options:', error);
+        setAvailableModes(defaultModes);
+        setAvailableLengths(defaultLengths);
+      }
+    };
+
+    loadSummaryOptions();
+  }, []);
+
+  // Stats calculation
   const inputWordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const inputCharCount = inputText.length;
   const outputWordCount = outputText.trim() ? outputText.trim().split(/\s+/).length : 0;
   const outputCharCount = outputText.length;
 
   const handleProcess = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim()) {
+      setError('Please enter some text to summarize');
+      return;
+    }
     
     setIsProcessing(true);
+    setError('');
     
-    // Simulate API call
-    setTimeout(() => {
-      let processedText = '';
-      
-      // Generate different outputs based on selected mode and length
-      const lengthMultiplier = {
-        'ULTRA_SHORT': 0.1,
-        'SHORT': 0.25,
-        'MEDIUM': 0.4,
-        'LONG': 0.6
-      };
-      
-      const estimatedWords = Math.floor(inputWordCount * lengthMultiplier[selectedLength]);
-      
-      switch (selectedMode) {
-        case 'QUICK':
-          processedText = `**Quick Summary (${selectedLength})**\n\nKey Points:\n• Main concept and primary arguments\n• Important supporting information\n• Final conclusions and insights\n\n**Processing Details:**\n- Mode: Quick Processing\n- Length: ${selectedLength}\n- Original: ${inputWordCount} words\n- Summary: ~${estimatedWords} words\n- Compression: ~${Math.round((1 - lengthMultiplier[selectedLength]) * 100)}%`;
-          break;
-          
-        case 'DETAILED':
-          processedText = `**Detailed Analysis Summary (${selectedLength})**\n\n**Executive Overview:**\nComprehensive analysis of the provided content with detailed insights and contextual information.\n\n**Key Components:**\n1. **Primary Arguments**: Core ideas and main concepts\n2. **Supporting Evidence**: Important details and background\n3. **Context & Implications**: Broader significance and impact\n4. **Conclusions**: Final insights and recommendations\n\n**Analysis Metrics:**\n- Processing Mode: Detailed Analysis\n- Length Setting: ${selectedLength}\n- Source Material: ${inputWordCount} words\n- Generated Summary: ~${estimatedWords} words`;
-          break;
-          
-        case 'BULLETS':
-          processedText = `**Bullet Point Summary (${selectedLength})**\n\n**Main Points:**\n• Core concept and primary focus\n• Key supporting arguments\n• Important evidence and examples\n• Background context and circumstances\n• Final conclusions and recommendations\n• Action items and next steps\n\n**Summary Statistics:**\n• Format: Structured Bullets\n• Length: ${selectedLength}\n• Original Length: ${inputWordCount} words\n• Summary Length: ~${estimatedWords} words\n• Key Points Extracted: 6 main bullets`;
-          break;
-          
-        case 'EXECUTIVE':
-          processedText = `**Executive Summary (${selectedLength})**\n\n**Business Overview:**\nStrategic summary designed for executive decision-making and business context.\n\n**Key Business Points:**\n- Strategic implications and business impact\n- Critical success factors and risks\n- Resource requirements and timelines\n- Recommended actions and decisions\n\n**Executive Metrics:**\n- Summary Type: Executive Brief\n- Target Length: ${selectedLength}\n- Source Document: ${inputWordCount} words\n- Executive Summary: ~${estimatedWords} words\n- Decision Points: 4 key areas identified`;
-          break;
-          
-        case 'ABSTRACT':
-          processedText = `**Academic Abstract (${selectedLength})**\n\n**Objective:** This abstract provides a scholarly summary of the source material following academic standards and formatting conventions.\n\n**Methods:** Content analysis and key concept extraction were employed to identify primary themes, supporting evidence, and conclusions.\n\n**Results:** The analysis revealed core arguments, supporting data, and significant findings that contribute to the overall understanding of the subject matter.\n\n**Conclusions:** The material presents valuable insights with practical implications for further research and application.\n\n**Abstract Details:**\n- Format: Academic Abstract\n- Length Classification: ${selectedLength}\n- Source Words: ${inputWordCount}\n- Abstract Length: ~${estimatedWords} words`;
-          break;
-          
-        case 'KEY SENTANCES':
-          processedText = `**Key Sentences Extract (${selectedLength})**\n\n**Most Important Sentences:**\n\n1. "This sentence represents the core argument or main thesis of the content."\n\n2. "Supporting evidence and key data points are highlighted in this critical sentence."\n\n3. "Important context and background information is captured in this essential statement."\n\n4. "The conclusion and final insights are summarized in this significant sentence."\n\n**Extraction Details:**\n- Method: Key Sentence Identification\n- Length: ${selectedLength}\n- Source Material: ${inputWordCount} words\n- Sentences Extracted: 4 key sentences\n- Maintains: Original wording and context`;
-          break;
-          
-        case 'OUTLINE':
-          processedText = `**Hierarchical Outline (${selectedLength})**\n\nI. Main Topic/Theme\n   A. Primary Argument\n      1. Supporting evidence\n      2. Key examples\n   B. Secondary Points\n      1. Additional support\n      2. Context information\n\nII. Key Details\n   A. Important Facts\n   B. Relevant Data\n   C. Background Context\n\nIII. Conclusions\n   A. Final Insights\n   B. Recommendations\n   C. Next Steps\n\n**Outline Specifications:**\n- Format: Hierarchical Structure\n- Detail Level: ${selectedLength}\n- Source Content: ${inputWordCount} words\n- Outline Length: ~${estimatedWords} words`;
-          break;
-          
-        case 'HIGHLIGHTS':
-          processedText = `**Key Highlights & Takeaways (${selectedLength})**\n\n✨ **Top Highlights:**\n🔸 Primary insight and main discovery\n🔸 Critical finding with significant impact\n🔸 Important trend or pattern identified\n🔸 Notable conclusion with practical value\n\n💡 **Key Takeaways:**\n→ Essential understanding for readers\n→ Practical application or implementation\n→ Important consideration for decision-making\n→ Valuable insight for future reference\n\n**Highlight Summary:**\n- Format: Highlights & Takeaways\n- Emphasis Level: ${selectedLength}\n- Original Content: ${inputWordCount} words\n- Highlights Generated: ~${estimatedWords} words`;
-          break;
-          
-        case 'PARAGRAPH':
-          processedText = `**Comprehensive Paragraph Summary (${selectedLength})**\n\nThis comprehensive summary encapsulates the essential elements of the source material in a flowing, coherent paragraph format. The content presents the main arguments and supporting evidence while maintaining the logical progression and contextual relationships between key concepts. Important findings and conclusions are integrated seamlessly to provide readers with a complete understanding of the subject matter, ensuring that critical insights and practical implications are clearly communicated. The summary maintains the original intent and meaning while condensing the information into an accessible and readable format that serves the needs of various stakeholders and decision-makers.\n\n**Paragraph Details:**\n- Format: Single Comprehensive Paragraph\n- Style: ${selectedLength} Length\n- Source Material: ${inputWordCount} words\n- Paragraph Summary: ~${estimatedWords} words\n- Structure: Flowing narrative format`;
-          break;
-          
-        default: // SHORT
-          processedText = `**Brief Summary (${selectedLength})**\n\nEssential points: Main concept, key evidence, and primary conclusions. Important context and final insights included.\n\n**Summary Info:**\n- Type: Brief Overview\n- Length: ${selectedLength}\n- Original: ${inputWordCount} words\n- Brief: ~${estimatedWords} words`;
+    try {
+      const response = await fetch(`${API_BASE_URL}/summarize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: inputText,
+          mode: selectedMode,
+          length: selectedLength
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
       
-      setOutputText(processedText);
+      
+
+      setOutputText(data.summary);
+      
+    } catch (error) {
+      console.error('Summarization failed:', error);
+      setError(`Summarization failed: ${error.message}`);
+      
+      // Fallback processing
+      const sentences = inputText.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      const fallbackCount = selectedLength === 'ultra_short' ? 1 : selectedLength === 'short' ? 2 : 3;
+      const fallbackSummary = sentences.slice(0, fallbackCount).join('. ').trim() + '.';
+      
+      setOutputText(`${fallbackSummary}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**Note:** API unavailable - using fallback processing.
+**Mode:** ${selectedMode} (${selectedLength})
+**Status:** Offline processing - limited functionality`);
+      
+    } finally {
       setIsProcessing(false);
-    }, 2500);
+    }
   };
 
   const handleCopy = async () => {
@@ -213,6 +265,7 @@ export default function Summary() {
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       console.error('Failed to copy text:', err);
+      setError('Failed to copy to clipboard');
     }
   };
 
@@ -220,7 +273,7 @@ export default function Summary() {
     const element = document.createElement('a');
     const file = new Blob([outputText], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = `summary-${selectedMode.toLowerCase()}-${selectedLength.toLowerCase()}-result.txt`;
+    element.download = `summary-${selectedMode}-${selectedLength}-${new Date().toISOString().slice(0, 10)}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -229,6 +282,7 @@ export default function Summary() {
   const handleClear = () => {
     setInputText('');
     setOutputText('');
+    setError('');
   };
 
   const handleFileUpload = async (event) => {
@@ -238,14 +292,30 @@ export default function Summary() {
     try {
       const { text } = await processFile(file);
       setInputText(text);
+      setError('');
     } catch (error) {
-      alert(error.message);
+      setError(`File upload failed: ${error.message}`);
       console.error("File upload failed:", error);
     }
   };
 
   return (
     <>
+      {/* Error Display */}
+      {error && (
+        <div style={{
+          backgroundColor: '#fee2e2',
+          border: '1px solid #fecaca',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          margin: '0 0 20px 0',
+          color: '#dc2626',
+          fontSize: '14px'
+        }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
       {/* Summary Mode Selection */}
       <div style={modeSelectionStyles}>
         <label style={sectionHeaderStyles}>
@@ -253,7 +323,7 @@ export default function Summary() {
           Summary Mode
         </label>
         <div style={modeGridStyles}>
-          {summaryModes.map((mode) => (
+          {availableModes.map((mode) => (
             <button
               key={mode.name}
               onClick={() => setSelectedMode(mode.name)}
@@ -261,7 +331,7 @@ export default function Summary() {
             >
               <div style={modeHeaderStyles}>
                 <span style={{ fontSize: '20px', marginRight: '12px' }}>{mode.icon}</span>
-                <div style={modeNameStyles}>{mode.name}</div>
+                <div style={modeNameStyles}>{mode.name.toUpperCase()}</div>
               </div>
               <div style={modeDescStyles}>{mode.description}</div>
               <div style={featuresStyles}>
@@ -283,7 +353,7 @@ export default function Summary() {
           Summary Length
         </label>
         <div style={modeGridStyles}>
-          {summaryLengths.map((length) => (
+          {availableLengths.map((length) => (
             <button
               key={length.name}
               onClick={() => setSelectedLength(length.name)}
@@ -291,7 +361,7 @@ export default function Summary() {
             >
               <div style={modeHeaderStyles}>
                 <span style={{ fontSize: '20px', marginRight: '12px' }}>{length.icon}</span>
-                <div style={modeNameStyles}>{length.name}</div>
+                <div style={modeNameStyles}>{length.name.toUpperCase().replace('_', ' ')}</div>
               </div>
               <div style={modeDescStyles}>{length.description}</div>
               <div style={featuresStyles}>
@@ -333,7 +403,7 @@ export default function Summary() {
             onFocus={() => setIsInputFocused(true)}
             onBlur={() => setIsInputFocused(false)}
             style={getTextareaStyles(isInputFocused)}
-            placeholder='Paste your content here for intelligent summarization...'
+            placeholder='Paste your content here for AI-powered summarization...'
           />
 
           <div style={statsStyles}>
@@ -357,7 +427,7 @@ export default function Summary() {
           <div style={outputHeaderStyles}>
             <label style={sectionLabelStyles}>
               <Brain size={18} style={{ marginRight: '8px' }} />
-              Generated Summary
+              AI Generated Summary
             </label>
             <div style={outputActionsStyles}>
               <button
@@ -387,7 +457,7 @@ export default function Summary() {
             onFocus={() => setIsOutputFocused(true)}
             onBlur={() => setIsOutputFocused(false)}
             style={getOutputTextareaStyles(isOutputFocused)}
-            placeholder={`Your ${selectedMode.toLowerCase()} ${selectedLength.toLowerCase()} summary will appear here...`}
+            placeholder={`Your ${selectedMode} ${selectedLength.replace('_', ' ')} summary will appear here...`}
           />
 
           <div style={outputStatsStyles}>
@@ -428,12 +498,12 @@ export default function Summary() {
           {isProcessing ? (
             <>
               <div style={spinnerStyles}></div>
-              Processing...
+              Processing with AI...
             </>
           ) : (
             <>
               <Brain size={18} />
-              Generate Summary
+              Generate AI Summary
             </>
           )}
         </button>
