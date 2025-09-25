@@ -303,7 +303,7 @@ export const MODES = ['Academic', 'Creative', 'Professional', 'Casual'];
 export const SAMPLE_TEXT = "Climate change represents one of the most significant challenges facing humanity in the 21st century. Rising global temperatures, caused primarily by greenhouse gas emissions from human activities, are leading to widespread environmental, economic, and social consequences. Scientists have documented increasing frequency of extreme weather events, melting ice caps, rising sea levels, and shifts in precipitation patterns. These changes threaten ecosystems, agricultural productivity, and human settlements worldwide.";
 
 // ✅ API base URL for backend
-export const API_BASE_URL = "https://test-3p0b.onrender.com";
+export const API_BASE_URL = "https://test-finam.onrender.com";
 
 // Tips data
 export const tips = [
