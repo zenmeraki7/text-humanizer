@@ -531,6 +531,8 @@ import time
 import random
 import logging
 from dotenv import load_dotenv
+from typing import Optional
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -578,19 +580,26 @@ modules_loaded = False
 ai_detector = None
 text_humanizer = None
 plagiarism_detector = None
-
+tone_manager = None
+summarizer = None
 try:
     from ai_detector import AITextDetector
     from humanizer import TextHumanizer
     from plagiarism_detector import PlagiarismDetector
-    
+    from tone import ToneManager  
+    from summarizer import LlamaSummarizer  
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if api_key:
         ai_detector = AITextDetector()
         text_humanizer = TextHumanizer(api_key, ai_detector)
         plagiarism_detector = PlagiarismDetector(api_key, ai_detector)
+         # Initialize Llama-based modules (free)
+        tone_manager = ToneManager()  # Uses Llama locally
+        summarizer = LlamaSummarizer()  # Uses Llama locally
         modules_loaded = True
         logger.info("✅ Modules loaded successfully")
+        logger.info(f"✅ Tone Manager: {getattr(tone_manager, 'ollama_available', False)}")
+        logger.info(f"✅ Summarizer: {getattr(summarizer, 'ollama_available', False)}")
     else:
         logger.warning("⚠️ ANTHROPIC_API_KEY not found")
 except Exception as e:
@@ -605,14 +614,26 @@ class HumanizeRequest(BaseModel):
 
 class PlagiarismRequest(BaseModel):  # ✅ simplified
     text: str
+class ToneChangeRequest(BaseModel):
+    text: str
+    tone_mode: str = "standard"
+    pattern_info: Optional[str] = ""
 
+class SummarizeRequest(BaseModel):
+    text: str
+    mode: str = "quick"
+    length: Optional[str] = None
 @app.get("/")
 def root():
     return {
         "message": "AI Text Detector & Humanizer API",
         "status": "running",
         "modules_loaded": modules_loaded,
-        "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY"))
+        "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "llama_available": {
+            "tone_manager": getattr(tone_manager, 'ollama_available', False) if tone_manager else False,
+            "summarizer": getattr(summarizer, 'ollama_available', False) if summarizer else False
+        }
     }
 
 @app.post("/analyze")
@@ -731,14 +752,85 @@ def remove_plagiarism(request: PlagiarismRequest):
             "ai_improvement": 10,
             "status": "Basic mode - modules not loaded"
         }
+# NEW ENDPOINT: Tone Change
+@app.post("/change-tone")
+def change_tone(request: ToneChangeRequest):
+    if not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    if not modules_loaded or not tone_manager:
+        raise HTTPException(status_code=503, detail="Tone manager not available")
+    
+    def call_tone_changer():
+        changed_text, status, analysis = tone_manager.change_tone(
+            request.text, 
+            request.tone_mode, 
+            request.pattern_info or ""
+        )
+        return {
+            "changed_text": changed_text,
+            "status": status,
+            "analysis": analysis,
+            "tone_mode": request.tone_mode
+        }
+    
+    return handle_api_retry(call_tone_changer)
 
+# NEW ENDPOINT: Get Available Tone Modes
+@app.get("/tone-modes")
+def get_tone_modes():
+    if not modules_loaded or not tone_manager:
+        raise HTTPException(status_code=503, detail="Tone manager not available")
+    
+    return {
+        "available_modes": tone_manager.get_available_modes(),
+        "modes_by_category": tone_manager.get_modes_by_category(),
+        "ollama_available": getattr(tone_manager, 'ollama_available', False)
+    }
+
+# NEW ENDPOINT: Summarize Text
+@app.post("/summarize")
+def summarize_text(request: SummarizeRequest):
+    if not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    if not modules_loaded or not summarizer:
+        raise HTTPException(status_code=503, detail="Summarizer not available")
+    
+    def call_summarizer():
+        summary, status, analysis = summarizer.summarize(
+            request.text,
+            request.mode,
+            request.length
+        )
+        return {
+            "summary": summary,
+            "status": status,
+            "analysis": analysis,
+            "mode": request.mode,
+            "length": request.length or "default"
+        }
+    
+    return handle_api_retry(call_summarizer)
+
+# NEW ENDPOINT: Get Available Summary Options
+@app.get("/summary-options")
+def get_summary_options():
+    if not modules_loaded or not summarizer:
+        raise HTTPException(status_code=503, detail="Summarizer not available")
+    
+    return {
+        "available_modes": summarizer.get_available_modes(),
+        "available_lengths": summarizer.get_available_lengths(),
+        "ollama_available": getattr(summarizer, 'ollama_available', False)
+    }
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
         "modules_loaded": modules_loaded,
         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
-        "endpoints": ["/analyze", "/humanize", "/remove-plagiarism"]
+        "endpoints": ["/analyze", "/humanize", "/remove-plagiarism","/change-tone","/tone-modes","/summarize","/summary-options"]
     }
 
 # Preflight handlers
