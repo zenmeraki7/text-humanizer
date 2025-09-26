@@ -37,6 +37,7 @@ import { processFile } from '../MainContentComponents/utils';
 // Dynamic API URL based on environment
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
   ? "http://127.0.0.1:8000"  // Local development
+
   : "https://test-finam.onrender.com";  // Production
 
 export default function Mode() {
