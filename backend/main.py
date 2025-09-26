@@ -828,8 +828,9 @@ try:
     
     modules_loaded = True
     logger.info("✅ All modules loaded successfully")
-    logger.info(f"✅ Tone Manager: {getattr(tone_manager, 'ollama_available', False)}")
-    logger.info(f"✅ Summarizer: {getattr(summarizer, 'ollama_available', False)}")
+
+    logger.info(f"✅ Tone Manager: {tone_manager.ollama_available}")
+    logger.info(f"✅ Summarizer: {summarizer.ollama_available}")
     
 except Exception as e:
     logger.error(f"❌ Failed to load modules: {e}")
@@ -862,8 +863,9 @@ def root():
         "modules_loaded": modules_loaded,
         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
         "llama_available": {
-            "tone_manager": getattr(tone_manager, 'ollama_available', False) if tone_manager else False,
-            "summarizer": getattr(summarizer, 'ollama_available', False) if summarizer else False
+
+            "tone_manager": tone_manager.ollama_available if tone_manager else False,
+            "summarizer": summarizer.ollama_available if summarizer else False
         }
     }
 
@@ -1017,7 +1019,8 @@ def get_tone_modes():
     return {
         "available_modes": tone_manager.get_available_modes(),
         "modes_by_category": tone_manager.get_modes_by_category(),
-        "ollama_available": getattr(tone_manager, 'ollama_available', False)
+
+        "ollama_available": tone_manager.ollama_available
     }
 
 # NEW ENDPOINT: Summarize Text
@@ -1055,6 +1058,7 @@ def get_summary_options():
         "available_modes": summarizer.get_available_modes(),
         "available_lengths": summarizer.get_available_lengths(),
         "ollama_available": getattr(summarizer, 'ollama_available', False)
+
     }
 
 @app.get("/health")
@@ -1064,8 +1068,9 @@ def health_check():
         "modules_loaded": modules_loaded,
         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
         "llama_services": {
-            "tone_manager_available": getattr(tone_manager, 'ollama_available', False) if tone_manager else False,
-            "summarizer_available": getattr(summarizer, 'ollama_available', False) if summarizer else False
+
+            "tone_manager_available": tone_manager.ollama_available if tone_manager else False,
+            "summarizer_available": summarizer.ollama_available if summarizer else False
         },
         "endpoints": [
             "/analyze", 
@@ -1085,4 +1090,5 @@ async def options_handler(path: str):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
