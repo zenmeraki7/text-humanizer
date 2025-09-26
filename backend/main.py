@@ -820,10 +820,11 @@ def get_summary_options():
         raise HTTPException(status_code=503, detail="Summarizer not available")
     
     return {
-        "available_modes": summarizer.get_available_modes(),
+        "available_modes": summarizer.get_available_types(),   # ✅ FIX
         "available_lengths": summarizer.get_available_lengths(),
         "ollama_available": getattr(summarizer, 'ollama_available', False)
     }
+
 @app.get("/health")
 def health_check():
     return {
