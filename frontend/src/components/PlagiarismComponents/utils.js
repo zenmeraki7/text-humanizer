@@ -305,6 +305,7 @@ export const SAMPLE_TEXT = "Climate change represents one of the most significan
 // ✅ API base URL for backend
 export const API_BASE_URL = "https://test-finam.onrender.com";
 
+
 // Tips data
 export const tips = [
   {

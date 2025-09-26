@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import ParticleBackground from '../../components/Particle';
 function LoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -365,7 +365,7 @@ function LoginPage() {
           }
         }
       `}</style>
-
+<ParticleBackground/>
       <div 
         className="login-card"
         style={cardStyles}

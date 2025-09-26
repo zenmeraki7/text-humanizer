@@ -262,12 +262,10 @@
 # #     allow_origins=[
 # #         "https://test-finam.onrender.com",  # your frontend
 # #         "http://localhost:3000",            # local dev
-# #          "http://localhost:5173",
-# #          "http://127.0.0.1:5173",
-##           "http://127.0.0.1:8000" 
+# #          "http://localhost:5173", 
 # #     ],
 # #     allow_credentials=True,
-# #     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+# #     allow_methods=["*"],
 # #     allow_headers=["*"],
 # # )
 
@@ -525,8 +523,6 @@
 # #     import uvicorn
 # #     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-
-
 # from fastapi import FastAPI, HTTPException
 # from fastapi.middleware.cors import CORSMiddleware
 # from pydantic import BaseModel
@@ -534,12 +530,11 @@
 # import time
 # import random
 # import logging
-# from typing import Optional
-
+# from dotenv import load_dotenv
 # # Configure logging
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
-
+# load_dotenv()
 # app = FastAPI(title="AI Text Detector & Humanizer API")
 
 # # CORS setup
@@ -548,6 +543,11 @@
 #     allow_origins=[
 #         "https://test-finam.onrender.com",  # frontend
 #         "http://localhost:3000",           # local dev
+#    "http://localhost:5173",
+#         "http://127.0.0.1:8000",
+#         "http://127.0.0.1:5173", 
+#         "http://127.0.0.1:3000",
+#         "http://localhost:8000"
 #     ],
 #     allow_credentials=True,
 #     allow_methods=["*"],
@@ -578,32 +578,21 @@
 # ai_detector = None
 # text_humanizer = None
 # plagiarism_detector = None
-# tone_manager = None
-# summarizer = None
 
 # try:
 #     from ai_detector import AITextDetector
 #     from humanizer import TextHumanizer
 #     from plagiarism_detector import PlagiarismDetector
-#     from tone import ToneManager  # Updated tone module with Llama
-#     from summarizer import LlamaSummarizer  # Updated summarizer with Llama
     
-#     api_key = os.getenv("ANTHROPIC_API_KEY", "dummy_key")  # Use dummy for free models
-    
-#     # Initialize modules
-#     ai_detector = AITextDetector()
-#     text_humanizer = TextHumanizer(api_key, ai_detector)
-#     plagiarism_detector = PlagiarismDetector(api_key, ai_detector)
-    
-#     # Initialize Llama-based modules (free)
-#     tone_manager = ToneManager()  # Uses Llama locally
-#     summarizer = LlamaSummarizer("llama2")  # Uses Llama locally
-    
-#     modules_loaded = True
-#     logger.info("✅ All modules loaded successfully")
-#     logger.info(f"✅ Tone Manager: {tone_manager.ollama_available}")
-#     logger.info(f"✅ Summarizer: {summarizer.ollama_available}")
-    
+#     api_key = os.getenv("ANTHROPIC_API_KEY")
+#     if api_key:
+#         ai_detector = AITextDetector()
+#         text_humanizer = TextHumanizer(api_key, ai_detector)
+#         plagiarism_detector = PlagiarismDetector(api_key, ai_detector)
+#         modules_loaded = True
+#         logger.info("✅ Modules loaded successfully")
+#     else:
+#         logger.warning("⚠️ ANTHROPIC_API_KEY not found")
 # except Exception as e:
 #     logger.error(f"❌ Failed to load modules: {e}")
 
@@ -614,18 +603,8 @@
 # class HumanizeRequest(BaseModel):
 #     text: str
 
-# class PlagiarismRequest(BaseModel):
+# class PlagiarismRequest(BaseModel):  # ✅ simplified
 #     text: str
-
-# class ToneChangeRequest(BaseModel):
-#     text: str
-#     tone_mode: str = "standard"
-#     pattern_info: Optional[str] = ""
-
-# class SummarizeRequest(BaseModel):
-#     text: str
-#     mode: str = "quick"
-#     length: Optional[str] = None
 
 # @app.get("/")
 # def root():
@@ -633,11 +612,7 @@
 #         "message": "AI Text Detector & Humanizer API",
 #         "status": "running",
 #         "modules_loaded": modules_loaded,
-#         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
-#         "llama_available": {
-#             "tone_manager": tone_manager.ollama_available if tone_manager else False,
-#             "summarizer": summarizer.ollama_available if summarizer else False
-#         }
+#         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY"))
 #     }
 
 # @app.post("/analyze")
@@ -757,98 +732,13 @@
 #             "status": "Basic mode - modules not loaded"
 #         }
 
-# # NEW ENDPOINT: Tone Change
-# @app.post("/change-tone")
-# def change_tone(request: ToneChangeRequest):
-#     if not request.text.strip():
-#         raise HTTPException(status_code=400, detail="Text cannot be empty")
-    
-#     if not modules_loaded or not tone_manager:
-#         raise HTTPException(status_code=503, detail="Tone manager not available")
-    
-#     def call_tone_changer():
-#         changed_text, status, analysis = tone_manager.change_tone(
-#             request.text, 
-#             request.tone_mode, 
-#             request.pattern_info or ""
-#         )
-#         return {
-#             "changed_text": changed_text,
-#             "status": status,
-#             "analysis": analysis,
-#             "tone_mode": request.tone_mode
-#         }
-    
-#     return handle_api_retry(call_tone_changer)
-
-# # NEW ENDPOINT: Get Available Tone Modes
-# @app.get("/tone-modes")
-# def get_tone_modes():
-#     if not modules_loaded or not tone_manager:
-#         raise HTTPException(status_code=503, detail="Tone manager not available")
-    
-#     return {
-#         "available_modes": tone_manager.get_available_modes(),
-#         "modes_by_category": tone_manager.get_modes_by_category(),
-#         "ollama_available": tone_manager.ollama_available
-#     }
-
-# # NEW ENDPOINT: Summarize Text
-# @app.post("/summarize")
-# def summarize_text(request: SummarizeRequest):
-#     if not request.text.strip():
-#         raise HTTPException(status_code=400, detail="Text cannot be empty")
-    
-#     if not modules_loaded or not summarizer:
-#         raise HTTPException(status_code=503, detail="Summarizer not available")
-    
-#     def call_summarizer():
-#         summary, status, analysis = summarizer.summarize(
-#             request.text,
-#             request.mode,
-#             request.length
-#         )
-#         return {
-#             "summary": summary,
-#             "status": status,
-#             "analysis": analysis,
-#             "mode": request.mode,
-#             "length": request.length or "default"
-#         }
-    
-#     return handle_api_retry(call_summarizer)
-
-# # NEW ENDPOINT: Get Available Summary Options
-# @app.get("/summary-options")
-# def get_summary_options():
-#     if not modules_loaded or not summarizer:
-#         raise HTTPException(status_code=503, detail="Summarizer not available")
-    
-#     return {
-#         "available_modes": summarizer.get_available_modes(),
-#         "available_lengths": summarizer.get_available_lengths(),
-#         "ollama_available": summarizer.ollama_available
-#     }
-
 # @app.get("/health")
 # def health_check():
 #     return {
 #         "status": "healthy",
 #         "modules_loaded": modules_loaded,
 #         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
-#         "llama_services": {
-#             "tone_manager_available": tone_manager.ollama_available if tone_manager else False,
-#             "summarizer_available": summarizer.ollama_available if summarizer else False
-#         },
-#         "endpoints": [
-#             "/analyze", 
-#             "/humanize", 
-#             "/remove-plagiarism",
-#             "/change-tone",           # NEW
-#             "/tone-modes",            # NEW
-#             "/summarize",             # NEW
-#             "/summary-options"        # NEW
-#         ]
+#         "endpoints": ["/analyze", "/humanize", "/remove-plagiarism"]
 #     }
 
 # # Preflight handlers
@@ -859,6 +749,9 @@
 # if __name__ == "__main__":
 #     import uvicorn
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
 
 
 from fastapi import FastAPI, HTTPException
@@ -876,110 +769,28 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Text Detector & Humanizer API")
 
-# Enhanced CORS setup
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://test-finam.onrender.com",
-        "http://localhost:3000",
-        "http://localhost:5173", 
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "*"  # Allow all for testing - remove in production
+        "https://test-finam.onrender.com",  # frontend
+        "http://localhost:3000",           # local dev
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Request models
-class TextAnalysisRequest(BaseModel):
-    text: str
-
-class HumanizeRequest(BaseModel):
-    text: str
-
-class ToneChangeRequest(BaseModel):
-    text: str
-    tone_mode: str = "standard"
-    pattern_info: Optional[str] = ""
-
-class SummarizeRequest(BaseModel):
-    text: str
-    mode: str = "abstractive"
-    length: str = "medium"
-
-# Simple text replacements for basic humanization
-def basic_humanize(text: str) -> str:
-    """Basic text humanization using simple replacements"""
-    replacements = {
-        # Corporate jargon
-        "leverage": "use",
-        "utilize": "use", 
-        "optimize": "improve",
-        "facilitate": "help",
-        "implement": "use",
-        "streamline": "simplify",
-        "synergy": "teamwork",
-        "paradigm": "approach",
-        "holistic": "complete",
-        "cutting-edge": "latest",
-        "state-of-the-art": "advanced",
-        "best-in-class": "excellent",
-        
-        # AI transitions
-        "furthermore": "also",
-        "moreover": "plus", 
-        "however": "but",
-        "therefore": "so",
-        "consequently": "as a result",
-        "subsequently": "then",
-        "additionally": "also",
-        "nonetheless": "still",
-        "nevertheless": "however",
-        
-        # AI phrases
-        "it's important to note that": "",
-        "it should be noted that": "",
-        "it's worth mentioning that": "",
-        "in today's fast-paced world": "nowadays",
-        "at the end of the day": "ultimately", 
-        "with that being said": "however",
-        "moving forward": "going ahead",
-        "in conclusion": "finally",
-        "to summarize": "in short",
-        
-        # Formal words
-        "demonstrate": "show",
-        "significant": "important", 
-        "substantial": "large",
-        "considerable": "big",
-        "comprehensive": "complete",
-        "fundamental": "basic",
-        "essential": "needed",
-        "critical": "important",
-        "crucial": "key"
-    }
-    
-    result = text
-    for old, new in replacements.items():
-        result = result.replace(old, new)
-        result = result.replace(old.capitalize(), new.capitalize())
-        result = result.replace(old.upper(), new.upper())
-    
-    # Clean up double spaces and empty phrases
-    result = result.replace("  ", " ").strip()
-    return result
-
 def handle_api_retry(func, max_retries=3):
-    """Retry wrapper for API calls"""
+    """
+    Wrapper to retry API calls with exponential backoff when overloaded
+    """
     for attempt in range(max_retries):
         try:
             return func()
         except Exception as e:
-            if "overloaded" in str(e).lower() or "529" in str(e):
+            error_str = str(e).lower()
+            if "overloaded" in error_str or "529" in error_str:
                 if attempt < max_retries - 1:
                     wait_time = (2 ** attempt) + random.uniform(0, 1)
                     logger.info(f"API overloaded, retrying in {wait_time:.1f}s... (attempt {attempt+1})")
@@ -989,58 +800,70 @@ def handle_api_retry(func, max_retries=3):
             raise e
     raise HTTPException(status_code=500, detail="Unexpected error")
 
-# Lazy loading for optional modules
+# Try to load custom modules
+modules_loaded = False
 ai_detector = None
 text_humanizer = None
+plagiarism_detector = None
 tone_manager = None
 summarizer = None
 
-def try_load_advanced_modules():
-    """Try to load advanced modules if available"""
-    global ai_detector, text_humanizer, tone_manager, summarizer
+try:
+    from ai_detector import AITextDetector
+    from humanizer import TextHumanizer
+    from plagiarism_detector import PlagiarismDetector
+    from tone import ToneManager  # Updated tone module with Llama
+    from summarizer import LlamaSummarizer  # Updated summarizer with Llama
     
-    try:
-        from ai_detector import AITextDetector
-        ai_detector = AITextDetector()
-        logger.info("✅ AI Detector loaded")
-    except:
-        logger.info("⚠️ AI Detector not available - using basic mode")
+    api_key = os.getenv("ANTHROPIC_API_KEY", "dummy_key")  # Use dummy for free models
     
-    try:
-        from humanizer import TextHumanizer
-        api_key = os.getenv("ANTHROPIC_API_KEY", "dummy_key")
-        text_humanizer = TextHumanizer(api_key, ai_detector)
-        logger.info("✅ Text Humanizer loaded")
-    except:
-        logger.info("⚠️ Text Humanizer not available - using basic mode")
+    # Initialize modules
+    ai_detector = AITextDetector()
+    text_humanizer = TextHumanizer(api_key, ai_detector)
+    plagiarism_detector = PlagiarismDetector(api_key, ai_detector)
     
-    try:
-        from tone import ToneManager
-        tone_manager = ToneManager()
-        logger.info("✅ Tone Manager loaded")
-    except:
-        logger.info("⚠️ Tone Manager not available")
+    # Initialize Llama-based modules (free)
+    tone_manager = ToneManager()  # Uses Llama locally
+    summarizer = LlamaSummarizer("llama2")  # Uses Llama locally
     
-    try:
-        from summarizer import LlamaSummarizer
-        summarizer = LlamaSummarizer()
-        logger.info("✅ Summarizer loaded")  
-    except:
-        logger.info("⚠️ Summarizer not available")
+    modules_loaded = True
+    logger.info("✅ All modules loaded successfully")
+    logger.info(f"✅ Tone Manager: {getattr(tone_manager, 'ollama_available', False)}")
+    logger.info(f"✅ Summarizer: {getattr(summarizer, 'ollama_available', False)}")
+    
+except Exception as e:
+    logger.error(f"❌ Failed to load modules: {e}")
 
-# Try loading modules at startup
-try_load_advanced_modules()
+# Request models
+class TextAnalysisRequest(BaseModel):
+    text: str
+
+class HumanizeRequest(BaseModel):
+    text: str
+
+class PlagiarismRequest(BaseModel):
+    text: str
+
+class ToneChangeRequest(BaseModel):
+    text: str
+    tone_mode: str = "standard"
+    pattern_info: Optional[str] = ""
+
+class SummarizeRequest(BaseModel):
+    text: str
+    mode: str = "quick"
+    length: Optional[str] = None
 
 @app.get("/")
 def root():
     return {
-        "message": "AI Text Detector & Humanizer API", 
+        "message": "AI Text Detector & Humanizer API",
         "status": "running",
-        "modules": {
-            "ai_detector": ai_detector is not None,
-            "text_humanizer": text_humanizer is not None,
-            "tone_manager": tone_manager is not None,
-            "summarizer": summarizer is not None
+        "modules_loaded": modules_loaded,
+        "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "llama_available": {
+            "tone_manager": getattr(tone_manager, 'ollama_available', False) if tone_manager else False,
+            "summarizer": getattr(summarizer, 'ollama_available', False) if summarizer else False
         }
     }
 
@@ -1048,94 +871,133 @@ def root():
 def analyze_text(request: TextAnalysisRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
-    
-    if ai_detector:
-        try:
-            def call_analysis():
-                report, score, classification = ai_detector.get_detection_report(request.text)
-                detected_patterns = ai_detector.detect_ai_patterns(request.text)
-                return {
-                    "ai_score": score,
-                    "classification": classification,
-                    "report": report,
-                    "detected_patterns": detected_patterns
-                }
-            return handle_api_retry(call_analysis)
-        except Exception as e:
-            logger.error(f"Analysis error: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+
+    if modules_loaded and ai_detector:
+        def call_analysis():
+            report, score, classification = ai_detector.get_detection_report(request.text)
+            detected_patterns = ai_detector.detect_ai_patterns(request.text)
+            return {
+                "ai_score": score,
+                "classification": classification,
+                "report": report,
+                "detected_patterns": detected_patterns
+            }
+        return handle_api_retry(call_analysis)
     else:
-        # Basic analysis
+        # Basic fallback
         word_count = len(request.text.split())
         ai_indicators = sum(
             phrase in request.text.lower()
-            for phrase in ["furthermore", "moreover", "utilize", "leverage", "optimize"]
+            for phrase in ["furthermore", "moreover", "it's important to note", "significant", "utilize"]
         )
         score = min(90, 20 + (ai_indicators * 15))
         classification = "Likely AI" if score > 60 else "Likely Human"
-        
         return {
             "ai_score": score,
-            "classification": classification, 
-            "report": f"Basic analysis: {word_count} words, {ai_indicators} AI indicators detected",
-            "detected_patterns": {"basic_indicators": ai_indicators}
+            "classification": classification,
+            "report": f"Word count: {word_count}, AI indicators: {ai_indicators}. Basic mode",
+            "detected_patterns": {}
         }
 
 @app.post("/humanize")
 def humanize_text(request: HumanizeRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
-    
-    # Always use basic humanization first (no API key required)
-    try:
-        humanized = basic_humanize(request.text)
-        original_words = len(request.text.split())
-        new_words = len(humanized.split())
-        
-        # Count improvements made
-        improvements = []
-        if "utilize" in request.text.lower():
-            improvements.append("utilize → use")
-        if "leverage" in request.text.lower():
-            improvements.append("leverage → use") 
-        if "furthermore" in request.text.lower():
-            improvements.append("furthermore → also")
-        if "optimize" in request.text.lower():
-            improvements.append("optimize → improve")
-        
-        status = f"✅ Basic humanization complete ({original_words} → {new_words} words)"
-        if improvements:
-            status += f" | {len(improvements)} improvements made"
-        
-        analysis = f"Removed common AI patterns and corporate jargon. Changes made: {', '.join(improvements[:5])}" if improvements else "Applied basic humanization rules to improve readability."
-        
-        return {
-            "humanized_text": humanized,
-            "status": status,
-            "analysis": analysis
+
+    if modules_loaded and text_humanizer:
+        def call_humanizer():
+            humanized_text, status, analysis = text_humanizer.humanize(request.text)
+            return {
+                "humanized_text": humanized_text,
+                "status": status,
+                "analysis": analysis
+            }
+        return handle_api_retry(call_humanizer)
+    else:
+        # Basic fallback
+        text = request.text
+        replacements = {
+            "furthermore": "also",
+            "moreover": "plus",
+            "utilize": "use",
+            "it's important to note that": "",
+            "significant": "important"
         }
-        
-    except Exception as e:
-        logger.error(f"Basic humanization error: {e}")
-        # Even if basic fails, return something
+        for k, v in replacements.items():
+            text = text.replace(k, v)
         return {
-            "humanized_text": request.text,  # Return original text
-            "status": f"❌ Humanization failed: {str(e)}",
-            "analysis": "Error occurred during processing. Original text returned."
+            "humanized_text": text,
+            "status": "Basic mode - modules not loaded",
+            "analysis": "Simple word replacements applied"
         }
 
+@app.post("/remove-plagiarism")
+def remove_plagiarism(request: PlagiarismRequest):
+    if not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+
+    if modules_loaded and plagiarism_detector:
+        def call_plagiarism_remover():
+            cleaned_text, report = plagiarism_detector.remove(request.text)
+            if isinstance(report, dict):
+                return {
+                    "rewritten_text": cleaned_text,
+                    "original_word_count": len(request.text.split()),
+                    "new_word_count": len(cleaned_text.split()),
+                    "improvement": report.get("improvement", 0),
+                    "ai_improvement": report.get("ai_improvement", 0),
+                    "original_plagiarism_score": report.get("original_plagiarism_score", 0),
+                    "new_plagiarism_score": report.get("new_plagiarism_score", 0),
+                    "status": report.get("status", "Success")
+                }
+            return {
+                "rewritten_text": cleaned_text,
+                "original_word_count": len(request.text.split()),
+                "new_word_count": len(cleaned_text.split()),
+                "improvement": 25,
+                "ai_improvement": 20,
+                "status": str(report)
+            }
+        return handle_api_retry(call_plagiarism_remover)
+    else:
+        # Basic fallback
+        text = request.text
+        replacements = {
+            "significant": "important",
+            "demonstrate": "show",
+            "utilize": "use",
+            "furthermore": "also",
+            "moreover": "plus",
+            "implement": "use",
+            "facilitate": "help",
+            "optimize": "improve",
+            "leverage": "use"
+        }
+        for k, v in replacements.items():
+            text = text.replace(k, v)
+        return {
+            "rewritten_text": text,
+            "original_word_count": len(request.text.split()),
+            "new_word_count": len(text.split()),
+            "improvement": 15,
+            "ai_improvement": 10,
+            "status": "Basic mode - modules not loaded"
+        }
+
+# NEW ENDPOINT: Tone Change
 @app.post("/change-tone")
 def change_tone(request: ToneChangeRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
     
-    if not tone_manager:
+    if not modules_loaded or not tone_manager:
         raise HTTPException(status_code=503, detail="Tone manager not available")
     
-    try:
+    def call_tone_changer():
         changed_text, status, analysis = tone_manager.change_tone(
             request.text, 
-            request.tone_mode
+            request.tone_mode, 
+            request.pattern_info or ""
         )
         return {
             "changed_text": changed_text,
@@ -1143,91 +1005,84 @@ def change_tone(request: ToneChangeRequest):
             "analysis": analysis,
             "tone_mode": request.tone_mode
         }
-    except Exception as e:
-        logger.error(f"Tone change error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    return handle_api_retry(call_tone_changer)
 
+# NEW ENDPOINT: Get Available Tone Modes
 @app.get("/tone-modes")
 def get_tone_modes():
-    if tone_manager:
-        try:
-            return {
-                "available_modes": tone_manager.get_available_modes(),
-                "modes_by_category": tone_manager.get_modes_by_category()
-            }
-        except:
-            pass
+    if not modules_loaded or not tone_manager:
+        raise HTTPException(status_code=503, detail="Tone manager not available")
     
-    # Fallback response
     return {
-        "available_modes": ["standard", "formal", "casual", "professional", "friendly"],
-        "modes_by_category": {
-            "Basic": ["standard", "formal", "casual"],
-            "Professional": ["professional", "friendly"]
-        }
+        "available_modes": tone_manager.get_available_modes(),
+        "modes_by_category": tone_manager.get_modes_by_category(),
+        "ollama_available": getattr(tone_manager, 'ollama_available', False)
     }
 
+# NEW ENDPOINT: Summarize Text
 @app.post("/summarize")
 def summarize_text(request: SummarizeRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
     
-    if not summarizer:
+    if not modules_loaded or not summarizer:
         raise HTTPException(status_code=503, detail="Summarizer not available")
     
-    try:
+    def call_summarizer():
         summary, status, analysis = summarizer.summarize(
             request.text,
-            request.mode, 
+            request.mode,
             request.length
         )
         return {
             "summary": summary,
             "status": status,
             "analysis": analysis,
-            "mode": request.mode
+            "mode": request.mode,
+            "length": request.length or "default"
         }
-    except Exception as e:
-        logger.error(f"Summarization error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    return handle_api_retry(call_summarizer)
 
+# NEW ENDPOINT: Get Available Summary Options
 @app.get("/summary-options")
 def get_summary_options():
-    if summarizer:
-        try:
-            return {
-                "available_modes": summarizer.get_available_types(),
-                "available_lengths": summarizer.get_available_lengths()
-            }
-        except:
-            pass
+    if not modules_loaded or not summarizer:
+        raise HTTPException(status_code=503, detail="Summarizer not available")
     
-    # Fallback response
     return {
-        "available_modes": ["abstractive", "extractive", "bullet_points"],
-        "available_lengths": ["short", "medium", "long"]
+        "available_modes": summarizer.get_available_modes(),
+        "available_lengths": summarizer.get_available_lengths(),
+        "ollama_available": getattr(summarizer, 'ollama_available', False)
     }
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "modules": {
-            "ai_detector": ai_detector is not None,
-            "text_humanizer": text_humanizer is not None, 
-            "tone_manager": tone_manager is not None,
-            "summarizer": summarizer is not None
-        },
+        "modules_loaded": modules_loaded,
         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
-        "endpoints": ["/analyze", "/humanize", "/change-tone", "/summarize"]
+        "llama_services": {
+            "tone_manager_available": getattr(tone_manager, 'ollama_available', False) if tone_manager else False,
+            "summarizer_available": getattr(summarizer, 'ollama_available', False) if summarizer else False
+        },
+        "endpoints": [
+            "/analyze", 
+            "/humanize", 
+            "/remove-plagiarism",
+            "/change-tone",           # NEW
+            "/tone-modes",            # NEW
+            "/summarize",             # NEW
+            "/summary-options"        # NEW
+        ]
     }
 
-# Handle preflight requests
+# Preflight handlers
 @app.options("/{path:path}")
 async def options_handler(path: str):
     return {"message": "OK"}
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
