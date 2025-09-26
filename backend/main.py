@@ -530,11 +530,11 @@ import os
 import time
 import random
 import logging
-
+from dotenv import load_dotenv
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
+load_dotenv()
 app = FastAPI(title="AI Text Detector & Humanizer API")
 
 # CORS setup
@@ -543,6 +543,11 @@ app.add_middleware(
     allow_origins=[
         "https://test-finam.onrender.com",  # frontend
         "http://localhost:3000",           # local dev
+   "http://localhost:5173",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:5173", 
+        "http://127.0.0.1:3000",
+        "http://localhost:8000"
     ],
     allow_credentials=True,
     allow_methods=["*"],

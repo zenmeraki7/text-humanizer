@@ -372,7 +372,7 @@ export const getScoreIcon = (score) => {
 };
 
 // ✅ FIXED: Updated backend URL
-const BACKEND_URL = 'https://test-3p0b.onrender.com';
+const BACKEND_URL = 'http://localhost:8000';
 
 // API functions
 export const analyzeText = async (text) => {
