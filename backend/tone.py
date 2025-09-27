@@ -315,8 +315,8 @@
 
 
 """
-Improved Tone Manager with Perfect Claude API Integration
-Optimized for high-quality output with official Anthropic SDK
+Robust Tone Manager with Enhanced API Reliability
+Optimized to minimize 529 errors and maximize success rate
 """
 
 import os
@@ -326,6 +326,7 @@ import logging
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 import anthropic
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -343,7 +344,7 @@ class ClaudeAPIError(Exception):
     pass
 
 class ToneManager:
-    """Advanced tone manager with perfect Claude integration"""
+    """Advanced tone manager with robust Claude integration"""
     
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
@@ -353,134 +354,87 @@ class ToneManager:
         # Use official Anthropic SDK
         self.client = anthropic.Anthropic(api_key=self.api_key)
         self.tone_configs = self._load_tone_configurations()
-        logger.info(f"✅ Advanced Tone Manager initialized with {len(self.tone_configs)} optimized modes")
+        
+        # API reliability tracking
+        self.consecutive_failures = 0
+        self.last_success_time = datetime.now()
+        self.last_failure_time = None
+        
+        logger.info(f"Robust Tone Manager initialized with {len(self.tone_configs)} modes")
     
     def _load_tone_configurations(self) -> Dict[ToneMode, Dict]:
-        """Load optimized tone configurations for best Claude output"""
+        """Load optimized tone configurations"""
         return {
             ToneMode.PROFESSIONAL: {
-                "name": "💼 Professional",
-                "description": "Polished business communication with authority and clarity",
-                "prompt": self._get_professional_prompt(),
+                "name": "Professional",
+                "description": "Polished business communication",
+                "prompt": "Transform this text into professional business communication with confident, authoritative language suitable for executives and business contexts. Use precise vocabulary, maintain clear structure, and focus on outcomes.",
                 "temperature": 0.1,
-                "max_tokens": 3000
+                "max_tokens": 2500
             },
             
             ToneMode.CASUAL: {
-                "name": "😊 Casual",
-                "description": "Friendly, conversational tone for everyday communication",
-                "prompt": self._get_casual_prompt(),
-                "temperature": 0.4,
-                "max_tokens": 3000
+                "name": "Casual",
+                "description": "Friendly, conversational tone",
+                "prompt": "Rewrite this text in a friendly, conversational style as if talking to a friend. Use natural everyday language, contractions, and relaxed phrasing while maintaining the core message.",
+                "temperature": 0.3,
+                "max_tokens": 2500
             },
             
             ToneMode.ACADEMIC: {
-                "name": "🎓 Academic",
-                "description": "Scholarly, precise language for research and formal writing",
-                "prompt": self._get_academic_prompt(),
+                "name": "Academic",
+                "description": "Scholarly, precise language",
+                "prompt": "Transform this text into scholarly academic writing with precise technical vocabulary, objective analytical tone, and clear logical progression appropriate for academic publications.",
                 "temperature": 0.1,
-                "max_tokens": 4000
-            },
-            
-            ToneMode.CREATIVE: {
-                "name": "🎨 Creative",
-                "description": "Engaging, imaginative style with personality and flair",
-                "prompt": self._get_creative_prompt(),
-                "temperature": 0.6,
-                "max_tokens": 3500
-            },
-            
-            ToneMode.SIMPLE: {
-                "name": "🔍 Simple",
-                "description": "Clear, easy-to-understand language for broad audiences",
-                "prompt": self._get_simple_prompt(),
-                "temperature": 0.2,
                 "max_tokens": 3000
             },
             
+            ToneMode.CREATIVE: {
+                "name": "Creative",
+                "description": "Engaging, imaginative style",
+                "prompt": "Rewrite this text with creative flair using vivid language, varied sentence structures, and engaging style that captures attention while maintaining clarity.",
+                "temperature": 0.5,
+                "max_tokens": 2800
+            },
+            
+            ToneMode.SIMPLE: {
+                "name": "Simple",
+                "description": "Clear, easy-to-understand language",
+                "prompt": "Simplify this text using common everyday words, shorter sentences, and plain language that anyone can easily understand while preserving all important information.",
+                "temperature": 0.2,
+                "max_tokens": 2500
+            },
+            
             ToneMode.FORMAL: {
-                "name": "👔 Formal",
-                "description": "Dignified, official tone for important documents",
-                "prompt": self._get_formal_prompt(),
+                "name": "Formal",
+                "description": "Dignified, official tone",
+                "prompt": "Transform this text into formal, dignified language with elevated vocabulary, sophisticated phrasing, and ceremonial tone appropriate for official documents.",
                 "temperature": 0.1,
-                "max_tokens": 3500
+                "max_tokens": 2800
             }
         }
     
-    def _get_professional_prompt(self) -> str:
-        return """Transform this text into professional business communication that:
-
-• Uses confident, authoritative language appropriate for executives
-• Maintains clear structure with logical flow
-• Employs precise business vocabulary without jargon
-• Sounds competent and trustworthy
-• Focuses on outcomes and value propositions
-• Removes any casual or uncertain language
-
-Write in a tone suitable for boardroom presentations, client proposals, or executive reports."""
+    def _should_use_api(self) -> bool:
+        """Determine if we should attempt API call based on recent failures"""
+        # If too many consecutive failures, use fallback
+        if self.consecutive_failures >= 3:
+            # Allow retry after 5 minutes
+            if self.last_failure_time and (datetime.now() - self.last_failure_time).seconds < 300:
+                return False
+            else:
+                # Reset after cooldown
+                self.consecutive_failures = 0
+        
+        return True
     
-    def _get_casual_prompt(self) -> str:
-        return """Rewrite this text in a friendly, conversational style that:
-
-• Sounds like you're talking to a friend or colleague
-• Uses natural, everyday language
-• Includes contractions and relaxed phrasing
-• Maintains warmth and approachability
-• Avoids overly formal or stiff language
-• Keeps the original meaning but makes it more relatable
-
-Write as if you're having a comfortable conversation."""
-    
-    def _get_academic_prompt(self) -> str:
-        return """Transform this text into scholarly academic writing that:
-
-• Uses precise, technical vocabulary appropriate for research
-• Maintains objective, analytical tone throughout
-• Structures arguments with clear logical progression
-• Includes appropriate academic phrasing and conventions
-• Demonstrates intellectual rigor and careful analysis
-• Avoids personal opinions or casual language
-
-Write in the style of peer-reviewed academic publications."""
-    
-    def _get_creative_prompt(self) -> str:
-        return """Rewrite this text with creative flair and engaging style that:
-
-• Uses vivid language and compelling imagery
-• Includes varied sentence structures for rhythm
-• Adds personality and unique voice
-• Creates hooks that capture attention
-• Makes the content memorable and distinctive
-• Balances creativity with clarity
-
-Write in a style that would engage readers and make them want to continue reading."""
-    
-    def _get_simple_prompt(self) -> str:
-        return """Simplify this text for easy understanding by:
-
-• Using common, everyday words instead of complex terms
-• Breaking long sentences into shorter, clearer ones
-• Explaining any technical concepts in plain language
-• Removing unnecessary jargon and complicated phrases
-• Making it accessible to general audiences
-• Maintaining all important information while improving clarity
-
-Write so that anyone can easily understand the message."""
-    
-    def _get_formal_prompt(self) -> str:
-        return """Transform this text into formal, dignified language that:
-
-• Uses elevated vocabulary and sophisticated phrasing
-• Maintains respectful, ceremonial tone
-• Structures content with proper formal conventions
-• Avoids contractions and casual expressions
-• Demonstrates gravity and importance
-• Sounds appropriate for official documents or ceremonies
-
-Write in the style of formal declarations, legal documents, or state occasions."""
-    
-    def _make_claude_request_with_retry(self, prompt: str, max_tokens: int, temperature: float, max_retries: int = 5) -> str:
-        """Make Claude API request with intelligent retry logic"""
+    def _make_claude_request_robust(self, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Make Claude API request with aggressive retry logic for 529 errors"""
+        
+        if not self._should_use_api():
+            raise ClaudeAPIError("Circuit breaker: Too many recent failures")
+        
+        max_retries = 8  # Increased retries
+        base_wait = 1.5   # Shorter initial wait
         
         for attempt in range(max_retries):
             try:
@@ -488,44 +442,54 @@ Write in the style of formal declarations, legal documents, or state occasions."
                     model="claude-3-5-sonnet-20241022",
                     max_tokens=max_tokens,
                     temperature=temperature,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ]
+                    messages=[{"role": "user", "content": prompt}]
                 )
+                
+                # Success - reset failure tracking
+                self.consecutive_failures = 0
+                self.last_success_time = datetime.now()
                 return message.content[0].text.strip()
                 
             except anthropic.RateLimitError as e:
                 if attempt < max_retries - 1:
-                    wait_time = (2 ** attempt) + random.uniform(0, 2)
-                    logger.info(f"Rate limit hit, waiting {wait_time:.1f}s... (attempt {attempt + 1})")
+                    wait_time = (base_wait * (2 ** attempt)) + random.uniform(0, 2)
+                    logger.warning(f"Rate limit, waiting {wait_time:.1f}s... (attempt {attempt + 1})")
                     time.sleep(wait_time)
                     continue
-                raise ClaudeAPIError(f"Rate limit exceeded after {max_retries} attempts")
+                raise ClaudeAPIError("Rate limit exceeded after maximum retries")
                 
             except anthropic.APIError as e:
                 error_str = str(e).lower()
+                
                 if "overloaded" in error_str or "529" in error_str:
                     if attempt < max_retries - 1:
-                        wait_time = (2 ** attempt) + random.uniform(1, 3)
-                        logger.info(f"API overloaded, waiting {wait_time:.1f}s... (attempt {attempt + 1})")
+                        # Aggressive backoff for 529 errors
+                        wait_time = min(60, (base_wait * (3 ** attempt)) + random.uniform(2, 8))
+                        logger.warning(f"API overloaded (529), waiting {wait_time:.1f}s... (attempt {attempt + 1})")
                         time.sleep(wait_time)
                         continue
-                    raise ClaudeAPIError("Claude API is currently overloaded. Please try again in a few minutes.")
+                    else:
+                        self.consecutive_failures += 1
+                        self.last_failure_time = datetime.now()
+                        raise ClaudeAPIError("Claude API overloaded after maximum retries")
+                
+                elif "401" in error_str or "403" in error_str:
+                    raise ClaudeAPIError("Authentication error - check API key")
                 else:
                     raise ClaudeAPIError(f"Claude API error: {e}")
                     
             except Exception as e:
-                logger.error(f"Unexpected error: {e}")
+                if attempt < max_retries - 1:
+                    wait_time = base_wait + random.uniform(0, 1)
+                    time.sleep(wait_time)
+                    continue
                 raise ClaudeAPIError(f"Unexpected error: {e}")
         
         raise ClaudeAPIError("Maximum retries exceeded")
     
     def change_tone(self, text: str, tone_mode: str) -> Tuple[str, str, Dict]:
         """
-        Change text tone using Claude API
+        Change text tone using Claude API with robust error handling
         
         Args:
             text: Text to transform
@@ -542,25 +506,25 @@ Write in the style of formal declarations, legal documents, or state occasions."
             mode_enum = ToneMode(tone_mode.lower())
         except ValueError:
             available_modes = [mode.value for mode in ToneMode]
-            raise ValueError(f"Invalid tone mode: {tone_mode}. Available: {available_modes}")
+            # Use fallback with basic transformation
+            fallback_text = self._apply_enhanced_fallback(text, tone_mode)
+            return fallback_text, f"Invalid tone mode, using fallback", {
+                "error": f"Invalid tone mode: {tone_mode}. Available: {available_modes}"
+            }
         
         config = self.tone_configs[mode_enum]
         
         # Build optimized prompt
         prompt = f"""{config['prompt']}
 
-Original text to transform:
-'''{text}'''
+Original text:
+{text}
 
-Requirements:
-- Maintain all key information and meaning
-- Transform the tone completely to match the target style
-- Return ONLY the transformed text with no explanations
-- Ensure the output is polished and professional quality"""
+Instructions: Return ONLY the transformed text with no explanations."""
         
         try:
-            # Make API call with retry logic
-            transformed_text = self._make_claude_request_with_retry(
+            # Attempt Claude API call
+            transformed_text = self._make_claude_request_robust(
                 prompt=prompt,
                 max_tokens=config['max_tokens'],
                 temperature=config['temperature']
@@ -570,73 +534,86 @@ Requirements:
             original_words = len(text.split())
             transformed_words = len(transformed_text.split())
             
-            # Create analysis
             analysis = {
                 "tone_mode": tone_mode,
                 "tone_name": config["name"],
                 "original_words": original_words,
                 "transformed_words": transformed_words,
-                "word_change_ratio": round(transformed_words / original_words, 2) if original_words > 0 else 1,
-                "temperature": config["temperature"],
                 "model": "claude-3-5-sonnet-20241022",
-                "quality": "Premium"
+                "quality": "Premium Claude AI",
+                "success": True
             }
             
-            status = f"{config['name']} transformation completed | {original_words}→{transformed_words} words | Quality: Premium"
+            status = f"{config['name']} | {original_words}→{transformed_words} words | Claude AI Success"
             
-            logger.info(f"✅ Successfully transformed text to {tone_mode} tone")
+            logger.info(f"Successfully transformed text to {tone_mode} tone")
             return transformed_text, status, analysis
             
         except ClaudeAPIError as e:
-            logger.error(f"❌ Tone transformation failed: {e}")
-            # Return enhanced fallback
-            fallback_text = self._apply_basic_tone_transformation(text, mode_enum)
-            return fallback_text, f"Basic {config['name']} (API unavailable)", {"error": str(e)}
-        except Exception as e:
-            logger.error(f"❌ Unexpected error: {e}")
-            raise ClaudeAPIError(f"Tone transformation failed: {e}")
+            logger.warning(f"Claude API failed, using enhanced fallback: {e}")
+            
+            # Enhanced fallback
+            fallback_text = self._apply_enhanced_fallback(text, tone_mode)
+            
+            analysis = {
+                "tone_mode": tone_mode,
+                "fallback_used": True,
+                "api_error": str(e),
+                "consecutive_failures": self.consecutive_failures,
+                "quality": "Fallback Processing"
+            }
+            
+            status = f"Enhanced {config['name']} Fallback | API temporarily unavailable"
+            
+            return fallback_text, status, analysis
     
-    def _apply_basic_tone_transformation(self, text: str, tone_mode: ToneMode) -> str:
-        """Apply basic tone transformation as fallback"""
+    def _apply_enhanced_fallback(self, text: str, tone_mode: str) -> str:
+        """Apply enhanced fallback transformation"""
         
-        if tone_mode == ToneMode.PROFESSIONAL:
+        try:
+            mode_enum = ToneMode(tone_mode.lower())
+        except ValueError:
+            mode_enum = ToneMode.PROFESSIONAL
+        
+        if mode_enum == ToneMode.PROFESSIONAL:
             replacements = {
-                "really": "significantly",
-                "a lot": "substantially", 
-                "thing": "element",
-                "stuff": "components",
-                "get": "obtain",
-                "make": "create",
-                "big": "substantial"
+                "really": "significantly", "a lot": "substantially", "thing": "element",
+                "stuff": "components", "get": "obtain", "make": "create", "big": "substantial",
+                "good": "effective", "bad": "ineffective", "nice": "beneficial"
             }
-        elif tone_mode == ToneMode.CASUAL:
+        elif mode_enum == ToneMode.CASUAL:
             replacements = {
-                "substantial": "big",
-                "demonstrate": "show",
-                "utilize": "use",
-                "implement": "put in place",
-                "significantly": "really"
+                "substantial": "big", "demonstrate": "show", "utilize": "use",
+                "implement": "put in place", "significantly": "really", "facilitate": "help",
+                "furthermore": "also", "moreover": "plus", "therefore": "so"
             }
-        elif tone_mode == ToneMode.SIMPLE:
+        elif mode_enum == ToneMode.SIMPLE:
             replacements = {
-                "utilize": "use",
-                "implement": "set up",
-                "substantial": "big",
-                "demonstrate": "show",
-                "facilitate": "help"
+                "utilize": "use", "implement": "set up", "substantial": "big",
+                "demonstrate": "show", "facilitate": "help", "approximately": "about",
+                "subsequently": "then", "consequently": "so", "furthermore": "also"
             }
-        else:
-            # Generic improvements
+        elif mode_enum == ToneMode.ACADEMIC:
             replacements = {
-                "furthermore": "also",
-                "moreover": "plus",
-                "utilize": "use",
-                "implement": "use"
+                "show": "demonstrate", "use": "utilize", "help": "facilitate",
+                "big": "substantial", "really": "significantly", "also": "furthermore"
+            }
+        elif mode_enum == ToneMode.FORMAL:
+            replacements = {
+                "can't": "cannot", "won't": "will not", "don't": "do not",
+                "isn't": "is not", "aren't": "are not", "doesn't": "does not"
+            }
+        else:  # CREATIVE
+            replacements = {
+                "good": "excellent", "big": "massive", "important": "crucial",
+                "show": "reveal", "help": "empower", "make": "craft"
             }
         
         result = text
         for old, new in replacements.items():
+            # Case-sensitive replacement
             result = result.replace(old, new)
+            result = result.replace(old.capitalize(), new.capitalize())
         
         return result
     
@@ -650,20 +627,15 @@ Requirements:
             for mode, config in self.tone_configs.items()
         }
     
-    def get_mode_info(self, tone_mode: str) -> Dict:
-        """Get detailed information about a specific tone mode"""
-        try:
-            mode_enum = ToneMode(tone_mode.lower())
-            config = self.tone_configs[mode_enum]
-            return {
-                "mode": tone_mode,
-                "name": config["name"],
-                "description": config["description"],
-                "temperature": config["temperature"],
-                "max_tokens": config["max_tokens"]
-            }
-        except ValueError:
-            return {"error": f"Invalid tone mode: {tone_mode}"}
+    def get_api_status(self) -> Dict:
+        """Get current API status information"""
+        return {
+            "consecutive_failures": self.consecutive_failures,
+            "last_success": self.last_success_time.isoformat(),
+            "last_failure": self.last_failure_time.isoformat() if self.last_failure_time else None,
+            "api_available": self._should_use_api(),
+            "circuit_breaker_active": self.consecutive_failures >= 3
+        }
     
     def validate_mode(self, tone_mode_str: str) -> Optional[ToneMode]:
         """Validate tone mode string"""
@@ -671,37 +643,3 @@ Requirements:
             return ToneMode(tone_mode_str.lower())
         except ValueError:
             return None
-
-# Test function
-def test_tone_manager():
-    """Test the improved tone manager"""
-    try:
-        tone_manager = ToneManager()
-        
-        test_text = """
-        The implementation of artificial intelligence solutions represents a paradigm shift that enables 
-        companies to optimize their operational efficiency while simultaneously reducing costs. Furthermore, 
-        these innovative approaches foster enhanced customer experiences and drive sustainable growth trajectories.
-        """
-        
-        print("🧪 Testing Improved Tone Manager...")
-        print(f"Original: {test_text.strip()}\n")
-        
-        # Test different tones
-        for mode in ["professional", "casual", "simple", "creative"]:
-            try:
-                result, status, analysis = tone_manager.change_tone(test_text.strip(), mode)
-                print(f"🔄 {mode.upper()}:")
-                print(f"Result: {result}")
-                print(f"Status: {status}")
-                print("-" * 80)
-            except Exception as e:
-                print(f"❌ {mode} failed: {e}")
-        
-        print("✅ Test completed!")
-        
-    except Exception as e:
-        print(f"❌ Initialization failed: {e}")
-
-if __name__ == "__main__":
-    test_tone_manager()
