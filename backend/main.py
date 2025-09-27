@@ -534,6 +534,7 @@ import time
 import random
 import logging
 import asyncio
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from typing import Optional
 
@@ -544,8 +545,8 @@ load_dotenv()
 
 app = FastAPI(
     title="AI Text Detector & Humanizer API",
-    version="3.0.0",
-    description="Advanced AI text detection, humanization, and plagiarism checking API powered by Claude"
+    version="4.0.0",
+    description="Advanced AI text processing with intelligent error handling and Claude API integration"
 )
 
 # CORS setup
@@ -565,27 +566,109 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def handle_api_retry(func, max_retries=3):
+# Circuit breaker for API overload management
+class APICircuitBreaker:
+    def __init__(self):
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.failure_threshold = 3
+        self.recovery_timeout = 300  # 5 minutes
+        
+    def is_open(self):
+        if self.failure_count >= self.failure_threshold:
+            if self.last_failure_time and (
+                datetime.now() - self.last_failure_time
+            ).seconds < self.recovery_timeout:
+                return True
+            else:
+                # Reset after timeout
+                self.failure_count = 0
+                self.last_failure_time = None
+        return False
+    
+    def record_failure(self):
+        self.failure_count += 1
+        self.last_failure_time = datetime.now()
+        
+    def record_success(self):
+        self.failure_count = 0
+        self.last_failure_time = None
+
+circuit_breaker = APICircuitBreaker()
+
+def handle_api_retry_advanced(func, max_retries=6, base_wait=2):
     """
-    Wrapper to retry API calls with exponential backoff when overloaded
+    Advanced retry logic specifically optimized for Claude API 529 errors
     """
+    if circuit_breaker.is_open():
+        raise HTTPException(
+            status_code=503,
+            detail="Service temporarily unavailable due to repeated API overloads. Please try again in 5 minutes."
+        )
+    
     for attempt in range(max_retries):
         try:
-            return func()
+            result = func()
+            circuit_breaker.record_success()
+            return result
+            
         except Exception as e:
             error_str = str(e).lower()
-            if "overloaded" in error_str or "529" in error_str or "rate limit" in error_str:
+            
+            # Handle Claude API overload (529 errors)
+            if "529" in error_str or "overloaded" in error_str:
                 if attempt < max_retries - 1:
-                    wait_time = (2 ** attempt) + random.uniform(0, 1)
-                    logger.info(f"API overloaded, retrying in {wait_time:.1f}s... (attempt {attempt+1})")
+                    # Exponential backoff with jitter for 529 errors
+                    wait_time = (base_wait ** (attempt + 1)) + random.uniform(1, 5)
+                    logger.warning(f"Claude API overloaded (529), waiting {wait_time:.1f}s... (attempt {attempt + 1}/{max_retries})")
                     time.sleep(wait_time)
                     continue
+                else:
+                    circuit_breaker.record_failure()
+                    raise HTTPException(
+                        status_code=503,
+                        detail={
+                            "error": "API_OVERLOADED",
+                            "message": "Claude API is experiencing high traffic. This is temporary.",
+                            "retry_after": "2-5 minutes",
+                            "suggestion": "Try again during off-peak hours for better performance."
+                        }
+                    )
+            
+            # Handle rate limiting
+            elif "rate limit" in error_str or "429" in error_str:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 10  # Linear backoff for rate limits
+                    logger.warning(f"Rate limited, waiting {wait_time}s... (attempt {attempt + 1})")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Rate limit exceeded. Please slow down your requests."
+                    )
+            
+            # Handle authentication errors
+            elif "401" in error_str or "unauthorized" in error_str:
                 raise HTTPException(
-                    status_code=503, 
-                    detail="Service temporarily overloaded. Please try again in a few minutes."
+                    status_code=401,
+                    detail="API authentication failed. Check your API key configuration."
                 )
-            raise e
-    raise HTTPException(status_code=500, detail="Unexpected error")
+            
+            # Handle other API errors
+            elif "api" in error_str and any(code in error_str for code in ["400", "403", "404", "500"]):
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Claude API error: {str(e)}"
+                )
+            
+            # For non-API errors, don't retry
+            else:
+                logger.error(f"Non-retryable error: {e}")
+                raise e
+    
+    # This shouldn't be reached, but just in case
+    raise HTTPException(status_code=500, detail="Maximum retries exceeded")
 
 # Try to load custom modules
 modules_loaded = False
@@ -596,7 +679,7 @@ tone_manager = None
 summarizer = None
 
 try:
-    # Import the Claude API modules we created
+    # Import the improved Claude API modules
     from ai_detector import AITextDetector
     from humanizer import TextHumanizer
     from plagiarism_detector import PlagiarismDetector
@@ -610,18 +693,18 @@ try:
         text_humanizer = TextHumanizer(api_key, ai_detector)
         plagiarism_detector = PlagiarismDetector(api_key, ai_detector)
         
-        # Initialize Claude-based modules (requires API key)
+        # Initialize improved Claude-based modules
         tone_manager = ToneManager(api_key)
         summarizer = LlamaSummarizer(api_key)
         
         modules_loaded = True
         logger.info("✅ All modules loaded successfully with Claude API")
-        logger.info(f"✅ API Key: {api_key[:10]}...")
+        logger.info(f"✅ API Key configured: {api_key[:15]}...")
     else:
         logger.warning("⚠️ ANTHROPIC_API_KEY not found")
 except Exception as e:
     logger.error(f"❌ Failed to load modules: {e}")
-    logger.error("Make sure you have the required module files: ai_detector.py, humanizer.py, etc.")
+    logger.error("Make sure you have: tone.py, summarizer.py, and other required modules")
 
 # Request models
 class TextAnalysisRequest(BaseModel):
@@ -635,8 +718,7 @@ class PlagiarismRequest(BaseModel):
 
 class ToneChangeRequest(BaseModel):
     text: str
-    tone_mode: str = "standard"
-    pattern_info: Optional[str] = ""
+    tone_mode: str = "professional"
 
 class SummarizeRequest(BaseModel):
     text: str
@@ -649,18 +731,30 @@ def root():
     return {
         "message": "AI Text Detector & Humanizer API",
         "status": "running",
-        "version": "3.0.0",
+        "version": "4.0.0",
         "modules_loaded": modules_loaded,
         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
-        "powered_by": "Claude AI",
+        "circuit_breaker_status": "open" if circuit_breaker.is_open() else "closed",
+        "powered_by": "Claude AI with Smart Error Handling",
         "endpoints": {
-            "analysis": "/analyze",
-            "humanization": "/humanize", 
-            "plagiarism": "/remove-plagiarism",
-            "tone": "/change-tone",
-            "summarization": "/summarize",
-            "info": "/tone-modes, /summary-options, /health"
+            "core": ["/analyze", "/humanize", "/remove-plagiarism"],
+            "advanced": ["/change-tone", "/summarize"],
+            "info": ["/tone-modes", "/summary-options", "/health", "/api-status"]
         }
+    }
+
+@app.get("/api-status")
+def get_api_status():
+    """Get current API and circuit breaker status"""
+    return {
+        "circuit_breaker": {
+            "status": "open" if circuit_breaker.is_open() else "closed",
+            "failure_count": circuit_breaker.failure_count,
+            "last_failure": circuit_breaker.last_failure_time.isoformat() if circuit_breaker.last_failure_time else None
+        },
+        "modules_loaded": modules_loaded,
+        "api_key_configured": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "recommendation": "off-peak hours: early morning, late evening" if circuit_breaker.failure_count > 0 else "service operating normally"
     }
 
 @app.post("/analyze")
@@ -680,7 +774,7 @@ def analyze_text(request: TextAnalysisRequest):
                 "detected_patterns": detected_patterns,
                 "powered_by": "Claude AI Detection"
             }
-        return handle_api_retry(call_analysis)
+        return handle_api_retry_advanced(call_analysis)
     else:
         # Enhanced fallback analysis
         word_count = len(request.text.split())
@@ -694,18 +788,20 @@ def analyze_text(request: TextAnalysisRequest):
             "utilize" in text_lower,
             "demonstrate" in text_lower,
             "implement" in text_lower,
-            "facilitate" in text_lower
+            "facilitate" in text_lower,
+            "cutting-edge" in text_lower,
+            "paradigm shift" in text_lower
         ])
         
-        score = min(95, 15 + (ai_indicators * 12))
-        classification = "Likely AI" if score > 60 else "Likely Human"
+        score = min(95, 10 + (ai_indicators * 10))
+        classification = "Likely AI" if score > 55 else "Likely Human"
         
         return {
             "ai_score": score,
             "classification": classification,
-            "report": f"Basic analysis: {word_count} words, {ai_indicators} AI indicators detected",
+            "report": f"Fallback analysis: {word_count} words, {ai_indicators} AI patterns detected",
             "detected_patterns": {"ai_phrases": ai_indicators},
-            "note": "Using fallback analysis - full features require API key"
+            "note": "Limited analysis - full Claude AI detection requires API key"
         }
 
 @app.post("/humanize")
@@ -721,9 +817,9 @@ def humanize_text(request: HumanizeRequest):
                 "humanized_text": humanized_text,
                 "status": status,
                 "analysis": analysis,
-                "powered_by": "Claude AI"
+                "powered_by": "Claude AI Humanization"
             }
-        return handle_api_retry(call_humanizer)
+        return handle_api_retry_advanced(call_humanizer)
     else:
         # Enhanced fallback humanization
         text = request.text
@@ -731,13 +827,15 @@ def humanize_text(request: HumanizeRequest):
             "furthermore": "also",
             "moreover": "plus", 
             "utilize": "use",
-            "implement": "use",
+            "implement": "put in place",
             "facilitate": "help",
             "demonstrate": "show",
             "it's important to note that": "",
             "significant": "important",
             "optimize": "improve",
-            "leverage": "use"
+            "leverage": "use",
+            "cutting-edge": "latest",
+            "paradigm shift": "major change"
         }
         
         for old, new in replacements.items():
@@ -747,7 +845,7 @@ def humanize_text(request: HumanizeRequest):
             "humanized_text": text,
             "status": "Basic humanization completed",
             "analysis": f"Applied {len(replacements)} text transformations",
-            "note": "Using fallback mode - full AI humanization requires API key"
+            "note": "Limited features - full Claude AI humanization requires API key"
         }
 
 @app.post("/remove-plagiarism")
@@ -771,7 +869,7 @@ def remove_plagiarism(request: PlagiarismRequest):
                     "original_plagiarism_score": report.get("original_plagiarism_score", 0),
                     "new_plagiarism_score": report.get("new_plagiarism_score", 0),
                     "status": report.get("status", "Success"),
-                    "powered_by": "Claude AI"
+                    "powered_by": "Claude AI Rewriting"
                 }
             else:
                 return {
@@ -781,9 +879,9 @@ def remove_plagiarism(request: PlagiarismRequest):
                     "improvement": 25,
                     "ai_improvement": 20,
                     "status": str(report),
-                    "powered_by": "Claude AI"
+                    "powered_by": "Claude AI Rewriting"
                 }
-        return handle_api_retry(call_plagiarism_remover)
+        return handle_api_retry_advanced(call_plagiarism_remover)
     else:
         # Enhanced fallback rewriting
         text = request.text
@@ -800,7 +898,9 @@ def remove_plagiarism(request: PlagiarismRequest):
             "comprehensive": "complete",
             "substantial": "considerable",
             "innovative": "new",
-            "cutting-edge": "advanced"
+            "cutting-edge": "advanced",
+            "state-of-the-art": "latest",
+            "paradigm shift": "major change"
         }
         
         for old, new in advanced_replacements.items():
@@ -813,7 +913,7 @@ def remove_plagiarism(request: PlagiarismRequest):
             "improvement": 20,
             "ai_improvement": 15,
             "status": "Basic rewriting completed",
-            "note": "Using fallback mode - advanced plagiarism removal requires API key"
+            "note": "Limited features - full Claude AI rewriting requires API key"
         }
 
 @app.post("/change-tone")
@@ -829,35 +929,37 @@ def change_tone(request: ToneChangeRequest):
         )
     
     def call_tone_changer():
-        # Use the correct method from our Claude tone manager
-        changed_text, metadata = tone_manager.humanize_text(
+        # Use the correct method from our improved tone manager
+        changed_text, status, analysis = tone_manager.change_tone(
             text=request.text,
-            tone_mode=tone_manager.validate_mode(request.tone_mode) or tone_manager.validate_mode("standard"),
-            pattern_info=request.pattern_info or ""
+            tone_mode=request.tone_mode
         )
         return {
             "changed_text": changed_text,
-            "status": f"Tone changed to {request.tone_mode}",
-            "analysis": metadata,
+            "status": status,
+            "analysis": analysis,
             "tone_mode": request.tone_mode,
-            "powered_by": "Claude AI"
+            "powered_by": "Claude AI Tone Transformation"
         }
     
-    return handle_api_retry(call_tone_changer)
+    return handle_api_retry_advanced(call_tone_changer)
 
 @app.get("/tone-modes")
 def get_tone_modes():
     """Get available tone modes"""
     if not modules_loaded or not tone_manager:
         return {
-            "available_modes": ["standard", "fluency", "formal", "simple", "creative"],
+            "available_modes": {
+                "professional": {"name": "💼 Professional", "description": "Business communication"},
+                "casual": {"name": "😊 Casual", "description": "Friendly conversation"},
+                "formal": {"name": "👔 Formal", "description": "Official documents"}
+            },
             "note": "Limited modes - full features require API key",
             "api_required": True
         }
     
     return {
         "available_modes": tone_manager.get_available_modes(),
-        "modes_by_category": tone_manager.get_modes_by_category(),
         "powered_by": "Claude AI",
         "api_required": False
     }
@@ -875,7 +977,7 @@ def summarize_text_endpoint(request: SummarizeRequest):
         )
     
     def call_summarizer():
-        # Use the correct method from our Claude summarizer
+        # Use the correct method from our improved summarizer
         summary, status, analysis = summarizer.summarize(
             text=request.text,
             summary_type=request.summary_type,
@@ -887,10 +989,10 @@ def summarize_text_endpoint(request: SummarizeRequest):
             "analysis": analysis,
             "summary_type": request.summary_type,
             "summary_length": request.summary_length,
-            "powered_by": "Claude AI"
+            "powered_by": "Claude AI Summarization"
         }
     
-    return handle_api_retry(call_summarizer)
+    return handle_api_retry_advanced(call_summarizer)
 
 @app.get("/summary-options")
 def get_summary_options():
@@ -915,14 +1017,16 @@ def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "version": "3.0.0",
+        "version": "4.0.0",
         "modules_loaded": modules_loaded,
         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "circuit_breaker_status": "open" if circuit_breaker.is_open() else "closed",
         "endpoints": {
             "core": ["/analyze", "/humanize", "/remove-plagiarism"],
             "advanced": ["/change-tone", "/summarize"],
-            "info": ["/tone-modes", "/summary-options", "/health"]
+            "info": ["/tone-modes", "/summary-options", "/health", "/api-status"]
         },
+        "error_handling": "Advanced 529 retry logic with circuit breaker",
         "powered_by": "Claude AI" if modules_loaded else "Basic fallback"
     }
 
@@ -935,6 +1039,7 @@ def health_check():
 @app.options("/tone-modes")
 @app.options("/summary-options")
 @app.options("/health")
+@app.options("/api-status")
 async def options_handler():
     return {"message": "OK"}
 
@@ -942,9 +1047,25 @@ async def options_handler():
 async def catch_all_options(path: str):
     return {"message": "OK"}
 
-# Error handlers
+# Enhanced error handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
+    logger.error(f"HTTP {exc.status_code}: {exc.detail} for {request.url}")
+    
+    # Provide helpful error responses
+    if exc.status_code == 503:
+        return {
+            "error": True,
+            "status_code": exc.status_code,
+            "detail": exc.detail,
+            "suggestions": [
+                "Try again in 2-5 minutes",
+                "Use off-peak hours for better reliability",
+                "Check /api-status for current service status"
+            ],
+            "path": str(request.url)
+        }
+    
     return {
         "error": True,
         "status_code": exc.status_code,
@@ -954,12 +1075,13 @@ async def http_exception_handler(request, exc):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
-    logger.error(f"Unhandled exception: {exc}")
+    logger.error(f"Unhandled exception: {exc} for {request.url}")
     return {
         "error": True,
         "status_code": 500,
         "detail": "Internal server error",
-        "message": "Please try again or contact support"
+        "message": "Please try again or check /api-status for service health",
+        "path": str(request.url)
     }
 
 if __name__ == "__main__":
