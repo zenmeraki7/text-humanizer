@@ -500,8 +500,8 @@
 
 
 """
-Improved Claude Summarizer - Perfect API Integration
-Optimized for high-quality summarization with official Anthropic SDK
+Robust Claude Summarizer - Enhanced API Reliability
+Optimized to minimize 529 errors and maximize success rate
 """
 
 import os
@@ -511,6 +511,7 @@ import logging
 from typing import Dict, List, Tuple, Optional
 from enum import Enum
 import anthropic
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -535,7 +536,7 @@ class ClaudeAPIError(Exception):
     pass
 
 class LlamaSummarizer:
-    """Advanced summarizer with perfect Claude integration"""
+    """Advanced summarizer with robust Claude integration"""
     
     def __init__(self, api_key: Optional[str] = None):
         """Initialize with Claude API integration"""
@@ -545,67 +546,73 @@ class LlamaSummarizer:
         
         # Use official Anthropic SDK
         self.client = anthropic.Anthropic(api_key=self.api_key)
-        self.version = "4.0.0"
+        self.version = "5.0.0"
         self._init_configs()
-        logger.info(f"Advanced Claude Summarizer v{self.version} initialized")
+        
+        # API reliability tracking
+        self.consecutive_failures = 0
+        self.last_success_time = datetime.now()
+        self.last_failure_time = None
+        
+        logger.info(f"Robust Claude Summarizer v{self.version} initialized")
     
     def _init_configs(self):
         """Initialize optimized summary configurations"""
         self.configs = {
             SummaryType.ABSTRACTIVE: {
-                'name': '✨ Abstractive',
+                'name': 'Abstractive',
                 'description': "Intelligent rewrite capturing key insights",
-                'prompt': self._get_abstractive_prompt(),
+                'prompt': "Create a clear, concise summary that captures the main ideas and key information. Rewrite in your own words while preserving all important facts and conclusions.",
                 'temperature': 0.2,
-                'max_tokens': 3000
+                'max_tokens': 2500
             },
             
             SummaryType.BULLET_POINTS: {
-                'name': '📋 Bullet Points',
+                'name': 'Bullet Points',
                 'description': "Organized points for quick scanning",
-                'prompt': self._get_bullet_prompt(),
+                'prompt': "Transform this content into well-organized bullet points. Each point should contain one key idea and be easy to scan. Use bullet points (•) format.",
                 'temperature': 0.1,
-                'max_tokens': 2500
+                'max_tokens': 2000
             },
             
             SummaryType.PARAGRAPH: {
-                'name': '📄 Paragraph',
+                'name': 'Paragraph',
                 'description': "Flowing narrative summary",
-                'prompt': self._get_paragraph_prompt(),
-                'temperature': 0.3,
-                'max_tokens': 3000
-            },
-            
-            SummaryType.EXECUTIVE: {
-                'name': '💼 Executive',
-                'description': "Business-focused for decision makers",
-                'prompt': self._get_executive_prompt(),
-                'temperature': 0.1,
+                'prompt': "Create a flowing paragraph summary that reads naturally. Use smooth transitions and maintain narrative flow while covering all essential points.",
+                'temperature': 0.2,
                 'max_tokens': 2500
             },
             
-            SummaryType.ACADEMIC: {
-                'name': '🎓 Academic',
-                'description': "Scholarly analysis with formal structure",
-                'prompt': self._get_academic_prompt(),
+            SummaryType.EXECUTIVE: {
+                'name': 'Executive',
+                'description': "Business-focused for decision makers",
+                'prompt': "Create an executive summary for business leaders. Focus on key findings, business impact, and actionable insights. Use confident, professional language.",
                 'temperature': 0.1,
-                'max_tokens': 3500
+                'max_tokens': 2000
+            },
+            
+            SummaryType.ACADEMIC: {
+                'name': 'Academic',
+                'description': "Scholarly analysis with formal structure",
+                'prompt': "Create a scholarly summary using formal academic language. Include methodology, findings, and implications in an objective, analytical tone.",
+                'temperature': 0.1,
+                'max_tokens': 2800
             },
             
             SummaryType.SOCIAL: {
-                'name': '📱 Social',
+                'name': 'Social',
                 'description': "Engaging content for social platforms",
-                'prompt': self._get_social_prompt(),
-                'temperature': 0.5,
-                'max_tokens': 1500
+                'prompt': "Create an engaging summary for social media. Use conversational language and focus on the most interesting and shareable aspects.",
+                'temperature': 0.4,
+                'max_tokens': 1200
             },
             
             SummaryType.TECHNICAL: {
-                'name': '⚙️ Technical',
+                'name': 'Technical',
                 'description': "Precise technical documentation",
-                'prompt': self._get_technical_prompt(),
+                'prompt': "Create a technical summary preserving all specifications, data, and methodological details. Use precise technical language for expert audiences.",
                 'temperature': 0.1,
-                'max_tokens': 3500
+                'max_tokens': 2800
             }
         }
         
@@ -613,106 +620,34 @@ class LlamaSummarizer:
         self.length_configs = {
             SummaryLength.SHORT: {
                 'target_ratio': 0.15,
-                'min_words': 30,
-                'max_words': 100,
+                'min_words': 25,
+                'max_words': 80,
                 'description': 'Concise overview'
             },
             SummaryLength.MEDIUM: {
                 'target_ratio': 0.30,
-                'min_words': 75,
-                'max_words': 250,
+                'min_words': 60,
+                'max_words': 200,
                 'description': 'Balanced summary'
             },
             SummaryLength.LONG: {
                 'target_ratio': 0.50,
-                'min_words': 150,
-                'max_words': 400,
+                'min_words': 120,
+                'max_words': 350,
                 'description': 'Comprehensive analysis'
             }
         }
     
-    def _get_abstractive_prompt(self) -> str:
-        return """Create an intelligent abstractive summary that captures the core insights and key information. Focus on:
-
-• Rewriting content in clear, accessible language
-• Preserving all critical facts and data points
-• Maintaining logical flow and coherence
-• Condensing complex ideas into digestible concepts
-• Highlighting the most important findings and conclusions
-
-Write a summary that someone could read to understand the essential message without losing crucial details."""
-    
-    def _get_bullet_prompt(self) -> str:
-        return """Transform this content into well-organized bullet points that:
-
-• Present one key idea per bullet point
-• Start each point with strong, action-oriented language
-• Prioritize the most important information first
-• Group related concepts logically
-• Make the content easy to scan and digest
-• Include specific data, numbers, and facts where relevant
-
-Format as clean bullet points (•) that executives and busy readers can quickly review."""
-    
-    def _get_paragraph_prompt(self) -> str:
-        return """Create a flowing paragraph summary that reads like polished prose:
-
-• Use smooth transitions between ideas
-• Maintain narrative flow and readability
-• Connect concepts with appropriate linking words
-• Present information in logical sequence
-• Write in engaging, professional tone
-• Ensure the summary reads as cohesive text, not choppy fragments
-
-Craft a summary that flows naturally while covering all essential points."""
-    
-    def _get_executive_prompt(self) -> str:
-        return """Create an executive summary designed for senior decision-makers:
-
-• Lead with the most critical findings and recommendations
-• Focus on business impact, ROI, and strategic implications
-• Use confident, authoritative business language
-• Include key metrics, percentages, and financial data
-• Highlight actionable insights and next steps
-• Present information executives need for strategic decisions
-
-Write in the style of a boardroom briefing that gets straight to what matters for business success."""
-    
-    def _get_academic_prompt(self) -> str:
-        return """Create a scholarly summary using formal academic conventions:
-
-• Employ precise, technical vocabulary appropriate for research
-• Maintain objective, analytical tone throughout
-• Structure with clear logical progression of ideas
-• Include methodology, findings, and implications
-• Reference key concepts and theoretical frameworks
-• Use formal academic phrasing and conventions
-
-Write in the style appropriate for peer-reviewed publications and academic discourse."""
-    
-    def _get_social_prompt(self) -> str:
-        return """Create an engaging social media summary that:
-
-• Uses conversational, relatable language
-• Includes hooks that capture attention immediately
-• Makes complex topics accessible and interesting
-• Incorporates elements that encourage sharing and discussion
-• Balances informativeness with entertainment value
-• Uses active voice and dynamic phrasing
-
-Write content that would perform well on social platforms while maintaining accuracy."""
-    
-    def _get_technical_prompt(self) -> str:
-        return """Create a precise technical summary that:
-
-• Preserves all technical specifications and data
-• Maintains industry-standard terminology
-• Includes exact measurements, percentages, and metrics
-• Focuses on methodological details and processes
-• Uses appropriate technical language for expert audiences
-• Ensures complete accuracy for technical implementation
-
-Write for technical professionals who need precise, actionable information."""
+    def _should_use_api(self) -> bool:
+        """Determine if we should attempt API call based on recent failures"""
+        if self.consecutive_failures >= 3:
+            # Allow retry after 5 minutes
+            if self.last_failure_time and (datetime.now() - self.last_failure_time).seconds < 300:
+                return False
+            else:
+                # Reset after cooldown
+                self.consecutive_failures = 0
+        return True
     
     def _calculate_target_length(self, text: str, length: SummaryLength) -> Dict:
         """Calculate optimal summary length"""
@@ -731,8 +666,14 @@ Write for technical professionals who need precise, actionable information."""
             'description': config['description']
         }
     
-    def _make_claude_request_with_retry(self, prompt: str, max_tokens: int, temperature: float, max_retries: int = 5) -> str:
-        """Make Claude API request with intelligent retry logic"""
+    def _make_claude_request_robust(self, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Make Claude API request with robust retry logic"""
+        
+        if not self._should_use_api():
+            raise ClaudeAPIError("Circuit breaker: Too many recent failures")
+        
+        max_retries = 8
+        base_wait = 1.5
         
         for attempt in range(max_retries):
             try:
@@ -740,44 +681,54 @@ Write for technical professionals who need precise, actionable information."""
                     model="claude-3-5-sonnet-20241022",
                     max_tokens=max_tokens,
                     temperature=temperature,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ]
+                    messages=[{"role": "user", "content": prompt}]
                 )
+                
+                # Success - reset failure tracking
+                self.consecutive_failures = 0
+                self.last_success_time = datetime.now()
                 return message.content[0].text.strip()
                 
             except anthropic.RateLimitError as e:
                 if attempt < max_retries - 1:
-                    wait_time = (2 ** attempt) + random.uniform(0, 2)
-                    logger.info(f"Rate limit hit, waiting {wait_time:.1f}s... (attempt {attempt + 1})")
+                    wait_time = (base_wait * (2 ** attempt)) + random.uniform(0, 2)
+                    logger.warning(f"Rate limit, waiting {wait_time:.1f}s... (attempt {attempt + 1})")
                     time.sleep(wait_time)
                     continue
-                raise ClaudeAPIError(f"Rate limit exceeded after {max_retries} attempts")
+                raise ClaudeAPIError("Rate limit exceeded after maximum retries")
                 
             except anthropic.APIError as e:
                 error_str = str(e).lower()
+                
                 if "overloaded" in error_str or "529" in error_str:
                     if attempt < max_retries - 1:
-                        wait_time = (2 ** attempt) + random.uniform(1, 3)
-                        logger.info(f"API overloaded, waiting {wait_time:.1f}s... (attempt {attempt + 1})")
+                        # Aggressive backoff for 529 errors
+                        wait_time = min(60, (base_wait * (3 ** attempt)) + random.uniform(2, 8))
+                        logger.warning(f"API overloaded (529), waiting {wait_time:.1f}s... (attempt {attempt + 1})")
                         time.sleep(wait_time)
                         continue
-                    raise ClaudeAPIError("Claude API is currently overloaded. Please try again in a few minutes.")
+                    else:
+                        self.consecutive_failures += 1
+                        self.last_failure_time = datetime.now()
+                        raise ClaudeAPIError("Claude API overloaded after maximum retries")
+                
+                elif "401" in error_str or "403" in error_str:
+                    raise ClaudeAPIError("Authentication error - check API key")
                 else:
                     raise ClaudeAPIError(f"Claude API error: {e}")
                     
             except Exception as e:
-                logger.error(f"Unexpected error: {e}")
+                if attempt < max_retries - 1:
+                    wait_time = base_wait + random.uniform(0, 1)
+                    time.sleep(wait_time)
+                    continue
                 raise ClaudeAPIError(f"Unexpected error: {e}")
         
         raise ClaudeAPIError("Maximum retries exceeded")
     
     def summarize(self, text: str, summary_type: str = "abstractive", summary_length: str = "medium") -> Tuple[str, str, str]:
         """
-        Summarize text using Claude API
+        Summarize text using Claude API with robust error handling
         
         Args:
             text: Text to summarize
@@ -788,7 +739,7 @@ Write for technical professionals who need precise, actionable information."""
             Tuple of (summary, status, analysis)
         """
         if not text or len(text.strip()) < 20:
-            return "Please provide meaningful text to summarize.", "❌ Insufficient text", "Minimum 20 characters required"
+            return "Please provide meaningful text to summarize.", "Insufficient text", "Minimum 20 characters required"
         
         # Validate parameters
         try:
@@ -797,33 +748,25 @@ Write for technical professionals who need precise, actionable information."""
         except ValueError as e:
             available_types = [t.value for t in SummaryType]
             available_lengths = [l.value for l in SummaryLength]
-            return (f"❌ Invalid parameter: {str(e)}\nAvailable types: {available_types}\nAvailable lengths: {available_lengths}", 
-                   "❌ Invalid input", "Check parameters")
+            fallback_summary = self._create_enhanced_fallback_summary(text, summary_type, summary_length)
+            return fallback_summary, "Invalid parameters, using fallback", f"Error: {str(e)}"
+        
+        config = self.configs[type_enum]
+        length_info = self._calculate_target_length(text, length_enum)
+        
+        # Build optimized prompt
+        prompt = f"""{config['prompt']}
+
+Target length: approximately {length_info['target_words']} words (between {length_info['min_words']} and {length_info['max_words']} words).
+
+Content to summarize:
+{text}
+
+Instructions: Provide only the summary following the specified format. Do not include explanations."""
         
         try:
-            config = self.configs[type_enum]
-            length_info = self._calculate_target_length(text, length_enum)
-            
-            # Build optimized prompt
-            prompt = f"""{config['prompt']}
-
-TARGET LENGTH: {length_info['target_words']} words ({length_info['description']})
-- Minimum: {length_info['min_words']} words
-- Maximum: {length_info['max_words']} words
-
-CONTENT TO SUMMARIZE:
-'''
-{text}
-'''
-
-Instructions:
-- Provide ONLY the summary following the specified format
-- Stay within the target word count
-- Maintain high quality and clarity
-- Do not include explanations or meta-commentary"""
-            
-            # Make API call with retry logic
-            summary = self._make_claude_request_with_retry(
+            # Attempt Claude API call
+            summary = self._make_claude_request_robust(
                 prompt=prompt,
                 max_tokens=config['max_tokens'],
                 temperature=config['temperature']
@@ -835,77 +778,70 @@ Instructions:
             compression_ratio = round((1 - summary_words/original_words) * 100, 1) if original_words > 0 else 0
             
             # Create status and analysis
-            type_name = config['name']
-            status = f"{type_name} | {original_words}→{summary_words} words ({compression_ratio}% compression) | Claude AI"
+            status = f"{config['name']} | {original_words}→{summary_words} words ({compression_ratio}% compression) | Claude AI Success"
             
-            analysis = f"""**CLAUDE SUMMARIZER ANALYSIS:**
-
-**PROCESSING:**
-• Method: Advanced Claude AI Summarization
-• Type: {type_name}
-• Model: Claude 3.5 Sonnet
-• Quality: Premium AI Processing
-
-**METRICS:**
-• Original: {original_words} words
-• Summary: {summary_words} words
-• Target: {length_info['target_words']} words
-• Compression: {compression_ratio}%
-• Length: {length_enum.value.title()}
-
-**FEATURES:**
-• Context Understanding: ✓ Advanced
-• Content Preservation: ✓ Intelligent
-• Style Adaptation: ✓ Type-specific
-• Language Quality: ✓ Professional
-• Processing: ✓ Cloud-powered AI"""
+            analysis = f"""CLAUDE SUMMARIZER SUCCESS:
+- Method: Advanced Claude AI
+- Type: {config['name']}
+- Original: {original_words} words
+- Summary: {summary_words} words
+- Target: {length_info['target_words']} words
+- Compression: {compression_ratio}%
+- Quality: Premium AI Processing"""
             
-            logger.info(f"✅ Successfully summarized text using {summary_type} mode")
+            logger.info(f"Successfully summarized text using {summary_type} mode")
             return summary, status, analysis
             
         except ClaudeAPIError as e:
-            logger.error(f"❌ Summarization failed: {e}")
-            # Enhanced fallback
-            fallback_summary = self._create_fallback_summary(text, type_enum, length_enum)
-            return fallback_summary, "⚠️ Fallback mode (API unavailable)", f"API Error: {str(e)}"
+            logger.warning(f"Claude API failed, using enhanced fallback: {e}")
             
-        except Exception as e:
-            logger.error(f"❌ Unexpected error: {e}")
-            return "Error processing text. Please try again.", "❌ Processing failed", str(e)
+            # Enhanced fallback
+            fallback_summary = self._create_enhanced_fallback_summary(text, summary_type, summary_length)
+            
+            status = f"Enhanced {config['name']} Fallback | API temporarily unavailable"
+            analysis = f"""FALLBACK PROCESSING:
+- Reason: {str(e)}
+- Consecutive failures: {self.consecutive_failures}
+- Mode: Enhanced local processing
+- Quality: Fallback (reduced features)"""
+            
+            return fallback_summary, status, analysis
     
-    def _create_fallback_summary(self, text: str, summary_type: SummaryType, length: SummaryLength) -> str:
+    def _create_enhanced_fallback_summary(self, text: str, summary_type: str, length: str) -> str:
         """Create enhanced fallback summary when API unavailable"""
         sentences = [s.strip() for s in text.split('.') if len(s.strip()) > 10]
         
-        # Calculate how many sentences to include
-        if length == SummaryLength.SHORT:
-            target_sentences = min(3, len(sentences))
-        elif length == SummaryLength.MEDIUM:
-            target_sentences = min(5, len(sentences))
-        else:
-            target_sentences = min(8, len(sentences))
+        # Determine target sentence count based on length
+        if length == "short":
+            target_sentences = min(2, len(sentences))
+        elif length == "medium":
+            target_sentences = min(4, len(sentences))
+        else:  # long
+            target_sentences = min(6, len(sentences))
         
-        # Take first and last sentences, plus some from middle
+        # Select sentences intelligently
         if len(sentences) <= target_sentences:
             selected = sentences
         else:
-            selected = [sentences[0]]  # First sentence
+            # Always include first sentence
+            selected = [sentences[0]]
+            
+            # Add middle sentences
             if target_sentences > 2:
-                # Add middle sentences
                 middle_start = len(sentences) // 3
-                middle_end = (2 * len(sentences)) // 3
-                selected.extend(sentences[middle_start:middle_start + target_sentences - 2])
-            if target_sentences > 1:
-                selected.append(sentences[-1])  # Last sentence
+                middle_count = target_sentences - 2
+                selected.extend(sentences[middle_start:middle_start + middle_count])
+            
+            # Add last sentence if space
+            if target_sentences > 1 and len(selected) < target_sentences:
+                selected.append(sentences[-1])
         
-        fallback_summary = '. '.join(selected[:target_sentences]) + '.'
-        
-        # Apply basic formatting based on type
-        if summary_type == SummaryType.BULLET_POINTS:
+        # Format based on summary type
+        if summary_type == "bullet_points":
             points = [f"• {s.strip()}" for s in selected[:target_sentences]]
             return '\n'.join(points)
-        
-        return fallback_summary
+        else:
+            return '. '.join(selected[:target_sentences]) + '.'
     
     # Compatibility methods for FastAPI
     def get_available_types(self) -> List[str]:
@@ -924,101 +860,3 @@ Instructions:
     def summarize_text(self, text: str, summary_type: str = "abstractive", length: str = "medium") -> Tuple[str, str, str]:
         """Alternative method name for compatibility"""
         return self.summarize(text, summary_type, length)
-    
-    def get_type_info(self, summary_type: str) -> Dict:
-        """Get info about a summary type"""
-        try:
-            type_enum = SummaryType(summary_type.lower())
-            config = self.configs[type_enum]
-            return {
-                'name': config['name'],
-                'type': summary_type,
-                'description': config['description'],
-                'temperature': config['temperature']
-            }
-        except ValueError:
-            return {'error': f'Invalid summary type: {summary_type}'}
-    
-    def get_system_info(self) -> Dict:
-        """Get system information"""
-        return {
-            'version': self.version,
-            'name': 'Advanced Claude Summarizer',
-            'api_model': 'Claude 3.5 Sonnet',
-            'power_source': 'Anthropic Claude AI',
-            'summary_types': len(SummaryType),
-            'length_options': len(SummaryLength),
-            'algorithm': 'Advanced AI with retry logic',
-            'quality': 'Premium AI-Powered (9.8/10)',
-            'features': [
-                'Intelligent content analysis',
-                'Context-aware summarization', 
-                'Multiple specialized formats',
-                'Automatic retry on overload',
-                'Professional quality output'
-            ]
-        }
-
-# Aliases for compatibility
-ClaudeSummarizer = LlamaSummarizer
-SummarizerManager = LlamaSummarizer
-Summarizer = LlamaSummarizer
-EnhancedSummarizer = LlamaSummarizer
-TextSummarizer = LlamaSummarizer
-
-# Export classes
-__all__ = [
-    'LlamaSummarizer', 'ClaudeSummarizer', 'SummarizerManager', 
-    'Summarizer', 'EnhancedSummarizer', 'TextSummarizer',
-    'SummaryType', 'SummaryLength', 'ClaudeAPIError'
-]
-
-# Test function
-def test_summarizer():
-    """Test the improved summarizer"""
-    try:
-        summarizer = LlamaSummarizer()
-        
-        test_text = """
-        Artificial intelligence has fundamentally transformed business operations across multiple industries in 2024. 
-        Companies implementing comprehensive AI solutions report average revenue increases of 23% and operational cost 
-        reductions of 31%. The healthcare sector leads adoption with 89% of hospitals using AI for diagnostic imaging, 
-        achieving 94% accuracy rates compared to 87% for traditional methods. Financial institutions process over 2.4 
-        billion transactions daily using AI fraud detection systems with 99.7% accuracy. However, implementation 
-        challenges persist including workforce training requirements, with 67% of organizations reporting skill gaps, 
-        and substantial capital investments averaging $3.2 million per enterprise deployment. The talent shortage 
-        remains critical with demand for AI specialists exceeding supply by 340% globally. Despite challenges, 
-        industry analysts project continued exponential growth with AI market value reaching $890 billion by 2026.
-        """
-        
-        print("🧪 Testing Advanced Claude Summarizer...")
-        print(f"Original: {len(test_text.split())} words\n")
-        
-        # Test different combinations
-        test_cases = [
-            ("executive", "medium", "Business leaders"),
-            ("bullet_points", "short", "Quick reference"),
-            ("social", "short", "Social media"),
-            ("technical", "long", "Technical teams")
-        ]
-        
-        for summary_type, length, audience in test_cases:
-            try:
-                summary, status, analysis = summarizer.summarize(test_text.strip(), summary_type, length)
-                
-                print(f"🔍 {summary_type.upper()} ({length}) for {audience}:")
-                print(f"Summary: {summary}")
-                print(f"Status: {status}")
-                print("-" * 80)
-                
-            except Exception as e:
-                print(f"❌ {summary_type} failed: {e}")
-        
-        print("✅ Test completed!")
-        
-    except Exception as e:
-        print(f"❌ Setup failed: {e}")
-        print("Ensure ANTHROPIC_API_KEY is set correctly")
-
-if __name__ == "__main__":
-    test_summarizer()
