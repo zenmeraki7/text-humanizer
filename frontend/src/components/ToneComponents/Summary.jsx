@@ -155,7 +155,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'development'
   useEffect(() => {
     const loadSummaryOptions = async () => {
       try {
-        const response = await fetch(`${https://test-3p0b.onrender.com}/summary-options`);
+        const response = await fetch(`${API_BASE_URL}}/summary-options`);
         if (response.ok) {
           const data = await response.json();
           
