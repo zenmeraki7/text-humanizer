@@ -119,7 +119,7 @@ export default function Mode() {
   useEffect(() => {
     const loadToneModes = async () => {
       try {
-        console.log('Fetching tone modes from:', `${https://test-3p0b.onrender.com}/tone-modes`);
+        console.log('Fetching tone modes from:', `${API_BASE_URL}/tone-modes`);
         const response = await fetch(`${API_BASE_URL}/tone-modes`);
         
         if (response.ok) {
