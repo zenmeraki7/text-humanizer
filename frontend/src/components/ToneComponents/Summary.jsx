@@ -48,7 +48,7 @@ export default function Summary() {
 // Dynamic API URL based on environment
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
   ? "http://127.0.0.1:8000"  // Local development
-  : "https://test-finam.onrender.com";  // Production
+  : "https://test-3p0b.onrender.com";  // Production
   
   // Available modes and lengths from Python backend
   const [availableModes, setAvailableModes] = useState([]);
