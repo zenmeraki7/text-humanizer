@@ -35,9 +35,12 @@ import {
 import { processFile } from '../MainContentComponents/utils';
 
 // Dynamic API URL based on environment
+// const API_BASE_URL = process.env.NODE_ENV === 'development' 
+//   ? "http://localhost:8000"  // Local development
+//   : "https://test-finam.onrender.com";  // Production
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? "http://localhost:8000"  // Local development
-  : "https://test-finam.onrender.com";  // Production
+  ? "http://localhost:8000"
+  : "https://test-3p0b.onrender.com";  // Updated to match your backend
 
 export default function Mode() {
   const [inputText, setInputText] = useState('');
