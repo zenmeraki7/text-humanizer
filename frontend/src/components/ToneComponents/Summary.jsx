@@ -62,17 +62,18 @@ const API_BASE_URL = process.env.NODE_ENV === 'development'
       icon: '✨',
       features: ['Rewritten content', 'Clear language', 'Professional']
     },
-    { 
-      name: 'extractive', 
-      description: 'Selects most important original sentences', 
-      icon: '🎯',
-      features: ['Original sentences', 'Key points', 'Preservation']
-    },
+
     { 
       name: 'bullet_points', 
       description: 'Organizes into scannable bullets', 
       icon: '📋',
       features: ['Bullet format', 'Easy scanning', 'Organized']
+    },
+     { 
+      name: 'paragraph', 
+      description: 'Creates flowing paragraph summary', 
+      icon: '📄',
+      features: ['Paragraph form', 'Flowing text', 'Narrative']
     },
     { 
       name: 'executive', 
@@ -97,34 +98,11 @@ const API_BASE_URL = process.env.NODE_ENV === 'development'
       description: 'Preserves technical specifications', 
       icon: '⚙️',
       features: ['Technical details', 'Precision', 'Specifications']
-    },
-    { 
-      name: 'outline', 
-      description: 'Hierarchical structure with main points', 
-      icon: '📊',
-      features: ['Hierarchical', 'Structured', 'Outline format']
-    },
-    { 
-      name: 'paragraph', 
-      description: 'Creates flowing paragraph summary', 
-      icon: '📄',
-      features: ['Paragraph form', 'Flowing text', 'Narrative']
-    },
-    { 
-      name: 'narrative', 
-      description: 'Story format with chronological flow', 
-      icon: '📖',
-      features: ['Story format', 'Chronological', 'Narrative']
-    }
+    },  
   ];
 
   const defaultLengths = [
-    { 
-      name: 'ultra_short', 
-      description: 'Extremely brief - just the essentials', 
-      icon: '⚡',
-      features: ['1-2 sentences', 'Core message', 'Ultra brief']
-    },
+  
     { 
       name: 'short', 
       description: 'Short and to the point', 
@@ -143,19 +121,14 @@ const API_BASE_URL = process.env.NODE_ENV === 'development'
       icon: '📚',
       features: ['Multiple paragraphs', 'Full context', 'Detailed']
     },
-    { 
-      name: 'detailed', 
-      description: 'Maximum detail with comprehensive analysis', 
-      icon: '🔍',
-      features: ['Comprehensive', 'Maximum detail', 'Complete analysis']
-    }
+  
   ];
 
   // Load available options from API on component mount
   useEffect(() => {
     const loadSummaryOptions = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}}/summary-options`);
+        const response = await fetch(`${API_BASE_URL}/summary-options`);
         if (response.ok) {
           const data = await response.json();
           
@@ -220,8 +193,8 @@ const API_BASE_URL = process.env.NODE_ENV === 'development'
         },
         body: JSON.stringify({
           text: inputText,
-          mode: selectedMode,
-          length: selectedLength
+          summary_type: selectedMode,      
+          summary_length: selectedLength
         }),
       });
 

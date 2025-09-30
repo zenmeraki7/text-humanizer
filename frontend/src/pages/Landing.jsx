@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import Navigation from "./Layout/Navigation"; // Import the Navigation component
+import { Link } from "react-router-dom";
 
 const darkTheme = createTheme({
   palette: {
@@ -205,6 +206,7 @@ export default function Landing() {
               </Typography>
 
               <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap', mb: 6 }}>
+               <Link to="/humanize" >
                 <Button
                   variant="contained"
                   size="large"
@@ -218,6 +220,9 @@ export default function Landing() {
                 >
                   Start Humanizing
                 </Button>
+               </Link>
+                <Link to="/detector" >
+                
                 <Button
                   variant="contained"
                   size="large"
@@ -231,6 +236,9 @@ export default function Landing() {
                 >
                   Try Detection Free
                 </Button>
+                </Link>
+
+              <Link to ="/plagiarism" >
                 <Button
                   variant="contained"
                   size="large"
@@ -244,6 +252,7 @@ export default function Landing() {
                 >
                   Instant Plagiarism Scan
                 </Button>
+              </Link>
               </Box>
 
               <Box sx={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
