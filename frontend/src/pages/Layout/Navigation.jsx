@@ -349,9 +349,9 @@ export default function Navigation() {
       'Humanizer': '/humanize',
       'Detector': '/detector',
       'Plagiarism': '/plagiarism',
+      'Tone': '/tone',
       'Pricing': '/pricing',
       'Settings': '/settings',
-      'Tone': '/tone',
     };
     
     if (routes[item]) {
@@ -363,7 +363,7 @@ export default function Navigation() {
     }
   };
 
-  const navItems = ['Home', 'Humanizer', 'Detector', 'Plagiarism', 'Pricing', 'Settings', 'Tone', 'Logout'];
+  const navItems = ['Home', 'Humanizer', 'Detector', 'Plagiarism','Tone', 'Pricing', 'Settings',  'Logout'];
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);

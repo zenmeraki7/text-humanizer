@@ -570,7 +570,7 @@ class LlamaSummarizer:
             SummaryType.BULLET_POINTS: {
                 'name': 'Bullet Points',
                 'description': "Organized points for quick scanning",
-                'prompt': "Transform this content into well-organized bullet points. Each point should contain one key idea and be easy to scan. Use bullet points (•) format.",
+                'prompt': "Transform this content into bullet points. IMPORTANT: Format your response ONLY as bullet points, with each point on a new line starting with '•' or '-'. Each bullet should contain one key idea. Do not write paragraphs. Example format:\n• First key point\n• Second key point\n• Third key point",
                 'temperature': 0.1,
                 'max_tokens': 2000
             },

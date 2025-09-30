@@ -1,6 +1,6 @@
 // PlagiarismRemover.jsx - Responsive main component
 import React, { useState, useEffect } from 'react';
-import { CheckIcon, ChevronDownIcon, CompareIcon, CopyIcon, DocumentIcon, MagicWandIcon, UploadIcon, PasteIcon } from './Icons';
+import { CheckIcon, ChevronDownIcon, CompareIcon, CopyIcon, DocumentIcon, MagicWandIcon, UploadIcon, PasteIcon, LightBulbIcon } from './Icons';
 
 // Import responsive styles
 import {
@@ -411,71 +411,26 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
   }}
 >
   <div 
-    className="mode-selector"
-    style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '16px',
-      justifyContent: screenSize.isMobile ? 'center' : 'flex-start',
-      width: screenSize.isMobile ? '100%' : 'auto',
-      flex: screenSize.isMobile ? 'none' : '1' // Take up available space on desktop
-    }}
-  >
-    <span style={{ 
-      color: '#a1a1aa', 
-      fontSize: 'clamp(14px, 2.5vw, 16px)',
-      whiteSpace: 'nowrap'
-    }}>
-      Mode:
-    </span>
-    
-    <div style={selectStyles}>
-      {/* Your existing mode selector code */}
-      <button
-        onClick={() => setShowModeDropdown(!showModeDropdown)}
-        style={{
-          ...selectButtonStyles,
-          borderColor: showModeDropdown ? '#8b5cf6' : 'rgba(139, 92, 246, 0.3)',
-        }}
-      >
-        <span>{mode}</span>
-        <ChevronDownIcon />
-      </button>
-      
-      {showModeDropdown && (
-        <div style={dropdownStyles}>
-          {MODES.map((modeOption) => (
-            <button
-              key={modeOption}
-              onClick={() => {
-                setMode(modeOption);
-                setShowModeDropdown(false);
-              }}
-              style={{
-                width: '100%',
-                padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px)',
-                backgroundColor: 'transparent',
-                border: 'none',
-                color: '#fff',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: 'clamp(14px, 2.5vw, 16px)',
-                borderRadius: modeOption === MODES[0] ? '8px 8px 0 0' : modeOption === MODES[MODES.length - 1] ? '0 0 8px 8px' : '0',
-                transition: 'background-color 0.2s ease-in-out',
-                minHeight: '44px',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(139, 92, 246, 0.2)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-            >
-              {modeOption}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
+  className="tone-hint"
+  style={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '10px',
+    justifyContent: screenSize.isMobile ? 'center' : 'flex-start',
+    width: screenSize.isMobile ? '100%' : 'auto',
+    background: 'rgba(99, 102, 241, 0.1)',
+    border: '1px solid rgba(99, 102, 241, 0.3)',
+    borderRadius: '8px',
+    padding: '8px 12px',
+    color: '#a5b4fc',
+    fontSize: 'clamp(13px, 2.5vw, 14px)',
+    fontWeight: 500
+  }}
+>
+  <LightBulbIcon />
+  <span>Use <strong>Tone option</strong> for mode change</span>
+</div>
+
 
   <button
     className="primary-button"
@@ -620,55 +575,10 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
                     Words Processed
                   </div>
                 </div>
-                <div>
-                  <div style={{ 
-                    fontSize: 'clamp(20px, 4vw, 24px)', 
-                    fontWeight: 'bold', 
-                    color: '#f59e0b' 
-                  }}>
-                    {mode}
-                  </div>
-                  <div style={{ 
-                    fontSize: 'clamp(12px, 2vw, 14px)', 
-                    color: '#94a3b8' 
-                  }}>
-                    Mode Used
-                  </div>
-                </div>
+               
               </div>
               
-              {/* Additional API Stats */}
-              {apiResult && (
-                <div style={additionalStatsStyles}>
-                  <div 
-                    className="additional-stats-grid"
-                    style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: screenSize.isMobile ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))', 
-                      gap: '8px',
-                      textAlign: screenSize.isMobile ? 'center' : 'left'
-                    }}
-                  >
-                    {apiResult.improvement !== undefined && (
-                      <div>
-                        Plagiarism Reduction: <span style={{ color: '#10b981' }}>-{apiResult.improvement.toFixed(1)}%</span>
-                      </div>
-                    )}
-                    {apiResult.ai_improvement !== undefined && (
-                      <div>
-                        AI Score Reduction: <span style={{ color: '#10b981' }}>-{apiResult.ai_improvement.toFixed(1)}%</span>
-                      </div>
-                    )}
-                    {apiResult.length_change !== undefined && (
-                      <div>
-                        Length Change: <span style={{ color: apiResult.length_change > 0 ? '#8b5cf6' : '#f59e0b' }}>
-                          {apiResult.length_change > 0 ? '+' : ''}{apiResult.length_change.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+             
             </div>
           </div>
         )}
