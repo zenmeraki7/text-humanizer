@@ -54,6 +54,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
     isDesktop: true,
     width: typeof window !== 'undefined' ? window.innerWidth : 1024
   });
+const [showScoreCard, setShowScoreCard] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -398,67 +399,7 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
           ))}
         </div>
 
-        {/* Responsive Bottom Controls */}
-<div 
-  className="bottom-controls"
-  style={{ 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: screenSize.isMobile ? 'stretch' : 'center', 
-    flexDirection: screenSize.isMobile ? 'column' : 'row',
-    flexWrap: 'wrap', 
-    gap: '16px' 
-  }}
->
-  <div 
-  className="tone-hint"
-  style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '10px',
-    justifyContent: screenSize.isMobile ? 'center' : 'flex-start',
-    width: screenSize.isMobile ? '100%' : 'auto',
-    background: 'rgba(99, 102, 241, 0.1)',
-    border: '1px solid rgba(99, 102, 241, 0.3)',
-    borderRadius: '8px',
-    padding: '8px 12px',
-    color: '#a5b4fc',
-    fontSize: 'clamp(13px, 2.5vw, 14px)',
-    fontWeight: 500
-  }}
->
-  <LightBulbIcon />
-  <span>Use <strong>Tone option</strong> for mode change</span>
-</div>
 
-
-  <button
-    className="primary-button"
-    style={{
-      ...primaryButtonStyles,
-      ...(isPrimaryHovered && !isProcessing ? primaryButtonHoverStyles : {}),
-      width: screenSize.isMobile ? '100%' : 'auto', // Full width on mobile, auto on desktop
-      maxWidth: screenSize.isMobile ? 'none' : '200px', // Limit max width on desktop
-      flexShrink: 0 // Prevent button from shrinking
-    }}
-    onMouseEnter={() => !isProcessing && setIsPrimaryHovered(true)}
-    onMouseLeave={() => setIsPrimaryHovered(false)}
-    onClick={handleProcessText}
-    disabled={isProcessing}
-  >
-    {isProcessing ? (
-      <>
-        <div style={spinnerStyles} />
-        <span>Processing...</span>
-      </>
-    ) : (
-      <>
-        <MagicWandIcon />
-        <span>Remove Plagiarism</span>
-      </>
-    )}
-  </button>
-</div>
 
         {/* Responsive Results Section */}
         {showComparison && processedText && (
@@ -582,6 +523,158 @@ const PlagiarismRemover = ({ sidebarOpen }) => {
             </div>
           </div>
         )}
+ {showScoreCard && (
+  <div style={{
+    ...resultCardStyles,
+    marginTop: '24px',
+    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.03) 100%)',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+  }}>
+    {/* Header */}
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '12px',
+      marginBottom: 'clamp(20px, 4vw, 24px)',
+      justifyContent: screenSize.isMobile ? 'center' : 'flex-start'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 'clamp(32px, 7vw, 36px)',
+        height: 'clamp(32px, 7vw, 36px)',
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        borderRadius: '8px',
+        color: '#fff',
+        fontSize: 'clamp(16px, 4vw, 20px)'
+      }}>
+        ✓
+      </div>
+      <h3 style={{ 
+        color: '#10b981', 
+        fontSize: 'clamp(18px, 4vw, 20px)', 
+        fontWeight: '600', 
+        margin: 0
+      }}>
+        Content Analysis Score
+      </h3>
+    </div>
+
+    {/* Score Circle */}
+    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+        <div 
+          style={{ 
+            width: screenSize.isMobile ? '100px' : '120px',
+            height: screenSize.isMobile ? '100px' : '120px',
+            border: `${screenSize.isMobile ? '6px' : '8px'} solid rgba(16, 185, 129, 0.2)`,
+            borderTop: `${screenSize.isMobile ? '6px' : '8px'} solid #10b981`,
+            borderRadius: '50%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(16, 185, 129, 0.05)',
+            transition: 'all 0.5s ease-in-out',
+            animation: 'rotateCircle 2s ease-in-out',
+          }}
+        >
+          <div style={{
+            fontSize: screenSize.isMobile ? '24px' : '28px',
+            fontWeight: 'bold',
+            color: '#10b981',
+            lineHeight: 1
+          }}>
+            {apiResult
+              ? getUniquenessScore(apiResult, inputText)
+              : inputText.trim()
+              ? 100
+              : 0}%
+          </div>
+          <div style={{
+            fontSize: screenSize.isMobile ? '11px' : '12px',
+            color: '#94a3b8',
+            marginTop: '4px',
+            fontWeight: '500'
+          }}>
+            Uniqueness
+          </div>
+        </div>
+      </div>
+
+      {/* Classification Badge */}
+      <div 
+        style={{ 
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          color: '#10b981',
+          border: '2px solid rgba(16, 185, 129, 0.3)',
+          padding: 'clamp(6px 12px, 2vw, 8px 16px)',
+          borderRadius: '8px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: 'clamp(13px, 2.8vw, 14px)',
+          fontWeight: 'bold',
+          maxWidth: '90%'
+        }}
+      >
+        <span>✓</span>
+        <span>
+          {(apiResult ? getUniquenessScore(apiResult, inputText) : inputText.trim() ? 100 : 0) >= 80
+            ? 'Highly Original Content'
+            : (apiResult ? getUniquenessScore(apiResult, inputText) : 0) >= 60
+            ? 'Good Uniqueness Level'
+            : 'Needs Improvement'}
+        </span>
+      </div>
+    </div>
+
+    {/* Stats Grid */}
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: screenSize.isMobile ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))',
+      gap: 'clamp(12px, 3vw, 16px)',
+      marginBottom: '16px'
+    }}>
+      
+    </div>
+
+    {/* Footer Note */}
+    <div style={{
+      marginTop: '16px',
+      padding: 'clamp(10px, 2.5vw, 12px)',
+      background: 'rgba(16, 185, 129, 0.05)',
+      border: '1px solid rgba(16, 185, 129, 0.2)',
+      borderRadius: '8px',
+      textAlign: 'center'
+    }}>
+      <p style={{
+        color: '#10b981',
+        fontSize: 'clamp(12px, 2.5vw, 13px)',
+        fontWeight: '500',
+        margin: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        flexWrap: 'wrap'
+      }}>
+        <CheckIcon />
+        <span>AI-powered paraphrasing with contextual understanding</span>
+      </p>
+    </div>
+
+    <style>{`
+      @keyframes rotateCircle {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+)}
+
+
       </div>
     </div>
   );
