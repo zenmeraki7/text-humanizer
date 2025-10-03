@@ -399,7 +399,62 @@ const [showScoreCard, setShowScoreCard] = useState(false);
           ))}
         </div>
 
+        {/* Responsive Bottom Controls */}
+<div 
+  className="bottom-controls"
+  style={{ 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: screenSize.isMobile ? 'stretch' : 'center', 
+    flexDirection: screenSize.isMobile ? 'column' : 'row',
+    flexWrap: 'wrap', 
+    gap: '16px' 
+  }}
+>
 
+
+ <button
+    onClick={() => setShowScoreCard(!showScoreCard)}
+    style={{
+      ...primaryButtonStyles,
+      background: '#10b981',
+      width: screenSize.isMobile ? '100%' : 'auto',
+      maxWidth: screenSize.isMobile ? 'none' : '200px',
+      flexShrink: 0,
+      zIndex: 2, // prevent overlap
+    }}
+  >
+    {showScoreCard ? 'Hide Score' : 'Check the Score'}
+  </button>
+  <button
+    className="primary-button"
+    style={{
+      ...primaryButtonStyles,
+      ...(isPrimaryHovered && !isProcessing ? primaryButtonHoverStyles : {}),
+      width: screenSize.isMobile ? '100%' : 'auto', // Full width on mobile, auto on desktop
+      maxWidth: screenSize.isMobile ? 'none' : '200px', // Limit max width on desktop
+      flexShrink: 0 // Prevent button from shrinking
+    }}
+    onMouseEnter={() => !isProcessing && setIsPrimaryHovered(true)}
+    onMouseLeave={() => setIsPrimaryHovered(false)}
+    onClick={handleProcessText}
+    disabled={isProcessing}
+  >
+    {isProcessing ? (
+      <>
+        <div style={spinnerStyles} />
+        <span>Processing...</span>
+      </>
+    ) : (
+      <>
+        <MagicWandIcon />
+        <span>Remove Plagiarism</span>
+      </>
+    )}
+  </button>
+ 
+
+</div>
 
         {/* Responsive Results Section */}
         {showComparison && processedText && (
