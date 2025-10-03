@@ -8,7 +8,7 @@ export const SAMPLE_TEXT = "Climate change represents one of the most significan
 
 // ✅ API base URL for backend
 export const API_BASE_URL = "https://test-3p0b.onrender.com";
-//export const API_BASE_URL ="http://127.0.0.1:8000"
+
 // Tips data
 export const tips = [
   {
