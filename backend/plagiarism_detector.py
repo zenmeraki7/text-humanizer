@@ -714,7 +714,7 @@ Complete plagiarism detection and removal endpoints
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from plagiarism_module import PlagiarismDetector
+from plagiarism_detector import PlagiarismDetector
 import os
 
 # Initialize plagiarism detector
