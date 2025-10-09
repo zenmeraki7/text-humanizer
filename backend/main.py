@@ -155,7 +155,7 @@ try:
     # Import the improved Claude API modules
     from ai_detector import AITextDetector
     from humanizer import TextHumanizer
-    from plagiarism_detector import PlagiarismDetector
+    from plagiarism_module import PlagiarismDetector
     from tone import ToneManager  
     from summarizer import LlamaSummarizer
     
