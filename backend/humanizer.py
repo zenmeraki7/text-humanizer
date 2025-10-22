@@ -794,7 +794,7 @@ Rewritten text:"""
 
         try:
             response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-3.5-20230510",
                 max_tokens=4000,
                 temperature=0.4,
                 messages=[{"role": "user", "content": prompt}]
