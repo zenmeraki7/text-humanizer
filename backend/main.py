@@ -17,7 +17,7 @@ load_dotenv()
 
 app = FastAPI(
     title="AI Text Detector & Humanizer API",
-    version="4.0.0",
+    version="3.5.0",
     description="Advanced AI text processing with intelligent error handling and Claude API integration"
 )
 
@@ -203,7 +203,7 @@ def root():
     return {
         "message": "AI Text Detector & Humanizer API",
         "status": "running",
-        "version": "4.0.0",
+        "version": "3.5.0",
         "modules_loaded": modules_loaded,
         "api_key_available": bool(os.getenv("ANTHROPIC_API_KEY")),
         "circuit_breaker_status": "open" if circuit_breaker.is_open() else "closed",
