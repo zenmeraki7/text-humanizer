@@ -546,7 +546,7 @@ class LlamaSummarizer:
         
         # Use official Anthropic SDK
         self.client = anthropic.Anthropic(api_key=self.api_key)
-        self.version = "5.0.0"
+        self.version = "4.5.0"
         self._init_configs()
         
         # API reliability tracking
