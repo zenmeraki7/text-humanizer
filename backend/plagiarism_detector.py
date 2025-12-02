@@ -754,7 +754,6 @@
 
 
 
-
 import os
 import logging
 from typing import Dict, Any, List, Tuple
@@ -773,6 +772,7 @@ class PlagiarismDetector:
         if self.api_key:
             try:
                 import anthropic
+                # Clean init without proxies
                 self.client = anthropic.Anthropic(api_key=self.api_key)
             except ImportError:
                 logger.warning("Anthropic library not installed. AI features disabled.")
@@ -889,7 +889,8 @@ class PlagiarismDetector:
                 prompt = f"Rewrite the following text to remove plagiarism. Mode: {rewrite_mode}. Maintain original meaning but change structure and vocabulary.\n\nText: {text}"
                 
                 message = self.client.messages.create(
-                    model="claude-3-sonnet-20240229",
+                    # UPDATED: Using the newer Claude 3.5 Sonnet model
+                    model="claude-3-5-sonnet-20241022",
                     max_tokens=1024,
                     messages=[{"role": "user", "content": prompt}]
                 )
