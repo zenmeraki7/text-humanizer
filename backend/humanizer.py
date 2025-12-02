@@ -524,8 +524,6 @@
                 
 #         return suggestions
 
-
-
 """
 Text Humanizer Module
 Uses existing ai_patterns.json and phrasal_patterns.xlsx files
@@ -536,17 +534,21 @@ import logging
 import json
 import pandas as pd
 import re
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 
+# Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class TextHumanizer:
     def __init__(self, anthropic_api_key: str, ai_detector=None):
         # Initialize Anthropic client
-        self.anthropic_available = anthropic_api_key != "dummy_key"
+        self.anthropic_available = anthropic_api_key and anthropic_api_key != "dummy_key"
+        self.client = None
+        
         if self.anthropic_available:
             try:
+                # Clean initialization without proxies
                 self.client = anthropic.Anthropic(api_key=anthropic_api_key)
                 logger.info("✅ Anthropic client initialized for humanization")
             except Exception as e:
@@ -565,7 +567,11 @@ class TextHumanizer:
         self.excel_alternatives = self._load_excel_alternatives()
         self.humanized_alternatives = self._create_all_alternatives()
         
-        total_patterns = sum(len(p) if isinstance(p, list) else 0 for p in self.ai_patterns.values())
+        # Calculate stats safely
+        total_patterns = 0
+        if self.ai_patterns:
+            total_patterns = sum(len(p) if isinstance(p, list) else 0 for p in self.ai_patterns.values())
+            
         total_alternatives = len(self.humanized_alternatives)
         logger.info(f"✅ Text Humanizer initialized with {total_patterns} patterns and {total_alternatives} alternatives")
 
@@ -602,7 +608,7 @@ class TextHumanizer:
                             str(row.iloc[pattern_col]).strip()):
                             pattern = str(row.iloc[pattern_col]).strip().lower()
                             suggestions = str(row.iloc[suggestion_col]) if (len(row) > suggestion_col and 
-                                                                         pd.notna(row.iloc[suggestion_col])) else ""
+                                                                          pd.notna(row.iloc[suggestion_col])) else ""
                             if pattern and pattern not in ['pattern', ''] and suggestions:
                                 clean_suggestions = [s.strip() for s in suggestions.split(',') if s.strip()]
                                 if clean_suggestions:
@@ -645,18 +651,19 @@ class TextHumanizer:
         alternatives.update(base_alts)
 
         # JSON patterns
-        for category, patterns in self.ai_patterns.items():
-            if category in ['rhetorical_question_rewrites', 'uniform_sentences']:
-                continue
-            if isinstance(patterns, list):
-                for pattern in patterns:
-                    if pattern not in alternatives:
-                        alternatives[pattern] = self._generate_simple_alternative(pattern)
-            elif isinstance(patterns, dict) and category == 'rhetorical_questions':
-                for subcategory, questions in patterns.items():
-                    for question in questions:
-                        if question not in alternatives:
-                            alternatives[question] = ["direct statement version"]
+        if self.ai_patterns:
+            for category, patterns in self.ai_patterns.items():
+                if category in ['rhetorical_question_rewrites', 'uniform_sentences']:
+                    continue
+                if isinstance(patterns, list):
+                    for pattern in patterns:
+                        if pattern not in alternatives:
+                            alternatives[pattern] = self._generate_simple_alternative(pattern)
+                elif isinstance(patterns, dict) and category == 'rhetorical_questions':
+                    for subcategory, questions in patterns.items():
+                        for question in questions:
+                            if question not in alternatives:
+                                alternatives[question] = ["direct statement version"]
 
         # Excel alternatives override all
         alternatives.update(self.excel_alternatives)
@@ -689,10 +696,8 @@ class TextHumanizer:
         try:
             # Detect patterns before processing
             patterns_before = {}
-            ai_score_before = 0.0
             if self.ai_detector:
                 patterns_before = self.ai_detector.detect_ai_patterns(text)
-                ai_score_before, _ = self.ai_detector.calculate_ai_score(text)
 
             # Collect all flagged patterns and their alternatives
             flagged_patterns = []
@@ -793,8 +798,9 @@ Text to rewrite:
 Rewritten text:"""
 
         try:
+            # FIX: Updated to valid model ID
             response = self.client.messages.create(
-                model="claude-sonnet-3.5-20230510",
+                model="claude-3-5-sonnet-20241022",
                 max_tokens=4000,
                 temperature=0.4,
                 messages=[{"role": "user", "content": prompt}]
@@ -803,18 +809,22 @@ Rewritten text:"""
             return response.content[0].text.strip()
 
         except Exception as e:
+            logger.error(f"Pattern-free humanization error: {e}")
             return f"Error during humanization: {str(e)}"
 
     # --------------------- Suggestions based on files ---------------------
     def get_humanization_suggestions(self, text: str) -> dict:
         if not self.ai_detector:
             return {"error": "AI detector not available"}
+        
         detected_patterns = self.ai_detector.detect_ai_patterns(text)
         suggestions = {}
+        
         for category, patterns in detected_patterns.items():
             category_suggestions = []
             for pattern in patterns:
                 suggestion_data = {'pattern': pattern, 'alternatives': []}
+                
                 if pattern.lower() in self.excel_alternatives:
                     suggestion_data['alternatives'] = self.excel_alternatives[pattern.lower()][:3]
                     suggestion_data['source'] = 'Excel'
@@ -824,23 +834,15 @@ Rewritten text:"""
                 elif pattern.lower() in self.humanized_alternatives:
                     suggestion_data['alternatives'] = self.humanized_alternatives[pattern.lower()][:3]
                     suggestion_data['source'] = 'Generated'
+                
                 if suggestion_data['alternatives']:
                     category_suggestions.append(suggestion_data)
+            
             if category_suggestions:
                 suggestions[category] = category_suggestions
         return suggestions
 
 # --------------------- Usage Example ---------------------
 if __name__ == "__main__":
-    humanizer = TextHumanizer(anthropic_api_key="YOUR_ANTHROPIC_API_KEY_HERE")
-    text = "Why is this method important? Furthermore, it leverages complex AI patterns."
-    
-    # Pattern-based
-    result, status, analysis = humanizer.humanize(text)
-    print("Pattern-based:\n", result)
-    print(status)
-    print(analysis)
-
-    # Pattern-free
-    result_free = humanizer.humanize_without_patterns(text)
-    print("\nPattern-free:\n", result_free)
+    humanizer = TextHumanizer(anthropic_api_key="dummy_key")
+    print("Humanizer initialized (Test Mode)")
