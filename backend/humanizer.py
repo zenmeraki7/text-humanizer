@@ -548,7 +548,7 @@ class TextHumanizer:
         
         if self.anthropic_available:
             try:
-                # Clean initialization without proxies
+                # FIX: Removed 'proxies' argument - this was causing the crash
                 self.client = anthropic.Anthropic(api_key=anthropic_api_key)
                 logger.info("✅ Anthropic client initialized for humanization")
             except Exception as e:
