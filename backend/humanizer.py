@@ -524,6 +524,7 @@
                 
 #         return suggestions
 
+
 """
 Text Humanizer Module
 Uses existing ai_patterns.json and phrasal_patterns.xlsx files
