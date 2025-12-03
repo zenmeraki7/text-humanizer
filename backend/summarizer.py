@@ -861,7 +861,6 @@
 #         """Alternative method name for compatibility"""
 #         return self.summarize(text, summary_type, length)
 
-
 """
 Robust Claude Summarizer - Enhanced API Reliability
 Optimized to minimize 529 errors and maximize success rate
@@ -899,8 +898,8 @@ class ClaudeAPIError(Exception):
     """Custom exception for Claude API errors"""
     pass
 
-# RENAMED from LlamaSummarizer to ClaudeSummarizer
-class ClaudeSummarizer:
+# KEPT as LlamaSummarizer to match main.py import expectation
+class LlamaSummarizer:
     """Advanced summarizer with robust Claude integration"""
     
     def __init__(self, api_key: Optional[str] = None):
@@ -908,7 +907,6 @@ class ClaudeSummarizer:
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
         if not self.api_key:
             # Don't crash immediately if key is missing, just log warning
-            # This allows the app to start even if key is missing (module will fail gracefully later)
             logger.warning("Anthropic API key not found. Summarizer will use fallback mode.")
             self.client = None
         else:
