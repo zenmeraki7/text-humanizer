@@ -560,6 +560,8 @@
 #     import uvicorn
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+
+
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -574,7 +576,6 @@ from dotenv import load_dotenv
 from typing import Optional, Dict, Any, List, Union
 
 # ============ CONFIGURATION ============
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -648,7 +649,7 @@ circuit_breaker = APICircuitBreaker()
 
 async def handle_api_retry_advanced(func, max_retries: int = 3):
     """
-    Advanced async retry logic optimized for Claude Sonnet 4.5 API (529/429 errors)
+    Advanced async retry logic optimized for Claude API errors
     """
     if circuit_breaker.is_open():
         cooldown = circuit_breaker.get_cooldown_remaining()
@@ -663,7 +664,6 @@ async def handle_api_retry_advanced(func, max_retries: int = 3):
         
     for attempt in range(max_retries):
         try:
-            # Handle both async and sync functions
             if asyncio.iscoroutinefunction(func):
                 result = await func()
             else:
@@ -702,7 +702,7 @@ tone_manager = None
 summarizer = None
 
 try:
-    # Try importing modules - Handle missing files gracefully
+    # Import modules with graceful error handling
     try: from ai_detector import AITextDetector
     except ImportError: AITextDetector = None
     
@@ -715,15 +715,16 @@ try:
     try: from tone import ToneManager
     except ImportError: ToneManager = None
     
-    try: from summarizer import LlamaSummarizer
+    try: from summarizer import LlamaSummarizer 
     except ImportError: LlamaSummarizer = None
     
     api_key = os.getenv("ANTHROPIC_API_KEY")
     
     if api_key:
         if AITextDetector: ai_detector = AITextDetector()
+        # Initialize modules using the fixed classes (No proxies!)
         if TextHumanizer and ai_detector: text_humanizer = TextHumanizer(api_key, ai_detector)
-        if PlagiarismDetector: plagiarism_detector = PlagiarismDetector(api_key, ai_detector)
+        if PlagiarismDetector and ai_detector: plagiarism_detector = PlagiarismDetector(api_key, ai_detector)
         if ToneManager: tone_manager = ToneManager(api_key)
         if LlamaSummarizer: summarizer = LlamaSummarizer(api_key)
         
@@ -743,7 +744,6 @@ class TextAnalysisRequest(BaseModel):
 class HumanizeRequest(BaseModel):
     text: str = Field(..., min_length=1)
 
-# Plagiarism Models
 class SingleTextRequest(BaseModel):
     text: str
 
@@ -753,7 +753,7 @@ class TwoTextRequest(BaseModel):
 
 class PlagiarismRemovalRequest(BaseModel):
     text: str
-    rewrite_mode: str = "balanced"  # conservative, balanced, aggressive
+    rewrite_mode: str = "balanced"
     reference_text: str = ""
 
 class ToneChangeRequest(BaseModel):
@@ -805,7 +805,6 @@ async def analyze_text(request: TextAnalysisRequest):
             }
         return await handle_api_retry_advanced(call)
     
-    # Fallback
     return {
         "ai_score": 50, 
         "classification": "Unknown (Fallback)", 
@@ -830,7 +829,7 @@ async def humanize_text(request: HumanizeRequest):
 
     return {"humanized_text": request.text, "status": "Fallback mode (No API Key)"}
 
-# --- Plagiarism Endpoints (FIXED: Moved inside main.py) ---
+# --- Plagiarism Endpoints ---
 
 @app.post("/detect-plagiarism-patterns")
 async def detect_plagiarism_patterns(request: SingleTextRequest):
@@ -839,7 +838,6 @@ async def detect_plagiarism_patterns(request: SingleTextRequest):
     
     try:
         patterns = plagiarism_detector.detect_plagiarism_patterns(request.text)
-        # Handle count safely depending on if patterns is dict or list
         count = 0
         if isinstance(patterns, dict):
             count = sum(len(v) for v in patterns.values() if isinstance(v, list))
@@ -903,8 +901,8 @@ async def change_tone(request: ToneChangeRequest):
 
 @app.get("/tone-modes")
 async def get_tone_modes():
-    if tone_manager: return {"modes": tone_manager.get_available_modes()}
-    return {"modes": ["professional", "casual", "formal"]}
+    if tone_manager: return {"available_modes": tone_manager.get_available_modes()}
+    return {"available_modes": ["professional", "casual", "formal"]}
 
 @app.post("/summarize")
 async def summarize_text(request: SummarizeRequest):
@@ -965,4 +963,3 @@ if __name__ == "__main__":
     # Matches Render.com default port 10000
     port = int(os.getenv("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-# Trigger redeploy
