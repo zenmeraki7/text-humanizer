@@ -315,11 +315,10 @@
 
 
 
-
 """
 Robust Tone Manager with Enhanced API Reliability
 Optimized to minimize 529 errors and maximize success rate
-Updated with latest Claude Sonnet 4 model
+Updated with latest Claude 3.5 Sonnet
 """
 
 import os
@@ -355,11 +354,20 @@ class ToneManager:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
         if not self.api_key:
-            raise ValueError("Anthropic API key required. Set ANTHROPIC_API_KEY environment variable.")
-        
-        # Use official Anthropic SDK
-        self.client = anthropic.Anthropic(api_key=self.api_key)
-        self.model = "claude-sonnet-4-20250514"  # Latest Claude Sonnet 4
+            # Allow fallback initialization without crashing immediately
+            logger.warning("Anthropic API key not found. Tone Manager will use fallback mode.")
+            self.client = None
+        else:
+            # Use official Anthropic SDK - CLEAN INIT (No proxies)
+            try:
+                self.client = anthropic.Anthropic(api_key=self.api_key)
+                logger.info("✅ Tone Manager Client initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize Tone client: {e}")
+                self.client = None
+
+        # UPDATED: Use the correct, working model ID
+        self.model = "claude-3-5-sonnet-20241022"
         self.version = "2.0.0"
         self.tone_configs = self._load_tone_configurations()
         
@@ -448,6 +456,10 @@ class ToneManager:
     
     def _should_use_api(self) -> bool:
         """Determine if we should attempt API call based on recent failures"""
+        # If no client, fallback immediately
+        if not self.client:
+            return False
+
         # If too many consecutive failures, use fallback
         if self.consecutive_failures >= 3:
             # Allow retry after 5 minutes
@@ -465,8 +477,8 @@ class ToneManager:
         if not self._should_use_api():
             raise ClaudeAPIError("Circuit breaker: Too many recent failures")
         
-        max_retries = 8  # Increased retries
-        base_wait = 1.5   # Shorter initial wait
+        max_retries = 3  # Standardized retries
+        base_wait = 1.5
         
         for attempt in range(max_retries):
             try:
@@ -531,7 +543,7 @@ class ToneManager:
             Tuple of (transformed_text, status, analysis)
         """
         if not text.strip():
-            raise ValueError("Text cannot be empty")
+            return "Text cannot be empty", "Error", {}
         
         # Validate tone mode
         try:
@@ -572,11 +584,11 @@ Instructions: Return ONLY the transformed text with no explanations."""
                 "original_words": original_words,
                 "transformed_words": transformed_words,
                 "model": self.model,
-                "quality": "Premium Claude Sonnet 4",
+                "quality": "Premium Claude Sonnet 3.5",
                 "success": True
             }
             
-            status = f"{config['name']} | {original_words}→{transformed_words} words | Claude Sonnet 4 Success"
+            status = f"{config['name']} | {original_words}→{transformed_words} words | Claude Success"
             
             logger.info(f"Successfully transformed text to {tone_mode} tone using {self.model}")
             return transformed_text, status, analysis
