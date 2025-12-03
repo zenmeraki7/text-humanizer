@@ -575,7 +575,6 @@ class TextHumanizer:
             
         total_alternatives = len(self.humanized_alternatives)
         logger.info(f"✅ Text Humanizer initialized with {total_patterns} patterns and {total_alternatives} alternatives")
-
     # --------------------- Load JSON and Excel ---------------------
     def _load_json_patterns(self):
         try:
