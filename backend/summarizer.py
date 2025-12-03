@@ -861,6 +861,7 @@
 #         """Alternative method name for compatibility"""
 #         return self.summarize(text, summary_type, length)
 
+
 """
 Robust Claude Summarizer - Enhanced API Reliability
 Optimized to minimize 529 errors and maximize success rate
@@ -898,7 +899,7 @@ class ClaudeAPIError(Exception):
     """Custom exception for Claude API errors"""
     pass
 
-# KEPT as LlamaSummarizer to match main.py import expectation
+# FIXED: Renamed to LlamaSummarizer to match main.py imports
 class LlamaSummarizer:
     """Advanced summarizer with robust Claude integration"""
     
@@ -906,11 +907,10 @@ class LlamaSummarizer:
         """Initialize with Claude API integration"""
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
         if not self.api_key:
-            # Don't crash immediately if key is missing, just log warning
             logger.warning("Anthropic API key not found. Summarizer will use fallback mode.")
             self.client = None
         else:
-            # Use official Anthropic SDK - CLEAN INIT (No proxies)
+            # FIXED: Clean init without proxies
             try:
                 self.client = anthropic.Anthropic(api_key=self.api_key)
                 logger.info("✅ Claude Client initialized successfully")
@@ -1105,27 +1105,16 @@ class LlamaSummarizer:
     def summarize(self, text: str, summary_type: str = "abstractive", summary_length: str = "medium") -> Tuple[str, str, str]:
         """
         Summarize text using Claude API with robust error handling
-        
-        Args:
-            text: Text to summarize
-            summary_type: Type of summary to create
-            summary_length: Target length for summary
-            
-        Returns:
-            Tuple of (summary, status, analysis)
         """
         if not text or len(text.strip()) < 20:
             return "Please provide meaningful text to summarize.", "Insufficient text", "Minimum 20 characters required"
         
         # Validate parameters
         try:
-            # Handle both hyphen and underscore inputs
             clean_type = summary_type.lower().replace("-", "_")
             type_enum = SummaryType(clean_type)
             length_enum = SummaryLength(summary_length.lower())
         except ValueError as e:
-            available_types = [t.value for t in SummaryType]
-            available_lengths = [l.value for l in SummaryLength]
             fallback_summary = self._create_enhanced_fallback_summary(text, summary_type, summary_length)
             return fallback_summary, "Invalid parameters, using fallback", f"Error: {str(e)}"
         
@@ -1143,7 +1132,6 @@ Content to summarize:
 Instructions: Provide only the summary following the specified format. Do not include explanations."""
         
         try:
-            # Attempt Claude API call
             summary = self._make_claude_request_robust(
                 prompt=prompt,
                 max_tokens=config['max_tokens'],
@@ -1155,7 +1143,6 @@ Instructions: Provide only the summary following the specified format. Do not in
             summary_words = len(summary.split())
             compression_ratio = round((1 - summary_words/original_words) * 100, 1) if original_words > 0 else 0
             
-            # Create status and analysis
             status = f"{config['name']} | {original_words}→{summary_words} words ({compression_ratio}% compression) | Claude AI Success"
             
             analysis = f"""CLAUDE SUMMARIZER SUCCESS:
@@ -1172,72 +1159,32 @@ Instructions: Provide only the summary following the specified format. Do not in
             
         except ClaudeAPIError as e:
             logger.warning(f"Claude API failed, using enhanced fallback: {e}")
-            
-            # Enhanced fallback
             fallback_summary = self._create_enhanced_fallback_summary(text, summary_type, summary_length)
-            
             status = f"Enhanced {config['name']} Fallback | API temporarily unavailable"
-            analysis = f"""FALLBACK PROCESSING:
-- Reason: {str(e)}
-- Consecutive failures: {self.consecutive_failures}
-- Mode: Enhanced local processing
-- Quality: Fallback (reduced features)"""
-            
+            analysis = f"FALLBACK PROCESSING: {str(e)}"
             return fallback_summary, status, analysis
     
     def _create_enhanced_fallback_summary(self, text: str, summary_type: str, length: str) -> str:
         """Create enhanced fallback summary when API unavailable"""
         sentences = [s.strip() for s in text.split('.') if len(s.strip()) > 10]
-        
         if not sentences:
             return text[:500] + "..."
         
-        # Determine target sentence count based on length
-        if length == "short":
-            target_sentences = min(2, len(sentences))
-        elif length == "medium":
-            target_sentences = min(4, len(sentences))
-        else:  # long
-            target_sentences = min(6, len(sentences))
+        if length == "short": target_sentences = min(2, len(sentences))
+        elif length == "medium": target_sentences = min(4, len(sentences))
+        else: target_sentences = min(6, len(sentences))
         
-        # Select sentences intelligently
-        if len(sentences) <= target_sentences:
-            selected = sentences
-        else:
-            # Always include first sentence
-            selected = [sentences[0]]
-            
-            # Add middle sentences
-            if target_sentences > 2:
-                middle_start = len(sentences) // 3
-                middle_count = target_sentences - 2
-                selected.extend(sentences[middle_start:middle_start + middle_count])
-            
-            # Add last sentence if space
-            if target_sentences > 1 and len(selected) < target_sentences:
-                selected.append(sentences[-1])
+        selected = sentences[:target_sentences]
         
-        # Format based on summary type
         if summary_type == "bullet_points":
-            points = [f"• {s.strip()}" for s in selected[:target_sentences]]
+            points = [f"• {s.strip()}" for s in selected]
             return '\n'.join(points)
         else:
-            return '. '.join(selected[:target_sentences]) + '.'
+            return '. '.join(selected) + '.'
     
     # Compatibility methods for FastAPI
     def get_available_types(self) -> List[str]:
-        """Get available summary types"""
         return [t.value for t in SummaryType]
     
     def get_available_lengths(self) -> List[str]:
-        """Get available length options"""
         return [l.value for l in SummaryLength]
-    
-    def get_summary(self, text: str, mode: str = "abstractive", length: str = "medium") -> str:
-        """Simple interface - returns only summary text"""
-        result, _, _ = self.summarize(text, mode, length)
-        return result
-    
-    def summarize_text(self, text: str, summary_type: str = "abstractive", length: str = "medium") -> Tuple[str, str, str]:
-        """Alternative method name for compatibility"""
-        return self.summarize(text, summary_type, length)
