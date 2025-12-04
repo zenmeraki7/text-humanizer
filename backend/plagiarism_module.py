@@ -849,7 +849,7 @@ class PlagiarismDetector:
             prompt = f"Rewrite this text ({rewrite_mode}) to avoid plagiarism:\n{text}"
             try:
                 resp = self.client.messages.create(
-                    model="claude-3-5-sonnet-latest",
+                    model="claude-sonnet-4-5-20250929",
                     max_tokens=1000,
                     messages=[{"role": "user", "content": prompt}]
                 )
