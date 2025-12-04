@@ -314,12 +314,10 @@
 
 
 
-
-
 """
+backend/tone.py
 Robust Tone Manager with Enhanced API Reliability
-Optimized to minimize 529 errors and maximize success rate
-Updated with latest Claude Sonnet 4 model
+Optimized for Claude Sonnet 4.5
 """
 
 import os
@@ -329,7 +327,7 @@ import logging
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 import anthropic
-from datetime import datetime, timedelta
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -359,7 +357,10 @@ class ToneManager:
         
         # Use official Anthropic SDK
         self.client = anthropic.Anthropic(api_key=self.api_key)
-        self.model = "claude-sonnet-4-20250514"  # Latest Claude Sonnet 4
+        
+        # ✅ CORRECTED MODEL ID FOR SONNET 4.5
+        self.model = "claude-sonnet-4-5-20250929"
+        
         self.version = "2.0.0"
         self.tone_configs = self._load_tone_configurations()
         
@@ -368,79 +369,71 @@ class ToneManager:
         self.last_success_time = datetime.now()
         self.last_failure_time = None
         
-        logger.info(f"Robust Tone Manager v{self.version} initialized with {len(self.tone_configs)} modes using {self.model}")
+        logger.info(f"Robust Tone Manager v{self.version} initialized using {self.model}")
     
     def _load_tone_configurations(self) -> Dict[ToneMode, Dict]:
         """Load optimized tone configurations"""
         return {
             ToneMode.STANDARD: {
                 "name": "Standard",
-                "description": "Balanced processing for general content with natural flow",
-                "prompt": "Rewrite this text with balanced, natural language that flows well and reduces AI-like patterns while maintaining the original meaning and context.",
+                "description": "Balanced processing for general content",
+                "prompt": "Rewrite this text with balanced, natural language that flows well.",
                 "temperature": 0.2,
                 "max_tokens": 2500
             },
-            
             ToneMode.FLUENCY: {
                 "name": "Fluency",
                 "description": "Enhanced readability and smooth flow",
-                "prompt": "Rewrite this text to enhance readability and flow. Make it smooth, clear, and well-structured.",
+                "prompt": "Rewrite this text to enhance readability and flow. Make it smooth and clear.",
                 "temperature": 0.2,
                 "max_tokens": 2500
             },
-            
             ToneMode.ACADEMIC: {
                 "name": "Academic",
-                "description": "Scholarly and research writing standards",
-                "prompt": "Rewrite this text in an academic style suitable for scholarly work. Use formal vocabulary, proper structure, and maintain objectivity.",
+                "description": "Scholarly and research writing",
+                "prompt": "Rewrite this text in an academic style suitable for scholarly work.",
                 "temperature": 0.1,
                 "max_tokens": 3000
             },
-            
             ToneMode.CREATIVE: {
                 "name": "Creative",
-                "description": "Artistic and expressive content enhancement",
-                "prompt": "Rewrite this text in a creative and engaging way. Use varied sentence structures, expressive language, and make it interesting to read.",
+                "description": "Artistic and expressive content",
+                "prompt": "Rewrite this text in a creative and engaging way.",
                 "temperature": 0.5,
                 "max_tokens": 2800
             },
-            
             ToneMode.SIMPLE: {
                 "name": "Simple",
-                "description": "Clear and easy-to-understand language for all readers",
-                "prompt": "Rewrite this text in simple, easy-to-understand language. Use short sentences, plain vocabulary, and make it accessible for all readers.",
+                "description": "Clear language for all readers",
+                "prompt": "Rewrite this text in simple, easy-to-understand language.",
                 "temperature": 0.2,
                 "max_tokens": 2500
             },
-            
             ToneMode.FORMAL: {
                 "name": "Formal",
-                "description": "Polished and respectful communication style",
-                "prompt": "Rewrite this text in a formal, professional style. Use sophisticated vocabulary, polite phrasing, and structured formatting.",
+                "description": "Polished professional style",
+                "prompt": "Rewrite this text in a formal, professional style.",
                 "temperature": 0.1,
                 "max_tokens": 2800
             },
-            
             ToneMode.EXPAND: {
                 "name": "Expand",
-                "description": "Elaborates on ideas with more detail and explanation",
-                "prompt": "Expand this text by adding more detail, context, and explanation. Elaborate on key points while maintaining clarity.",
+                "description": "Elaborates on ideas",
+                "prompt": "Expand this text by adding more detail and context.",
                 "temperature": 0.3,
                 "max_tokens": 3500
             },
-            
             ToneMode.SHORTEN: {
                 "name": "Shorten",
-                "description": "Condenses content to be brief and to the point",
-                "prompt": "Condense this text to be brief and concise. Keep only the essential information and main points.",
+                "description": "Condenses content",
+                "prompt": "Condense this text to be brief and concise.",
                 "temperature": 0.1,
                 "max_tokens": 2000
             },
-            
             ToneMode.HUMANIZE: {
                 "name": "Humanize",
-                "description": "Makes text sound more natural and human-like",
-                "prompt": "Rewrite this text to sound more natural and human-like. Remove any AI-like patterns and make it conversational and authentic.",
+                "description": "Makes text sound natural",
+                "prompt": "Rewrite this text to sound natural, conversational, and authentic.",
                 "temperature": 0.4,
                 "max_tokens": 2500
             }
@@ -448,236 +441,75 @@ class ToneManager:
     
     def _should_use_api(self) -> bool:
         """Determine if we should attempt API call based on recent failures"""
-        # If too many consecutive failures, use fallback
         if self.consecutive_failures >= 3:
-            # Allow retry after 5 minutes
             if self.last_failure_time and (datetime.now() - self.last_failure_time).seconds < 300:
                 return False
             else:
-                # Reset after cooldown
                 self.consecutive_failures = 0
-        
         return True
     
     def _make_claude_request_robust(self, prompt: str, max_tokens: int, temperature: float) -> str:
-        """Make Claude API request with aggressive retry logic for 529 errors"""
-        
+        """Make Claude API request with retry logic"""
         if not self._should_use_api():
             raise ClaudeAPIError("Circuit breaker: Too many recent failures")
         
-        max_retries = 8  # Increased retries
-        base_wait = 1.5   # Shorter initial wait
+        max_retries = 5
+        base_wait = 1.5
         
         for attempt in range(max_retries):
             try:
                 message = self.client.messages.create(
-                    model=self.model,  # Use the configured model
+                    model=self.model,
                     max_tokens=max_tokens,
                     temperature=temperature,
                     messages=[{"role": "user", "content": prompt}]
                 )
-                
-                # Success - reset failure tracking
                 self.consecutive_failures = 0
                 self.last_success_time = datetime.now()
                 return message.content[0].text.strip()
                 
-            except anthropic.RateLimitError as e:
-                if attempt < max_retries - 1:
-                    wait_time = (base_wait * (2 ** attempt)) + random.uniform(0, 2)
-                    logger.warning(f"Rate limit, waiting {wait_time:.1f}s... (attempt {attempt + 1})")
-                    time.sleep(wait_time)
-                    continue
-                raise ClaudeAPIError("Rate limit exceeded after maximum retries")
-                
-            except anthropic.APIError as e:
-                error_str = str(e).lower()
-                
-                if "overloaded" in error_str or "529" in error_str:
-                    if attempt < max_retries - 1:
-                        # Aggressive backoff for 529 errors
-                        wait_time = min(60, (base_wait * (3 ** attempt)) + random.uniform(2, 8))
-                        logger.warning(f"API overloaded (529), waiting {wait_time:.1f}s... (attempt {attempt + 1})")
-                        time.sleep(wait_time)
-                        continue
-                    else:
-                        self.consecutive_failures += 1
-                        self.last_failure_time = datetime.now()
-                        raise ClaudeAPIError("Claude API overloaded after maximum retries")
-                
-                elif "401" in error_str or "403" in error_str:
-                    raise ClaudeAPIError("Authentication error - check API key")
-                else:
-                    raise ClaudeAPIError(f"Claude API error: {e}")
-                    
             except Exception as e:
-                if attempt < max_retries - 1:
-                    wait_time = base_wait + random.uniform(0, 1)
-                    time.sleep(wait_time)
-                    continue
-                raise ClaudeAPIError(f"Unexpected error: {e}")
+                # Basic exponential backoff
+                time.sleep(base_wait * (2 ** attempt))
+                if attempt == max_retries - 1:
+                    self.consecutive_failures += 1
+                    self.last_failure_time = datetime.now()
+                    raise ClaudeAPIError(f"Claude API failed: {e}")
         
         raise ClaudeAPIError("Maximum retries exceeded")
     
     def change_tone(self, text: str, tone_mode: str) -> Tuple[str, str, Dict]:
-        """
-        Change text tone using Claude API with robust error handling
-        
-        Args:
-            text: Text to transform
-            tone_mode: Target tone mode
-            
-        Returns:
-            Tuple of (transformed_text, status, analysis)
-        """
+        """Change text tone using Claude API"""
         if not text.strip():
             raise ValueError("Text cannot be empty")
         
-        # Validate tone mode
         try:
             mode_enum = ToneMode(tone_mode.lower())
         except ValueError:
-            available_modes = [mode.value for mode in ToneMode]
-            # Use fallback with basic transformation
-            fallback_text = self._apply_enhanced_fallback(text, tone_mode)
-            return fallback_text, f"Invalid tone mode, using fallback", {
-                "error": f"Invalid tone mode: {tone_mode}. Available: {available_modes}"
-            }
+            # Fallback to standard
+            mode_enum = ToneMode.STANDARD
         
         config = self.tone_configs[mode_enum]
-        
-        # Build optimized prompt
-        prompt = f"""{config['prompt']}
-
-Original text:
-{text}
-
-Instructions: Return ONLY the transformed text with no explanations."""
+        prompt = f"{config['prompt']}\n\nOriginal text:\n{text}\n\nReturn ONLY the transformed text."
         
         try:
-            # Attempt Claude API call
             transformed_text = self._make_claude_request_robust(
                 prompt=prompt,
                 max_tokens=config['max_tokens'],
                 temperature=config['temperature']
             )
             
-            # Calculate metrics
-            original_words = len(text.split())
-            transformed_words = len(transformed_text.split())
-            
+            status = f"{config['name']} | Success"
             analysis = {
                 "tone_mode": tone_mode,
-                "tone_name": config["name"],
-                "original_words": original_words,
-                "transformed_words": transformed_words,
                 "model": self.model,
-                "quality": "Premium Claude Sonnet 4",
                 "success": True
             }
-            
-            status = f"{config['name']} | {original_words}→{transformed_words} words | Claude Sonnet 4 Success"
-            
-            logger.info(f"Successfully transformed text to {tone_mode} tone using {self.model}")
             return transformed_text, status, analysis
             
         except ClaudeAPIError as e:
-            logger.warning(f"Claude API failed, using enhanced fallback: {e}")
-            
-            # Enhanced fallback
-            fallback_text = self._apply_enhanced_fallback(text, tone_mode)
-            
-            analysis = {
-                "tone_mode": tone_mode,
-                "fallback_used": True,
-                "api_error": str(e),
-                "consecutive_failures": self.consecutive_failures,
-                "quality": "Fallback Processing"
-            }
-            
-            status = f"Enhanced {config['name']} Fallback | API temporarily unavailable"
-            
-            return fallback_text, status, analysis
-    
-    def _apply_enhanced_fallback(self, text: str, tone_mode: str) -> str:
-        """Apply enhanced fallback transformation"""
-        
-        try:
-            mode_enum = ToneMode(tone_mode.lower())
-        except ValueError:
-            mode_enum = ToneMode.STANDARD
-        
-        if mode_enum == ToneMode.FORMAL:
-            replacements = {
-                "can't": "cannot", "won't": "will not", "don't": "do not",
-                "isn't": "is not", "aren't": "are not", "doesn't": "does not",
-                "really": "significantly", "a lot": "substantially"
-            }
-        elif mode_enum == ToneMode.SIMPLE:
-            replacements = {
-                "utilize": "use", "implement": "set up", "substantial": "big",
-                "demonstrate": "show", "facilitate": "help", "approximately": "about",
-                "subsequently": "then", "consequently": "so", "furthermore": "also"
-            }
-        elif mode_enum == ToneMode.ACADEMIC:
-            replacements = {
-                "show": "demonstrate", "use": "utilize", "help": "facilitate",
-                "big": "substantial", "really": "significantly", "also": "furthermore"
-            }
-        elif mode_enum == ToneMode.CREATIVE:
-            replacements = {
-                "good": "excellent", "big": "massive", "important": "crucial",
-                "show": "reveal", "help": "empower", "make": "craft"
-            }
-        elif mode_enum == ToneMode.SHORTEN:
-            # Remove common filler words
-            sentences = text.split('.')
-            return '. '.join(sentences[:max(1, len(sentences)//2)]) + '.'
-        elif mode_enum == ToneMode.EXPAND:
-            # Add context markers
-            return f"{text} This represents a comprehensive analysis of the subject matter."
-        else:  # STANDARD, FLUENCY, HUMANIZE
-            replacements = {
-                "really": "quite", "a lot": "many", "thing": "aspect"
-            }
-        
-        result = text
-        for old, new in replacements.items():
-            # Case-sensitive replacement
-            result = result.replace(old, new)
-            result = result.replace(old.capitalize(), new.capitalize())
-        
-        return result
-    
+            logger.warning(f"Tone change failed: {e}")
+            return text, "Failed (API Error)", {"error": str(e)}
+
     def get_available_modes(self) -> List[str]:
-        """Get list of available tone modes"""
         return [mode.value for mode in ToneMode]
-    
-    def get_mode_details(self) -> Dict[str, Dict]:
-        """Get detailed information about all tone modes"""
-        return {
-            mode.value: {
-                "name": config["name"],
-                "description": config["description"]
-            }
-            for mode, config in self.tone_configs.items()
-        }
-    
-    def get_api_status(self) -> Dict:
-        """Get current API status information"""
-        return {
-            "model": self.model,
-            "version": self.version,
-            "consecutive_failures": self.consecutive_failures,
-            "last_success": self.last_success_time.isoformat(),
-            "last_failure": self.last_failure_time.isoformat() if self.last_failure_time else None,
-            "api_available": self._should_use_api(),
-            "circuit_breaker_active": self.consecutive_failures >= 3
-        }
-    
-    def validate_mode(self, tone_mode_str: str) -> Optional[ToneMode]:
-        """Validate tone mode string"""
-        try:
-            return ToneMode(tone_mode_str.lower())
-        except ValueError:
-            return None
