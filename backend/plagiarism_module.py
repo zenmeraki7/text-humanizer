@@ -704,384 +704,156 @@
 
 
 
-
-
-
 """
-Add these endpoints to your main.py FastAPI application
-Complete plagiarism detection and removal endpoints
+plagiarism_module.py
+Logic only. No FastAPI routes here.
 """
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from plagiarism_module import PlagiarismDetector
+from __future__ import annotations
 import os
+import re
+import json
+import time
+import logging
+import random
+from pathlib import Path
+from typing import Dict, Tuple, List
+from difflib import SequenceMatcher
 
-# Initialize plagiarism detector
-plagiarism_detector = PlagiarismDetector(
-    anthropic_api_key=os.getenv('ANTHROPIC_API_KEY'),
-    ai_detector=ai_detector  # Your existing AI detector instance
-)
+# Optional imports
+try:
+    import openpyxl
+except Exception:
+    openpyxl = None
 
-# ============ REQUEST MODELS ============
+try:
+    import anthropic
+except Exception:
+    anthropic = None
 
-class SingleTextRequest(BaseModel):
-    text: str
+# Logging setup
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
 
-class TwoTextRequest(BaseModel):
-    text1: str
-    text2: str
+BASE_DIR = Path(__file__).resolve().parent
 
-class PlagiarismRemovalRequest(BaseModel):
-    text: str
-    rewrite_mode: str = "balanced"  # conservative, balanced, aggressive
-    reference_text: str = ""
+# ---------------- Helpers ---------------- #
 
-
-# ============ DETECTION ENDPOINTS ============
-
-@app.post("/detect-plagiarism-patterns")
-async def detect_plagiarism_patterns(request: SingleTextRequest):
-    """
-    Detect plagiarism indicators and patterns in text
-    
-    Returns patterns like:
-    - Missing citations
-    - Unmarked quotes
-    - Copy-paste indicators
-    - Style inconsistencies
-    """
+def load_json_patterns(filename: str = "ai_patterns.json") -> Dict[str, str]:
+    path = BASE_DIR / filename
+    if not path.exists():
+        return {}
     try:
-        if not request.text.strip():
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
-        
-        patterns = plagiarism_detector.detect_plagiarism_patterns(request.text)
-        pattern_count = sum(len(matches) for matches in patterns.values())
-        
-        return {
-            "patterns_detected": patterns,
-            "total_patterns": pattern_count,
-            "categories": list(patterns.keys()),
-            "has_plagiarism_indicators": pattern_count > 0
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            return {str(k).strip().lower(): str(v).strip() for k, v in data.items()}
+    except Exception:
+        return {}
 
-
-@app.post("/calculate-plagiarism-risk")
-async def calculate_plagiarism_risk(request: TwoTextRequest):
-    """
-    Calculate plagiarism risk score (0-100) with detailed analysis
-    
-    Analyzes:
-    - Pattern indicators
-    - Common phrase overuse
-    - Similarity to reference text
-    - Writing style consistency
-    """
+def load_xlsx_patterns(filename: str = "phrasal_patterns.xlsx") -> Dict[str, str]:
+    path = BASE_DIR / filename
+    if not path.exists() or openpyxl is None:
+        return {}
+    patterns = {}
     try:
-        text = request.text1
-        reference = request.text2 if request.text2.strip() else ""
+        wb = openpyxl.load_workbook(path, read_only=True)
+        sheet = wb.active
+        for i, row in enumerate(sheet.iter_rows(values_only=True), start=1):
+            if i == 1: continue
+            orig = row[0]
+            repl = row[1] if len(row) > 1 else None
+            if orig and repl:
+                patterns[str(orig).strip().lower()] = str(repl).strip()
+    except Exception:
+        pass
+    return patterns
+
+# ---------------- Class Definition ---------------- #
+
+class PlagiarismDetector:
+    def __init__(self, anthropic_api_key: str | None = None, ai_detector=None):
+        self.ai_detector = ai_detector
+        self.api_key = anthropic_api_key or os.getenv("ANTHROPIC_API_KEY")
+        self.anthropic_available = bool(self.api_key) and (anthropic is not None)
         
-        if not text.strip():
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
+        self.json_patterns = load_json_patterns("ai_patterns.json")
+        self.xlsx_patterns = load_xlsx_patterns("phrasal_patterns.xlsx")
         
-        risk_score, details = plagiarism_detector.calculate_plagiarism_risk(text, reference)
+        self.client = None
+        if self.anthropic_available:
+            try:
+                self.client = anthropic.Anthropic(api_key=self.api_key)
+                logger.info("✅ Anthropic client initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ Anthropic init failed: {e}")
+                self.anthropic_available = False
+
+    def check_plagiarism_local(self, text1: str, text2: str) -> Tuple[float, dict]:
+        if not text1 or not text2:
+            return 0.0, {"error": "Both texts required"}
         
-        return {
-            "risk_score": risk_score,
-            "risk_level": details["risk_level"],
-            "risk_factors": details["risk_factors"],
-            "detected_patterns": details["detected_patterns"],
-            "recommendation": _get_recommendation(risk_score)
+        t1 = re.sub(r"[^\w\s]", "", text1.lower())
+        t2 = re.sub(r"[^\w\s]", "", text2.lower())
+        overall_similarity = SequenceMatcher(None, t1, t2).ratio()
+        
+        # Simple scoring logic
+        score = overall_similarity * 100
+        
+        details = {
+            "overall_similarity": score,
+            "word_count_1": len(text1.split()),
+            "word_count_2": len(text2.split()),
         }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return score, details
 
+    def get_plagiarism_report(self, text1: str, text2: str) -> Tuple[str, float, str]:
+        score, details = self.check_plagiarism_local(text1, text2)
+        status = "High Similarity" if score > 50 else "Low Similarity"
+        report = f"Plagiarism Score: {score:.1f}% - {status}"
+        return report, score, status
 
-@app.post("/plagiarism-detection-report")
-async def get_plagiarism_detection_report(request: TwoTextRequest):
-    """
-    Generate comprehensive plagiarism detection report
+    def get_plagiarism_statistics(self, text1: str, text2: str) -> Dict:
+        score, details = self.check_plagiarism_local(text1, text2)
+        return {"overall_score": score, "details": details}
+
+    def find_similar_sentences(self, text1: str, text2: str, threshold: float = 0.7) -> List[dict]:
+        sentences1 = [s.strip() for s in re.split(r"[.!?]+", text1) if s.strip()]
+        sentences2 = [s.strip() for s in re.split(r"[.!?]+", text2) if s.strip()]
+        pairs = []
+        for i, s1 in enumerate(sentences1):
+            for j, s2 in enumerate(sentences2):
+                sim = SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
+                if sim >= threshold:
+                    pairs.append({
+                        "text1": s1, "text2": s2, "similarity": sim * 100
+                    })
+        return pairs
+
+    # Dummy method placeholders if your route calls them but they were missing in the provided code
+    def detect_plagiarism_patterns(self, text: str):
+        # Placeholder logic
+        return {"general": ["No specific patterns implemented yet"]}
+
+    def calculate_plagiarism_risk(self, text: str, reference: str):
+        score, _ = self.check_plagiarism_local(text, reference)
+        risk_level = "HIGH" if score > 50 else "LOW"
+        return score, {"risk_level": risk_level, "risk_factors": [], "detected_patterns": []}
     
-    Provides:
-    - Risk assessment
-    - Pattern detection
-    - Recommendations
-    """
-    try:
-        text = request.text1
-        reference = request.text2 if request.text2.strip() else ""
-        
-        if not text.strip():
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
-        
-        report, risk_score, details = plagiarism_detector.get_detection_report(text, reference)
-        
-        return {
-            "report": report,
-            "risk_score": risk_score,
-            "risk_level": details["risk_level"],
-            "detected_patterns": details["detected_patterns"],
-            "risk_factors": details["risk_factors"]
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    def get_detection_report(self, text: str, reference: str):
+        score, details = self.calculate_plagiarism_risk(text, reference)
+        return "Analysis Report", score, details
 
-
-# ============ COMPARISON ENDPOINTS ============
-
-@app.post("/check-plagiarism")
-async def check_plagiarism(request: TwoTextRequest):
-    """
-    Compare two texts for similarity (0-100%)
-    
-    Returns:
-    - Similarity score
-    - Detailed metrics
-    - Classification
-    """
-    try:
-        if not request.text1.strip() or not request.text2.strip():
-            raise HTTPException(status_code=400, detail="Both texts are required")
-        
-        report, score, status = plagiarism_detector.get_plagiarism_report(
-            request.text1,
-            request.text2
-        )
-        
-        return {
-            "report": report,
-            "similarity_score": score,
-            "status": status,
-            "classification": _get_classification(score)
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/plagiarism-statistics")
-async def get_plagiarism_statistics(request: TwoTextRequest):
-    """
-    Get detailed plagiarism statistics between two texts
-    
-    Includes:
-    - Overall similarity
-    - Sentence-by-sentence analysis
-    - Similar sentence pairs
-    """
-    try:
-        if not request.text1.strip() or not request.text2.strip():
-            raise HTTPException(status_code=400, detail="Both texts are required")
-        
-        stats = plagiarism_detector.get_plagiarism_statistics(
-            request.text1,
-            request.text2
-        )
-        
-        return stats
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/find-similar-sentences")
-async def find_similar_sentences(request: TwoTextRequest):
-    """
-    Find sentences with high similarity between two texts
-    
-    Returns matching sentence pairs with similarity scores
-    """
-    try:
-        if not request.text1.strip() or not request.text2.strip():
-            raise HTTPException(status_code=400, detail="Both texts are required")
-        
-        similar = plagiarism_detector.find_similar_sentences(
-            request.text1,
-            request.text2,
-            threshold=0.7
-        )
-        
-        return {
-            "similar_sentences": similar,
-            "count": len(similar),
-            "has_matches": len(similar) > 0
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============ REMOVAL ENDPOINTS ============
-
-@app.post("/remove-plagiarism")
-async def remove_plagiarism(request: PlagiarismRemovalRequest):
-    """
-    Remove plagiarism by rewriting text
-    
-    Modes:
-    - conservative: Light paraphrasing
-    - balanced: Moderate restructuring (default)
-    - aggressive: Complete rewrite
-    """
-    try:
-        if not request.text.strip():
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
-        
-        if request.rewrite_mode not in ["conservative", "balanced", "aggressive"]:
-            raise HTTPException(
-                status_code=400, 
-                detail="Invalid mode. Use: conservative, balanced, or aggressive"
-            )
-        
-        rewritten, report = plagiarism_detector.remove(
-            text=request.text,
-            rewrite_mode=request.rewrite_mode,
-            reference_text=request.reference_text
-        )
-        
-        return {
-            "success": True,
-            "rewritten_text": rewritten,
-            "status": report.get("status"),
-            "fallback_used": report.get("fallback_used", False),
-            "metrics": {
-                "original_word_count": report.get("original_word_count"),
-                "new_word_count": report.get("new_word_count"),
-                "original_plagiarism_score": report.get("original_plagiarism_score"),
-                "new_plagiarism_score": report.get("new_plagiarism_score"),
-                "improvement": (
-                    report.get("original_plagiarism_score", 0) - 
-                    report.get("new_plagiarism_score", 0)
-                ) if report.get("original_plagiarism_score") else 0
-            },
-            "rewrite_mode": request.rewrite_mode
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============ INFO ENDPOINTS ============
-
-@app.get("/plagiarism-modes")
-async def get_plagiarism_modes():
-    """Get available rewrite modes for plagiarism removal"""
-    return {
-        "modes": [
-            {
-                "name": "conservative",
-                "description": "Light paraphrasing while maintaining original structure",
-                "use_case": "Minimal changes, preserves original style",
-                "change_level": "Low"
-            },
-            {
-                "name": "balanced",
-                "description": "Moderate restructuring with synonym replacement",
-                "use_case": "Best for most situations - balanced approach",
-                "change_level": "Medium"
-            },
-            {
-                "name": "aggressive",
-                "description": "Complete restructuring with new writing style",
-                "use_case": "Maximum difference from original",
-                "change_level": "High"
-            }
-        ]
-    }
-
-
-@app.get("/plagiarism-risk-levels")
-async def get_risk_levels():
-    """Get plagiarism risk level thresholds"""
-    return {
-        "levels": [
-            {"level": "MINIMAL", "range": "0-20%", "color": "green"},
-            {"level": "LOW", "range": "20-40%", "color": "yellow"},
-            {"level": "MEDIUM", "range": "40-60%", "color": "orange"},
-            {"level": "HIGH", "range": "60-80%", "color": "red"},
-            {"level": "CRITICAL", "range": "80-100%", "color": "darkred"}
-        ]
-    }
-
-
-# ============ HELPER FUNCTIONS ============
-
-def _get_classification(score: float) -> str:
-    """Get classification from similarity score"""
-    if score >= 80:
-        return "highly_similar"
-    elif score >= 60:
-        return "possibly_plagiarized"
-    elif score >= 40:
-        return "some_similarities"
-    elif score >= 20:
-        return "minor_similarities"
-    else:
-        return "likely_original"
-
-
-def _get_recommendation(risk_score: float) -> str:
-    """Get recommendation based on risk score"""
-    if risk_score >= 80:
-        return "CRITICAL: Immediate review required. Add citations and rewrite similar sections."
-    elif risk_score >= 60:
-        return "HIGH: Review all sources and verify proper attribution."
-    elif risk_score >= 40:
-        return "MEDIUM: Check detected patterns and ensure proper citations."
-    elif risk_score >= 20:
-        return "LOW: Minor concerns. Review citation practices."
-    else:
-        return "MINIMAL: Content appears original. Maintain good practices."
-
-
-# ============ UPDATE ROOT ENDPOINT ============
-
-@app.get("/")
-async def root():
-    """Root endpoint showing API status"""
-    return {
-        "message": "AI Text Detector & Humanizer API",
-        "status": "running",
-        "version": "5.0.0",
-        "modules_loaded": True,
-        "api_key_available": bool(os.getenv('ANTHROPIC_API_KEY')),
-        "powered_by": "Claude AI with Smart Error Handling",
-        "endpoints": {
-            "core": [
-                "/analyze",
-                "/humanize"
-            ],
-            "plagiarism_detection": [
-                "/detect-plagiarism-patterns",
-                "/calculate-plagiarism-risk",
-                "/plagiarism-detection-report"
-            ],
-            "plagiarism_comparison": [
-                "/check-plagiarism",
-                "/plagiarism-statistics",
-                "/find-similar-sentences"
-            ],
-            "plagiarism_removal": [
-                "/remove-plagiarism",
-                "/plagiarism-modes"
-            ],
-            "advanced": [
-                "/change-tone",
-                "/summarize"
-            ],
-            "info": [
-                "/tone-modes",
-                "/summary-options",
-                "/plagiarism-risk-levels",
-                "/health",
-                "/api-status"
-            ]
-        }
-    }
+    def remove(self, text: str, rewrite_mode: str = "balanced", reference_text: str = "") -> Tuple[str, Dict]:
+        # Simple fallback or Anthropic logic here
+        if self.client:
+            prompt = f"Rewrite this text ({rewrite_mode}) to avoid plagiarism:\n{text}"
+            try:
+                resp = self.client.messages.create(
+                    model="claude-3-5-sonnet-latest",
+                    max_tokens=1000,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                return resp.content[0].text, {"status": "anthropic_success"}
+            except Exception:
+                pass
+        return text, {"status": "fallback_no_change"}
