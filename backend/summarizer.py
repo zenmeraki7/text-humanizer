@@ -500,8 +500,9 @@
 
 
 """
+summarizer.py
 Robust Claude Summarizer - Enhanced API Reliability
-Optimized to minimize 529 errors and maximize success rate
+Optimized for Claude Sonnet 4.5
 """
 
 import os
@@ -535,6 +536,7 @@ class ClaudeAPIError(Exception):
     """Custom exception for Claude API errors"""
     pass
 
+# Kept class name as LlamaSummarizer to match your main.py imports
 class LlamaSummarizer:
     """Advanced summarizer with robust Claude integration"""
     
@@ -678,7 +680,8 @@ class LlamaSummarizer:
         for attempt in range(max_retries):
             try:
                 message = self.client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
+                    # ✅ UPDATED: Use the correct ID for Claude Sonnet 4.5
+                    model="claude-sonnet-4-5-20250929",
                     max_tokens=max_tokens,
                     temperature=temperature,
                     messages=[{"role": "user", "content": prompt}]
