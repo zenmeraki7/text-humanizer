@@ -582,7 +582,7 @@ load_dotenv()
 
 app = FastAPI(
     title="AI Text Detector & Humanizer API",
-    version="5.0.0",
+    version="Claude Sonnet 4.5",
     description="Advanced AI text processing with intelligent error handling, plagiarism detection, and Claude API integration"
 )
 
