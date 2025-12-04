@@ -738,7 +738,7 @@ Text to rewrite:
 Return ONLY the rewritten version with no explanations."""
 
             response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-sonnet-4-5-20250929",
                 max_tokens=4000,
                 messages=[{"role": "user", "content": prompt}]
             )
