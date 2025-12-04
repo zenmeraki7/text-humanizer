@@ -963,6 +963,16 @@
 #     # Matches Render.com default port 10000
 #     port = int(os.getenv("PORT", 10000))
 #     uvicorn.run(app, host="0.0.0.0", port=port)from fastapi import FastAPI, HTTPException, Request, Depends
+
+
+
+
+
+
+
+
+
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -1371,7 +1381,5 @@ if __name__ == "__main__":
     # Matches Render.com default port 10000
     port = int(os.getenv("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-
 
 
