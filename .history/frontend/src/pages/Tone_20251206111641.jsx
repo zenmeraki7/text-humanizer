@@ -32,7 +32,7 @@ export default function AdvancedTools() {
 
   const getTabDescription = (tab) => {
     switch (tab) {
-      case 'Tones': return 'Check plagiarism with different processing modes';
+      case 'Tones': return ' check plagiarism with different processing modes';
       case 'Summarize': return 'Generate concise summaries with key insights extraction';
       default: return 'Advanced AI text processing';
     }

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ParticleBackground from '../../components/Particle';
-
 function LoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -87,7 +86,7 @@ function LoginPage() {
   const containerStyles = {
     minHeight: '100vh',
     minWidth: '100vw',
-    background: 'linear-gradient(135deg, #ffffff 0%, #e8f4f8 50%, #d4e9f2 100%)',
+    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -100,14 +99,14 @@ function LoginPage() {
   };
 
   const cardStyles = {
-    background: 'rgba(255, 255, 255, 0.98)',
+    background: 'rgba(15, 23, 42, 0.95)',
     backdropFilter: 'blur(24px)',
-    border: '1px solid rgba(2, 56, 89, 0.15)',
+    border: '1px solid rgba(148, 163, 184, 0.1)',
     borderRadius: isMobile ? '16px' : '20px',
     padding: isMobile ? '24px' : '20px',
     width: '100%',
     maxWidth: isMobile ? '100%' : '460px',
-    boxShadow: '0 25px 50px -12px rgba(2, 56, 89, 0.15), 0 0 0 1px rgba(2, 56, 89, 0.05)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(148, 163, 184, 0.05)',
     margin: isMobile ? '0' : 'auto',
   };
 
@@ -117,7 +116,7 @@ function LoginPage() {
   };
 
   const titleStyles = {
-    color: '#023859',
+    color: '#f8fafc',
     fontSize: isMobile ? '24px' : '28px',
     fontWeight: '700',
     marginBottom: '8px',
@@ -125,7 +124,7 @@ function LoginPage() {
   };
 
   const subtitleStyles = {
-    color: '#456578',
+    color: '#94a3b8',
     fontSize: isMobile ? '14px' : '15px',
     fontWeight: '400',
     lineHeight: '1.5',
@@ -138,7 +137,7 @@ function LoginPage() {
 
   const labelStyles = {
     display: 'block',
-    color: '#023859',
+    color: '#f1f5f9',
     fontSize: isMobile ? '13px' : '14px',
     fontWeight: '500',
     marginBottom: '8px',
@@ -152,10 +151,10 @@ function LoginPage() {
   const inputStyles = (hasError) => ({
     width: '100%',
     padding: isMobile ? '12px 14px 12px 40px' : '14px 16px 14px 44px',
-    background: 'rgba(255, 255, 255, 0.9)',
-    border: `1px solid ${hasError ? '#ef4444' : 'rgba(2, 56, 89, 0.2)'}`,
+    background: 'rgba(30, 41, 59, 0.6)',
+    border: `1px solid ${hasError ? '#ef4444' : 'rgba(148, 163, 184, 0.2)'}`,
     borderRadius: isMobile ? '10px' : '12px',
-    color: '#023859',
+    color: '#f8fafc',
     fontSize: isMobile ? '16px' : '15px', // 16px prevents zoom on iOS
     outline: 'none',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -167,7 +166,7 @@ function LoginPage() {
     left: isMobile ? '12px' : '14px',
     top: '50%',
     transform: 'translateY(-50%)',
-    color: '#456578',
+    color: '#64748b',
     width: isMobile ? '16px' : '18px',
     height: isMobile ? '16px' : '18px'
   };
@@ -179,7 +178,7 @@ function LoginPage() {
     transform: 'translateY(-50%)',
     background: 'none',
     border: 'none',
-    color: '#456578',
+    color: '#64748b',
     cursor: 'pointer',
     padding: '4px',
     borderRadius: '6px',
@@ -212,7 +211,7 @@ function LoginPage() {
   const checkboxLabelStyles = {
     display: 'flex',
     alignItems: 'center',
-    color: '#456578',
+    color: '#cbd5e1',
     fontSize: isMobile ? '13px' : '14px',
     cursor: 'pointer',
     fontWeight: '400',
@@ -221,13 +220,13 @@ function LoginPage() {
 
   const checkboxStyles = {
     marginRight: '10px',
-    accentColor: '#023859',
+    accentColor: '#3b82f6',
     width: isMobile ? '18px' : '16px',
     height: isMobile ? '18px' : '16px'
   };
 
   const forgotLinkStyles = {
-    color: '#023859',
+    color: '#3b82f6',
     fontSize: isMobile ? '13px' : '14px',
     fontWeight: '500',
     textDecoration: 'none',
@@ -243,7 +242,7 @@ function LoginPage() {
   const buttonStyles = {
     width: '100%',
     padding: isMobile ? '14px' : '16px',
-    background: 'linear-gradient(135deg, #023859 0%, #034a73 100%)',
+    background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
     border: 'none',
     borderRadius: isMobile ? '10px' : '12px',
     color: '#ffffff',
@@ -254,7 +253,7 @@ function LoginPage() {
     opacity: isLoading ? 0.7 : 1,
     marginBottom: isMobile ? '24px' : '28px',
     letterSpacing: '0.01em',
-    boxShadow: '0 4px 14px 0 rgba(2, 56, 89, 0.3)',
+    boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.3)',
     minHeight: isMobile ? '48px' : 'auto'
   };
 
@@ -262,7 +261,7 @@ function LoginPage() {
     display: 'flex',
     alignItems: 'center',
     margin: isMobile ? '24px 0' : '28px 0',
-    color: '#456578',
+    color: '#64748b',
     fontSize: isMobile ? '12px' : '13px',
     fontWeight: '400'
   };
@@ -270,7 +269,7 @@ function LoginPage() {
   const dividerLineStyles = {
     flex: 1,
     height: '1px',
-    background: 'rgba(2, 56, 89, 0.15)'
+    background: 'rgba(148, 163, 184, 0.15)'
   };
 
   const dividerTextStyles = {
@@ -281,10 +280,10 @@ function LoginPage() {
   const socialButtonStyles = {
     width: '100%',
     padding: isMobile ? '12px' : '14px',
-    background: 'rgba(255, 255, 255, 0.9)',
-    border: '1px solid rgba(2, 56, 89, 0.2)',
+    background: 'rgba(30, 41, 59, 0.6)',
+    border: '1px solid rgba(148, 163, 184, 0.2)',
     borderRadius: isMobile ? '10px' : '12px',
-    color: '#023859',
+    color: '#f1f5f9',
     fontSize: isMobile ? '15px' : '14px',
     fontWeight: '500',
     cursor: 'pointer',
@@ -298,7 +297,7 @@ function LoginPage() {
 
   const signupLinkStyles = {
     textAlign: 'center',
-    color: '#456578',
+    color: '#94a3b8',
     fontSize: isMobile ? '13px' : '14px',
     marginTop: isMobile ? '28px' : '32px',
     fontWeight: '400',
@@ -306,7 +305,7 @@ function LoginPage() {
   };
 
   const linkStyles = {
-    color: '#023859',
+    color: '#3b82f6',
     fontWeight: '500',
     textDecoration: 'none',
     cursor: 'pointer',
@@ -365,13 +364,8 @@ function LoginPage() {
             font-size: 16px;
           }
         }
-
-        input::placeholder {
-          color: #94a3b8;
-        }
       `}</style>
-      <ParticleBackground/>
-      
+<ParticleBackground/>
       <div 
         className="login-card"
         style={cardStyles}
@@ -396,12 +390,12 @@ function LoginPage() {
                 autoComplete="email"
                 onFocus={(e) => {
                   if (!errors.email) {
-                    e.target.style.borderColor = '#023859';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(2, 56, 89, 0.1)';
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = errors.email ? '#ef4444' : 'rgba(2, 56, 89, 0.2)';
+                  e.target.style.borderColor = errors.email ? '#ef4444' : 'rgba(148, 163, 184, 0.2)';
                   e.target.style.boxShadow = 'none';
                 }}
               />
@@ -431,12 +425,12 @@ function LoginPage() {
                 autoComplete="current-password"
                 onFocus={(e) => {
                   if (!errors.password) {
-                    e.target.style.borderColor = '#023859';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(2, 56, 89, 0.1)';
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = errors.password ? '#ef4444' : 'rgba(2, 56, 89, 0.2)';
+                  e.target.style.borderColor = errors.password ? '#ef4444' : 'rgba(148, 163, 184, 0.2)';
                   e.target.style.boxShadow = 'none';
                 }}
               />
@@ -444,8 +438,8 @@ function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 style={passwordToggleStyles}
-                onMouseEnter={(e) => e.target.style.color = '#023859'}
-                onMouseLeave={(e) => e.target.style.color = '#456578'}
+                onMouseEnter={(e) => e.target.style.color = '#94a3b8'}
+                onMouseLeave={(e) => e.target.style.color = '#64748b'}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={isMobile ? 20 : 18} /> : <Eye size={isMobile ? 20 : 18} />}
@@ -472,8 +466,8 @@ function LoginPage() {
             </label>
             <a 
               style={forgotLinkStyles}
-              onMouseEnter={(e) => e.target.style.color = '#034a73'}
-              onMouseLeave={(e) => e.target.style.color = '#023859'}
+              onMouseEnter={(e) => e.target.style.color = '#60a5fa'}
+              onMouseLeave={(e) => e.target.style.color = '#3b82f6'}
               onClick={() => navigate('/forgot-password')}
             >
               Forgot password?
@@ -488,15 +482,13 @@ function LoginPage() {
             onMouseEnter={(e) => {
               if (!isLoading) {
                 e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0 8px 25px 0 rgba(2, 56, 89, 0.4)';
-                e.target.style.background = 'linear-gradient(135deg, #012744 0%, #02385a 100%)';
+                e.target.style.boxShadow = '0 8px 25px 0 rgba(59, 130, 246, 0.4)';
               }
             }}
             onMouseLeave={(e) => {
               if (!isLoading) {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 14px 0 rgba(2, 56, 89, 0.3)';
-                e.target.style.background = 'linear-gradient(135deg, #023859 0%, #034a73 100%)';
+                e.target.style.boxShadow = '0 4px 14px 0 rgba(59, 130, 246, 0.3)';
               }
             }}
           >
@@ -513,12 +505,12 @@ function LoginPage() {
         <button
           style={socialButtonStyles}
           onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(2, 56, 89, 0.05)';
-            e.target.style.borderColor = 'rgba(2, 56, 89, 0.3)';
+            e.target.style.background = 'rgba(30, 41, 59, 0.8)';
+            e.target.style.borderColor = 'rgba(148, 163, 184, 0.3)';
           }}
           onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-            e.target.style.borderColor = 'rgba(2, 56, 89, 0.2)';
+            e.target.style.background = 'rgba(30, 41, 59, 0.6)';
+            e.target.style.borderColor = 'rgba(148, 163, 184, 0.2)';
           }}
           onClick={() => console.log('Google sign in clicked')}
         >
@@ -543,8 +535,8 @@ function LoginPage() {
           Don't have an account?{' '}
           <a 
             style={linkStyles}
-            onMouseEnter={(e) => e.target.style.color = '#034a73'}
-            onMouseLeave={(e) => e.target.style.color = '#023859'}
+            onMouseEnter={(e) => e.target.style.color = '#60a5fa'}
+            onMouseLeave={(e) => e.target.style.color = '#3b82f6'}
             onClick={() => navigate('/sign-up')}
           >
             Create one here
@@ -552,7 +544,8 @@ function LoginPage() {
         </div>
       </div>
     </div>
-  );
-}
+  )
+};
+
 
 export default LoginPage;

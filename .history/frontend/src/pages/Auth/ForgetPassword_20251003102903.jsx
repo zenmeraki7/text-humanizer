@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ParticleBackground from '../../components/Particle';
-
 function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -66,7 +65,7 @@ function ForgotPasswordPage() {
   const containerStyles = {
     minHeight: '100vh',
     minWidth: '100vw',
-    background: 'linear-gradient(135deg, #ffffff 0%, #e8f4f8 50%, #d4e9f2 100%)',
+    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -79,14 +78,14 @@ function ForgotPasswordPage() {
   };
 
   const cardStyles = {
-    background: 'rgba(255, 255, 255, 0.98)',
+    background: 'rgba(15, 23, 42, 0.95)',
     backdropFilter: 'blur(24px)',
-    border: '1px solid rgba(2, 56, 89, 0.15)',
+    border: '1px solid rgba(148, 163, 184, 0.1)',
     borderRadius: isMobile ? '16px' : '20px',
     padding: isMobile ? '24px' : '48px',
     width: '100%',
     maxWidth: isMobile ? '100%' : '460px',
-    boxShadow: '0 25px 50px -12px rgba(2, 56, 89, 0.15), 0 0 0 1px rgba(2, 56, 89, 0.05)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(148, 163, 184, 0.05)',
     margin: isMobile ? '0' : 'auto',
   };
 
@@ -95,7 +94,7 @@ function ForgotPasswordPage() {
     alignItems: 'center',
     background: 'none',
     border: 'none',
-    color: '#456578',
+    color: '#64748b',
     fontSize: isMobile ? '13px' : '14px',
     fontWeight: '500',
     cursor: 'pointer',
@@ -111,7 +110,7 @@ function ForgotPasswordPage() {
   };
 
   const titleStyles = {
-    color: '#023859',
+    color: '#f8fafc',
     fontSize: isMobile ? '24px' : '28px',
     fontWeight: '700',
     marginBottom: '8px',
@@ -119,7 +118,7 @@ function ForgotPasswordPage() {
   };
 
   const subtitleStyles = {
-    color: '#456578',
+    color: '#94a3b8',
     fontSize: isMobile ? '14px' : '15px',
     fontWeight: '400',
     lineHeight: '1.5',
@@ -132,7 +131,7 @@ function ForgotPasswordPage() {
 
   const labelStyles = {
     display: 'block',
-    color: '#023859',
+    color: '#f1f5f9',
     fontSize: isMobile ? '13px' : '14px',
     fontWeight: '500',
     marginBottom: '8px',
@@ -146,10 +145,10 @@ function ForgotPasswordPage() {
   const inputStyles = (hasError) => ({
     width: '100%',
     padding: isMobile ? '12px 14px 12px 40px' : '14px 16px 14px 44px',
-    background: 'rgba(255, 255, 255, 0.9)',
-    border: `1px solid ${hasError ? '#ef4444' : 'rgba(2, 56, 89, 0.2)'}`,
+    background: 'rgba(30, 41, 59, 0.6)',
+    border: `1px solid ${hasError ? '#ef4444' : 'rgba(148, 163, 184, 0.2)'}`,
     borderRadius: isMobile ? '10px' : '12px',
-    color: '#023859',
+    color: '#f8fafc',
     fontSize: isMobile ? '16px' : '15px', // 16px prevents zoom on iOS
     outline: 'none',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -161,7 +160,7 @@ function ForgotPasswordPage() {
     left: isMobile ? '12px' : '14px',
     top: '50%',
     transform: 'translateY(-50%)',
-    color: '#456578',
+    color: '#64748b',
     width: isMobile ? '16px' : '18px',
     height: isMobile ? '16px' : '18px'
   };
@@ -178,7 +177,7 @@ function ForgotPasswordPage() {
   const buttonStyles = {
     width: '100%',
     padding: isMobile ? '14px' : '16px',
-    background: 'linear-gradient(135deg, #023859 0%, #034a73 100%)',
+    background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
     border: 'none',
     borderRadius: isMobile ? '10px' : '12px',
     color: '#ffffff',
@@ -189,7 +188,7 @@ function ForgotPasswordPage() {
     opacity: isLoading ? 0.7 : 1,
     marginBottom: isMobile ? '24px' : '28px',
     letterSpacing: '0.01em',
-    boxShadow: '0 4px 14px 0 rgba(2, 56, 89, 0.3)',
+    boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.3)',
     minHeight: isMobile ? '48px' : 'auto'
   };
 
@@ -206,14 +205,14 @@ function ForgotPasswordPage() {
   };
 
   const successTitleStyles = {
-    color: '#023859',
+    color: '#f8fafc',
     fontSize: isMobile ? '20px' : '24px',
     fontWeight: '600',
     marginBottom: '12px'
   };
 
   const successMessageStyles = {
-    color: '#456578',
+    color: '#94a3b8',
     fontSize: isMobile ? '14px' : '15px',
     lineHeight: '1.6',
     marginBottom: isMobile ? '28px' : '32px',
@@ -221,7 +220,7 @@ function ForgotPasswordPage() {
   };
 
   const emailHighlightStyles = {
-    color: '#023859',
+    color: '#3b82f6',
     fontWeight: '500',
     wordBreak: 'break-word'
   };
@@ -229,7 +228,7 @@ function ForgotPasswordPage() {
   const linkButtonStyles = {
     background: 'none',
     border: 'none',
-    color: '#023859',
+    color: '#3b82f6',
     fontSize: isMobile ? '13px' : '14px',
     fontWeight: '500',
     cursor: 'pointer',
@@ -240,7 +239,7 @@ function ForgotPasswordPage() {
   };
 
   const helpTextStyles = {
-    color: '#456578',
+    color: '#64748b',
     fontSize: isMobile ? '13px' : '14px',
     textAlign: 'center',
     lineHeight: '1.5',
@@ -300,13 +299,7 @@ function ForgotPasswordPage() {
               font-size: 16px;
             }
           }
-
-          input::placeholder {
-            color: #94a3b8;
-          }
         `}</style>
-        <ParticleBackground/>
-        
         <div 
           className="forgot-password-card"
           style={cardStyles}
@@ -314,8 +307,8 @@ function ForgotPasswordPage() {
           <button
             onClick={() => navigate('/login')}
             style={backButtonStyles}
-            onMouseEnter={(e) => e.target.style.color = '#023859'}
-            onMouseLeave={(e) => e.target.style.color = '#456578'}
+            onMouseEnter={(e) => e.target.style.color = '#94a3b8'}
+            onMouseLeave={(e) => e.target.style.color = '#64748b'}
           >
             <ArrowLeft style={{ 
               width: isMobile ? '18px' : '16px', 
@@ -339,13 +332,11 @@ function ForgotPasswordPage() {
               style={buttonStyles}
               onMouseEnter={(e) => {
                 e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0 8px 25px 0 rgba(2, 56, 89, 0.4)';
-                e.target.style.background = 'linear-gradient(135deg, #012744 0%, #02385a 100%)';
+                e.target.style.boxShadow = '0 8px 25px 0 rgba(59, 130, 246, 0.4)';
               }}
               onMouseLeave={(e) => {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 14px 0 rgba(2, 56, 89, 0.3)';
-                e.target.style.background = 'linear-gradient(135deg, #023859 0%, #034a73 100%)';
+                e.target.style.boxShadow = '0 4px 14px 0 rgba(59, 130, 246, 0.3)';
               }}
             >
               Back to Login
@@ -356,8 +347,8 @@ function ForgotPasswordPage() {
               <button
                 onClick={handleTryAgain}
                 style={linkButtonStyles}
-                onMouseEnter={(e) => e.target.style.color = '#034a73'}
-                onMouseLeave={(e) => e.target.style.color = '#023859'}
+                onMouseEnter={(e) => e.target.style.color = '#60a5fa'}
+                onMouseLeave={(e) => e.target.style.color = '#3b82f6'}
               >
                 try again
               </button>
@@ -424,10 +415,6 @@ function ForgotPasswordPage() {
             font-size: 16px;
           }
         }
-
-        input::placeholder {
-          color: #94a3b8;
-        }
       `}</style>
 
       <div 
@@ -437,8 +424,8 @@ function ForgotPasswordPage() {
         <button
           onClick={() => navigate('/login')}
           style={backButtonStyles}
-          onMouseEnter={(e) => e.target.style.color = '#023859'}
-          onMouseLeave={(e) => e.target.style.color = '#456578'}
+          onMouseEnter={(e) => e.target.style.color = '#94a3b8'}
+          onMouseLeave={(e) => e.target.style.color = '#64748b'}
         >
           <ArrowLeft style={{ 
             width: isMobile ? '18px' : '16px', 
@@ -470,12 +457,12 @@ function ForgotPasswordPage() {
                 autoComplete="email"
                 onFocus={(e) => {
                   if (!error) {
-                    e.target.style.borderColor = '#023859';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(2, 56, 89, 0.1)';
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = error ? '#ef4444' : 'rgba(2, 56, 89, 0.2)';
+                  e.target.style.borderColor = error ? '#ef4444' : 'rgba(148, 163, 184, 0.2)';
                   e.target.style.boxShadow = 'none';
                 }}
                 onKeyDown={(e) => {
@@ -505,15 +492,13 @@ function ForgotPasswordPage() {
             onMouseEnter={(e) => {
               if (!isLoading) {
                 e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0 8px 25px 0 rgba(2, 56, 89, 0.4)';
-                e.target.style.background = 'linear-gradient(135deg, #012744 0%, #02385a 100%)';
+                e.target.style.boxShadow = '0 8px 25px 0 rgba(59, 130, 246, 0.4)';
               }
             }}
             onMouseLeave={(e) => {
               if (!isLoading) {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 14px 0 rgba(2, 56, 89, 0.3)';
-                e.target.style.background = 'linear-gradient(135deg, #023859 0%, #034a73 100%)';
+                e.target.style.boxShadow = '0 4px 14px 0 rgba(59, 130, 246, 0.3)';
               }
             }}
           >
@@ -526,8 +511,8 @@ function ForgotPasswordPage() {
           <button
             onClick={() => navigate('/login')}
             style={linkButtonStyles}
-            onMouseEnter={(e) => e.target.style.color = '#034a73'}
-            onMouseLeave={(e) => e.target.style.color = '#023859'}
+            onMouseEnter={(e) => e.target.style.color = '#60a5fa'}
+            onMouseLeave={(e) => e.target.style.color = '#3b82f6'}
           >
             Sign in here
           </button>
