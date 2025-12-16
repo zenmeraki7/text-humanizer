@@ -703,92 +703,137 @@
 
 
 
-
-"""
-plagiarism_module.py
-Logic only. No FastAPI routes here.
-"""
-from __future__ import annotations
 import os
-import re
-import json
-import time
 import logging
-import random
-from pathlib import Path
-from typing import Dict, Tuple, List
+import re
+from typing import Dict, Any, List, Tuple, Optional
 from difflib import SequenceMatcher
+from collections import Counter
+import math
 
-# Optional imports
-try:
-    import openpyxl
-except Exception:
-    openpyxl = None
-
-try:
-    import anthropic
-except Exception:
-    anthropic = None
-
-# Logging setup
+# Configure logging
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    logging.basicConfig(level=logging.INFO)
-
-BASE_DIR = Path(__file__).resolve().parent
-
-# ---------------- Helpers ---------------- #
-
-def load_json_patterns(filename: str = "ai_patterns.json") -> Dict[str, str]:
-    path = BASE_DIR / filename
-    if not path.exists():
-        return {}
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-            return {str(k).strip().lower(): str(v).strip() for k, v in data.items()}
-    except Exception:
-        return {}
-
-def load_xlsx_patterns(filename: str = "phrasal_patterns.xlsx") -> Dict[str, str]:
-    path = BASE_DIR / filename
-    if not path.exists() or openpyxl is None:
-        return {}
-    patterns = {}
-    try:
-        wb = openpyxl.load_workbook(path, read_only=True)
-        sheet = wb.active
-        for i, row in enumerate(sheet.iter_rows(values_only=True), start=1):
-            if i == 1: continue
-            orig = row[0]
-            repl = row[1] if len(row) > 1 else None
-            if orig and repl:
-                patterns[str(orig).strip().lower()] = str(repl).strip()
-    except Exception:
-        pass
-    return patterns
-
-# ---------------- Class Definition ---------------- #
 
 class PlagiarismDetector:
-    def __init__(self, anthropic_api_key: str | None = None, ai_detector=None):
+    def __init__(self, anthropic_api_key: str = None, ai_detector=None):
+        self.api_key = anthropic_api_key
         self.ai_detector = ai_detector
-        self.api_key = anthropic_api_key or os.getenv("ANTHROPIC_API_KEY")
-        self.anthropic_available = bool(self.api_key) and (anthropic is not None)
-        
-        self.json_patterns = load_json_patterns("ai_patterns.json")
-        self.xlsx_patterns = load_xlsx_patterns("phrasal_patterns.xlsx")
-        
         self.client = None
-        if self.anthropic_available:
+        self.anthropic_available = False
+        
+        if self.api_key:
             try:
+                import anthropic
                 self.client = anthropic.Anthropic(api_key=self.api_key)
+                self.anthropic_available = True
                 logger.info("✅ Anthropic client initialized")
             except Exception as e:
                 logger.warning(f"⚠️ Anthropic init failed: {e}")
                 self.anthropic_available = False
 
+    def preprocess_text(self, text: str) -> str:
+        """Clean and normalize text for better comparison"""
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r'[^\w\s.,!?;:\'"()-]', '', text)
+        return text.strip()
+
+    def extract_sentences(self, text: str) -> List[str]:
+        """Extract sentences using improved regex"""
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        return [s.strip() for s in sentences if len(s.strip()) > 10]
+
+    def extract_ngrams(self, text: str, n: int = 3) -> List[str]:
+        """Extract n-grams for more granular comparison"""
+        words = text.lower().split()
+        ngrams = []
+        for i in range(len(words) - n + 1):
+            ngrams.append(' '.join(words[i:i+n]))
+        return ngrams
+
+    def calculate_cosine_similarity(self, text1: str, text2: str) -> float:
+        """Calculate cosine similarity between two texts"""
+        words1 = text1.lower().split()
+        words2 = text2.lower().split()
+        
+        counter1 = Counter(words1)
+        counter2 = Counter(words2)
+        
+        all_words = set(counter1.keys()) | set(counter2.keys())
+        
+        dot_product = sum(counter1[word] * counter2[word] for word in all_words)
+        magnitude1 = math.sqrt(sum(count ** 2 for count in counter1.values()))
+        magnitude2 = math.sqrt(sum(count ** 2 for count in counter2.values()))
+        
+        if magnitude1 == 0 or magnitude2 == 0:
+            return 0.0
+        
+        return dot_product / (magnitude1 * magnitude2)
+
+    def calculate_sequence_similarity(self, text1: str, text2: str) -> Dict[str, float]:
+        """Calculate multiple similarity metrics"""
+        clean_text1 = self.preprocess_text(text1)
+        clean_text2 = self.preprocess_text(text2)
+        
+        # 1. Basic sequence matching
+        sequence_ratio = SequenceMatcher(None, clean_text1, clean_text2).ratio()
+        
+        # 2. Cosine similarity
+        cosine_sim = self.calculate_cosine_similarity(clean_text1, clean_text2)
+        
+        # 3. N-gram overlap
+        ngrams1 = set(self.extract_ngrams(clean_text1, 3))
+        ngrams2 = set(self.extract_ngrams(clean_text2, 3))
+        
+        if len(ngrams1) == 0 or len(ngrams2) == 0:
+            ngram_overlap = 0.0
+        else:
+            intersection = len(ngrams1 & ngrams2)
+            union = len(ngrams1 | ngrams2)
+            ngram_overlap = intersection / union if union > 0 else 0.0
+        
+        # 4. Sentence-level similarity
+        sentences1 = self.extract_sentences(clean_text1)
+        sentences2 = self.extract_sentences(clean_text2)
+        
+        sentence_similarities = []
+        for s1 in sentences1:
+            max_sim = 0
+            for s2 in sentences2:
+                sim = SequenceMatcher(None, s1, s2).ratio()
+                max_sim = max(max_sim, sim)
+            if max_sim > 0.5:
+                sentence_similarities.append(max_sim)
+        
+        avg_sentence_sim = sum(sentence_similarities) / len(sentences1) if sentences1 else 0.0
+        
+        return {
+            "sequence_ratio": sequence_ratio,
+            "cosine_similarity": cosine_sim,
+            "ngram_overlap": ngram_overlap,
+            "sentence_similarity": avg_sentence_sim,
+            "overall_similarity": (sequence_ratio * 0.3 + cosine_sim * 0.3 + 
+                                 ngram_overlap * 0.2 + avg_sentence_sim * 0.2)
+        }
+
+    def calculate_uniqueness_score(self, original_text: str, rewritten_text: str) -> float:
+        """
+        ⭐ Calculate uniqueness score (0-100%) based on how different the rewritten text is from original
+        Higher score = more unique/different from original
+        """
+        if not original_text or not rewritten_text:
+            logger.warning("Missing text for uniqueness calculation")
+            return 0.0
+        
+        # Calculate similarity between original and rewritten
+        similarity_metrics = self.calculate_sequence_similarity(original_text, rewritten_text)
+        
+        # Uniqueness is the inverse of similarity
+        uniqueness = (1.0 - similarity_metrics["overall_similarity"]) * 100
+        
+        return max(0.0, min(100.0, uniqueness))
+
     def check_plagiarism_local(self, text1: str, text2: str) -> Tuple[float, dict]:
+        """Local plagiarism check using sequence matching"""
         if not text1 or not text2:
             return 0.0, {"error": "Both texts required"}
         
@@ -796,9 +841,7 @@ class PlagiarismDetector:
         t2 = re.sub(r"[^\w\s]", "", text2.lower())
         overall_similarity = SequenceMatcher(None, t1, t2).ratio()
         
-        # Simple scoring logic
         score = overall_similarity * 100
-        
         details = {
             "overall_similarity": score,
             "word_count_1": len(text1.split()),
@@ -807,53 +850,246 @@ class PlagiarismDetector:
         return score, details
 
     def get_plagiarism_report(self, text1: str, text2: str) -> Tuple[str, float, str]:
+        """Generate plagiarism report comparing two texts"""
         score, details = self.check_plagiarism_local(text1, text2)
         status = "High Similarity" if score > 50 else "Low Similarity"
         report = f"Plagiarism Score: {score:.1f}% - {status}"
         return report, score, status
 
     def get_plagiarism_statistics(self, text1: str, text2: str) -> Dict:
+        """Get plagiarism statistics"""
         score, details = self.check_plagiarism_local(text1, text2)
         return {"overall_score": score, "details": details}
 
     def find_similar_sentences(self, text1: str, text2: str, threshold: float = 0.7) -> List[dict]:
+        """Find similar sentences between two texts"""
         sentences1 = [s.strip() for s in re.split(r"[.!?]+", text1) if s.strip()]
         sentences2 = [s.strip() for s in re.split(r"[.!?]+", text2) if s.strip()]
         pairs = []
+        
         for i, s1 in enumerate(sentences1):
             for j, s2 in enumerate(sentences2):
                 sim = SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
                 if sim >= threshold:
                     pairs.append({
-                        "text1": s1, "text2": s2, "similarity": sim * 100
+                        "text1": s1, 
+                        "text2": s2, 
+                        "similarity": sim * 100
                     })
         return pairs
 
-    # Dummy method placeholders if your route calls them but they were missing in the provided code
-    def detect_plagiarism_patterns(self, text: str):
-        # Placeholder logic
-        return {"general": ["No specific patterns implemented yet"]}
+    def detect_plagiarism_patterns(self, text: str) -> Dict[str, List]:
+        """Detect plagiarism patterns in text"""
+        patterns = {
+            "missing_citations": [],
+            "academic_phrases": [],
+            "suspicious_patterns": []
+        }
+        
+        # Find uncited quotes
+        quote_pattern = r'"([^"]{20,})"(?!\s*[\(\[\d])'
+        uncited_quotes = re.findall(quote_pattern, text)
+        patterns["missing_citations"] = uncited_quotes[:10]
+        
+        # Detect academic phrases
+        academic_phrases_patterns = [
+            r'\baccording to\b',
+            r'\bstudies have shown\b',
+            r'\bresearch indicates\b'
+        ]
+        
+        for phrase_pattern in academic_phrases_patterns:
+            matches = re.findall(phrase_pattern, text, re.IGNORECASE)
+            if matches:
+                patterns["academic_phrases"].extend(matches)
+        
+        return patterns
 
-    def calculate_plagiarism_risk(self, text: str, reference: str):
+    def calculate_plagiarism_risk(self, text: str, reference: str = "") -> Tuple[float, Dict]:
+        """Calculate plagiarism risk score"""
+        if not reference or len(reference) < 50:
+            return 0.0, {
+                "risk_level": "N/A",
+                "risk_factors": [],
+                "detected_patterns": {}
+            }
+        
         score, _ = self.check_plagiarism_local(text, reference)
-        risk_level = "HIGH" if score > 50 else "LOW"
-        return score, {"risk_level": risk_level, "risk_factors": [], "detected_patterns": []}
-    
-    def get_detection_report(self, text: str, reference: str):
+        
+        if score > 80:
+            risk_level = "CRITICAL"
+        elif score > 60:
+            risk_level = "HIGH"
+        elif score > 40:
+            risk_level = "MEDIUM"
+        elif score > 20:
+            risk_level = "LOW"
+        else:
+            risk_level = "MINIMAL"
+        
+        patterns = self.detect_plagiarism_patterns(text)
+        
+        return score, {
+            "risk_level": risk_level,
+            "risk_factors": [f"Similarity to reference: {score:.1f}%"],
+            "detected_patterns": patterns
+        }
+
+    def get_detection_report(self, text: str, reference: str = "") -> Tuple[str, float, Dict]:
+        """Generate detection report"""
         score, details = self.calculate_plagiarism_risk(text, reference)
-        return "Analysis Report", score, details
+        report = f"Plagiarism Risk: {details['risk_level']} ({score:.1f}%)"
+        return report, score, details
 
     def remove(self, text: str, rewrite_mode: str = "balanced", reference_text: str = "") -> Tuple[str, Dict]:
-        # Simple fallback or Anthropic logic here
-        if self.client:
-            prompt = f"Rewrite this text ({rewrite_mode}) to avoid plagiarism:\n{text}"
+        """
+        ⭐ ULTIMATE FIX: Rewrite text and calculate uniqueness by comparing ORIGINAL vs REWRITTEN
+        
+        Args:
+            text: Original text to rewrite
+            rewrite_mode: 'conservative', 'balanced', or 'aggressive'
+            reference_text: Optional reference for plagiarism checking (not used for uniqueness)
+            
+        Returns:
+            (rewritten_text, metrics_dict)
+        """
+        # ⭐ CRITICAL: Store the original text BEFORE rewriting
+        original_text = text
+        
+        # Initialize metrics
+        rewritten_text = text
+        metrics = {
+            "status": "unknown",
+            "uniqueness_score": 0,
+            "rewrite_mode": rewrite_mode,
+            "word_count": len(text.split()),
+            "success": False
+        }
+        
+        # Try Anthropic API if available
+        if self.client and self.anthropic_available:
             try:
-                resp = self.client.messages.create(
+                # Construct prompt based on mode
+                mode_instructions = {
+                    "conservative": "Make minimal changes while removing plagiarism. Keep technical terms and proper nouns.",
+                    "balanced": "Rewrite to remove plagiarism while maintaining clarity. Change sentence structure and use synonyms appropriately.",
+                    "aggressive": "Completely rewrite the text with new sentence structures and vocabulary. Ensure maximum originality while preserving all key information."
+                }
+                
+                instruction = mode_instructions.get(rewrite_mode, mode_instructions["balanced"])
+                
+                prompt = f"""{instruction}
+
+Original Text:
+{text}
+
+Requirements:
+1. Preserve all factual information and key concepts
+2. Change sentence structure significantly
+3. Use different vocabulary (synonyms) where appropriate
+4. Maintain the same tone and reading level
+5. Do not add new information
+6. Ensure the rewritten text flows naturally
+
+Provide only the rewritten text without any preamble or explanation."""
+                
+                logger.info(f"🔄 Calling Anthropic API with {rewrite_mode} mode")
+                
+                response = self.client.messages.create(
                     model="claude-sonnet-4-5-20250929",
-                    max_tokens=1000,
+                    max_tokens=2048,
                     messages=[{"role": "user", "content": prompt}]
                 )
-                return resp.content[0].text, {"status": "anthropic_success"}
-            except Exception:
-                pass
-        return text, {"status": "fallback_no_change"}
+                
+                rewritten_text = response.content[0].text.strip()
+                
+                # ⭐ CALCULATE UNIQUENESS: Compare ORIGINAL vs REWRITTEN
+                uniqueness_score = self.calculate_uniqueness_score(original_text, rewritten_text)
+                
+                logger.info(f"✅ Rewrite complete. Uniqueness: {uniqueness_score:.2f}%")
+                
+                metrics = {
+                    "status": "Successfully rewritten by Anthropic API",
+                    "uniqueness_score": round(uniqueness_score, 2),
+                    "rewrite_mode": rewrite_mode,
+                    "word_count": len(rewritten_text.split()),
+                    "success": True,
+                    "anthropic_used": True
+                }
+                
+                # Optional: Calculate plagiarism risk if reference provided
+                if reference_text and len(reference_text) > 50:
+                    original_risk, _ = self.calculate_plagiarism_risk(original_text, reference_text)
+                    new_risk, _ = self.calculate_plagiarism_risk(rewritten_text, reference_text)
+                    improvement = original_risk - new_risk
+                    
+                    metrics.update({
+                        "original_plagiarism_score": round(original_risk, 2),
+                        "new_plagiarism_score": round(new_risk, 2),
+                        "improvement": round(improvement, 2)
+                    })
+                
+                return rewritten_text, metrics
+                
+            except Exception as e:
+                logger.error(f"❌ Anthropic API failed: {e}")
+                metrics["status"] = f"API Error: {str(e)}"
+                metrics["error"] = str(e)
+        
+        # Fallback: Basic synonym replacement
+        logger.warning("⚠️ Using fallback rewriter (API not available)")
+        rewritten_text = self._fallback_rewrite(text)
+        uniqueness_score = self.calculate_uniqueness_score(original_text, rewritten_text)
+        
+        metrics = {
+            "status": "API unavailable - basic rewriting applied",
+            "uniqueness_score": round(uniqueness_score, 2),
+            "rewrite_mode": rewrite_mode,
+            "word_count": len(rewritten_text.split()),
+            "success": uniqueness_score > 10,
+            "fallback_used": True,
+            "anthropic_used": False
+        }
+        
+        return rewritten_text, metrics
+
+    def _fallback_rewrite(self, text: str) -> str:
+        """Basic fallback rewriter using simple transformations"""
+        synonyms = {
+            'important': 'significant',
+            'show': 'demonstrate',
+            'use': 'utilize',
+            'get': 'obtain',
+            'make': 'create',
+            'good': 'beneficial',
+            'bad': 'detrimental',
+            'big': 'large',
+            'small': 'minor',
+            'help': 'assist',
+            'many': 'numerous',
+            'very': 'extremely',
+            'different': 'diverse',
+            'same': 'identical',
+            'new': 'novel',
+            'old': 'aged',
+            'fast': 'rapid',
+            'slow': 'gradual',
+            'easy': 'simple',
+            'hard': 'difficult'
+        }
+        
+        words = text.split()
+        result = []
+        
+        for word in words:
+            lower_word = word.lower().strip('.,!?;:')
+            if lower_word in synonyms:
+                replacement = synonyms[lower_word]
+                if word[0].isupper():
+                    replacement = replacement.capitalize()
+                punctuation = ''.join(c for c in word if not c.isalnum())
+                result.append(replacement + punctuation)
+            else:
+                result.append(word)
+        
+        return ' '.join(result)
