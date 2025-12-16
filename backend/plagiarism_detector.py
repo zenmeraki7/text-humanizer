@@ -1088,232 +1088,117 @@ class PlagiarismDetector:
         }
 
     
-    # def calculate_plagiarism_risk(self, text: str, reference_text: str = "") -> Tuple[float, Dict[str, Any]]:
-    #     """Enhanced risk calculation with multiple factors"""
-    #     risk_score = 0.0
-    #     risk_factors = []
-    #     weights = {}
-        
-    #     # 1. Check similarity to reference if provided
-    #     if reference_text and len(reference_text) > 50:
-    #         similarity_metrics = self.calculate_sequence_similarity(text, reference_text)
-            
-    #         overall_sim = similarity_metrics["overall_similarity"] * 100
-            
-    #         if overall_sim > 80:
-    #             risk_score += 50
-    #             risk_factors.append(f"Very high similarity to reference ({overall_sim:.1f}%)")
-    #             weights["reference_similarity"] = 50
-    #         elif overall_sim > 60:
-    #             risk_score += 35
-    #             risk_factors.append(f"High similarity to reference ({overall_sim:.1f}%)")
-    #             weights["reference_similarity"] = 35
-    #         elif overall_sim > 40:
-    #             risk_score += 20
-    #             risk_factors.append(f"Moderate similarity to reference ({overall_sim:.1f}%)")
-    #             weights["reference_similarity"] = 20
-    #         elif overall_sim > 20:
-    #             risk_score += 10
-    #             risk_factors.append(f"Low similarity to reference ({overall_sim:.1f}%)")
-    #             weights["reference_similarity"] = 10
-            
-    #         # Additional detail on specific metrics
-    #         if similarity_metrics["ngram_overlap"] > 0.5:
-    #             risk_score += 15
-    #             risk_factors.append(f"High phrase overlap detected ({similarity_metrics['ngram_overlap']:.2f})")
-    #             weights["ngram_overlap"] = 15
-        
-    #     # 2. Check for AI patterns if detector is available
-    #     if self.ai_detector:
-    #         try:
-    #             _, ai_score, _ = self.ai_detector.get_detection_report(text)
-    #             if ai_score > 80:
-    #                 risk_score += 25
-    #                 risk_factors.append(f"Very high AI-generation probability ({ai_score:.1f}%)")
-    #                 weights["ai_detection"] = 25
-    #             elif ai_score > 60:
-    #                 risk_score += 15
-    #                 risk_factors.append(f"High AI-generation probability ({ai_score:.1f}%)")
-    #                 weights["ai_detection"] = 15
-    #         except Exception as e:
-    #             logger.debug(f"AI detection failed: {e}")
-        
-    #     # 3. Pattern-based risk factors
-    #     patterns = self.detect_plagiarism_patterns(text)
-        
-    #     if len(patterns.get("missing_citations", [])) > 0:
-    #         citation_risk = min(15, len(patterns["missing_citations"]) * 3)
-    #         risk_score += citation_risk
-    #         risk_factors.append(f"{len(patterns['missing_citations'])} uncited quotes found")
-    #         weights["missing_citations"] = citation_risk
-        
-    #     if len(patterns.get("style_inconsistencies", [])) > 0:
-    #         risk_score += 10
-    #         risk_factors.append("Style inconsistencies detected")
-    #         weights["style_inconsistencies"] = 10
-        
-    #     if len(patterns.get("academic_phrases", [])) > 5:
-    #         risk_score += 8
-    #         risk_factors.append(f"Heavy use of academic phrases ({len(patterns['academic_phrases'])})")
-    #         weights["academic_phrases"] = 8
-        
-    #     # 4. Structural analysis
-    #     sentences = self.extract_sentences(text)
-    #     if len(sentences) > 5:
-    #         # Check for unusual sentence length variance
-    #         lengths = [len(s.split()) for s in sentences]
-    #         avg_length = sum(lengths) / len(lengths)
-    #         variance = sum((l - avg_length) ** 2 for l in lengths) / len(lengths)
-            
-    #         if variance > 200:  # High variance might indicate patchwork plagiarism
-    #             risk_score += 5
-    #             risk_factors.append("Unusual sentence length variation detected")
-    #             weights["sentence_variance"] = 5
-        
-    #     # Cap score at 100
-    #     risk_score = min(100.0, risk_score)
-        
-    #     # Determine risk level
-    #     if risk_score > 80: 
-    #         level = "CRITICAL"
-    #         recommendation = "Significant plagiarism detected. Extensive rewriting required."
-    #     elif risk_score > 60: 
-    #         level = "HIGH"
-    #         recommendation = "High plagiarism risk. Major revisions needed."
-    #     elif risk_score > 40: 
-    #         level = "MEDIUM"
-    #         recommendation = "Moderate plagiarism concerns. Review and revise flagged sections."
-    #     elif risk_score > 20: 
-    #         level = "LOW"
-    #         recommendation = "Minor similarity detected. Consider adding citations."
-    #     else: 
-    #         level = "MINIMAL"
-    #         recommendation = "Text appears original."
-
-    #     return risk_score, {
-    #         "risk_level": level,
-    #         "risk_factors": risk_factors,
-    #         "detected_patterns": patterns,
-    #         "recommendation": recommendation,
-    #         "weight_breakdown": weights,
-    #         "similarity_metrics": self.calculate_sequence_similarity(text, reference_text) if reference_text else {}
-    #     }
     def calculate_plagiarism_risk(self, text: str, reference_text: str = "") -> Tuple[float, Dict[str, Any]]:
-    """
-    Fixed plagiarism risk calculation
-    - Removes bucket locking (75% bug)
-    - Uses continuous similarity scoring
-    - Separates AI probability from plagiarism
-    """
-
-    risk_score = 0.0
-    risk_factors = []
-    weights = {}
-
-    # --------------------------------------------------
-    # 1. CONTINUOUS REFERENCE SIMILARITY (MAX 60)
-    # --------------------------------------------------
-    similarity_metrics = {}
-
-    if reference_text and len(reference_text) > 50:
-        similarity_metrics = self.calculate_sequence_similarity(text, reference_text)
-        overall_sim = similarity_metrics["overall_similarity"] * 100
-
-        similarity_risk = overall_sim * 0.6   # max 60
-        risk_score += similarity_risk
-
-        risk_factors.append(f"Similarity to reference text: {overall_sim:.1f}%")
-        weights["reference_similarity"] = round(similarity_risk, 2)
-
-        # Phrase overlap penalty (only if very high)
-        if similarity_metrics["ngram_overlap"] > 0.6:
+        """Enhanced risk calculation with multiple factors"""
+        risk_score = 0.0
+        risk_factors = []
+        weights = {}
+        
+        # 1. Check similarity to reference if provided
+        if reference_text and len(reference_text) > 50:
+            similarity_metrics = self.calculate_sequence_similarity(text, reference_text)
+            
+            overall_sim = similarity_metrics["overall_similarity"] * 100
+            
+            if overall_sim > 80:
+                risk_score += 50
+                risk_factors.append(f"Very high similarity to reference ({overall_sim:.1f}%)")
+                weights["reference_similarity"] = 50
+            elif overall_sim > 60:
+                risk_score += 35
+                risk_factors.append(f"High similarity to reference ({overall_sim:.1f}%)")
+                weights["reference_similarity"] = 35
+            elif overall_sim > 40:
+                risk_score += 20
+                risk_factors.append(f"Moderate similarity to reference ({overall_sim:.1f}%)")
+                weights["reference_similarity"] = 20
+            elif overall_sim > 20:
+                risk_score += 10
+                risk_factors.append(f"Low similarity to reference ({overall_sim:.1f}%)")
+                weights["reference_similarity"] = 10
+            
+            # Additional detail on specific metrics
+            if similarity_metrics["ngram_overlap"] > 0.5:
+                risk_score += 15
+                risk_factors.append(f"High phrase overlap detected ({similarity_metrics['ngram_overlap']:.2f})")
+                weights["ngram_overlap"] = 15
+        
+        # 2. Check for AI patterns if detector is available
+        if self.ai_detector:
+            try:
+                _, ai_score, _ = self.ai_detector.get_detection_report(text)
+                if ai_score > 80:
+                    risk_score += 25
+                    risk_factors.append(f"Very high AI-generation probability ({ai_score:.1f}%)")
+                    weights["ai_detection"] = 25
+                elif ai_score > 60:
+                    risk_score += 15
+                    risk_factors.append(f"High AI-generation probability ({ai_score:.1f}%)")
+                    weights["ai_detection"] = 15
+            except Exception as e:
+                logger.debug(f"AI detection failed: {e}")
+        
+        # 3. Pattern-based risk factors
+        patterns = self.detect_plagiarism_patterns(text)
+        
+        if len(patterns.get("missing_citations", [])) > 0:
+            citation_risk = min(15, len(patterns["missing_citations"]) * 3)
+            risk_score += citation_risk
+            risk_factors.append(f"{len(patterns['missing_citations'])} uncited quotes found")
+            weights["missing_citations"] = citation_risk
+        
+        if len(patterns.get("style_inconsistencies", [])) > 0:
+            risk_score += 10
+            risk_factors.append("Style inconsistencies detected")
+            weights["style_inconsistencies"] = 10
+        
+        if len(patterns.get("academic_phrases", [])) > 5:
             risk_score += 8
-            weights["ngram_overlap"] = 8
-            risk_factors.append(
-                f"High phrase overlap detected ({similarity_metrics['ngram_overlap']:.2f})"
-            )
+            risk_factors.append(f"Heavy use of academic phrases ({len(patterns['academic_phrases'])})")
+            weights["academic_phrases"] = 8
+        
+        # 4. Structural analysis
+        sentences = self.extract_sentences(text)
+        if len(sentences) > 5:
+            # Check for unusual sentence length variance
+            lengths = [len(s.split()) for s in sentences]
+            avg_length = sum(lengths) / len(lengths)
+            variance = sum((l - avg_length) ** 2 for l in lengths) / len(lengths)
+            
+            if variance > 200:  # High variance might indicate patchwork plagiarism
+                risk_score += 5
+                risk_factors.append("Unusual sentence length variation detected")
+                weights["sentence_variance"] = 5
+        
+        # Cap score at 100
+        risk_score = min(100.0, risk_score)
+        
+        # Determine risk level
+        if risk_score > 80: 
+            level = "CRITICAL"
+            recommendation = "Significant plagiarism detected. Extensive rewriting required."
+        elif risk_score > 60: 
+            level = "HIGH"
+            recommendation = "High plagiarism risk. Major revisions needed."
+        elif risk_score > 40: 
+            level = "MEDIUM"
+            recommendation = "Moderate plagiarism concerns. Review and revise flagged sections."
+        elif risk_score > 20: 
+            level = "LOW"
+            recommendation = "Minor similarity detected. Consider adding citations."
+        else: 
+            level = "MINIMAL"
+            recommendation = "Text appears original."
 
-    # --------------------------------------------------
-    # 2. AI PROBABILITY (INFO ONLY — NOT PLAGIARISM)
-    # --------------------------------------------------
-    ai_probability = None
-    if self.ai_detector:
-        try:
-            _, ai_score, _ = self.ai_detector.get_detection_report(text)
-            ai_probability = round(ai_score, 2)
-        except Exception:
-            pass
-
-    # --------------------------------------------------
-    # 3. PATTERN-BASED RISK (MAX ~25)
-    # --------------------------------------------------
-    patterns = self.detect_plagiarism_patterns(text)
-
-    if patterns.get("missing_citations"):
-        citation_risk = min(10, len(patterns["missing_citations"]) * 2)
-        risk_score += citation_risk
-        weights["missing_citations"] = citation_risk
-        risk_factors.append(
-            f"{len(patterns['missing_citations'])} uncited quotes found"
-        )
-
-    if patterns.get("style_inconsistencies"):
-        risk_score += 5
-        weights["style_inconsistencies"] = 5
-        risk_factors.append("Style inconsistencies detected")
-
-    if len(patterns.get("academic_phrases", [])) > 6:
-        risk_score += 4
-        weights["academic_phrases"] = 4
-        risk_factors.append(
-            f"Heavy use of academic phrases ({len(patterns['academic_phrases'])})"
-        )
-
-    # --------------------------------------------------
-    # 4. STRUCTURAL ANALYSIS (MAX 5)
-    # --------------------------------------------------
-    sentences = self.extract_sentences(text)
-    if len(sentences) > 5:
-        lengths = [len(s.split()) for s in sentences]
-        avg_len = sum(lengths) / len(lengths)
-        variance = sum((l - avg_len) ** 2 for l in lengths) / len(lengths)
-
-        if variance > 200:
-            risk_score += 5
-            weights["sentence_variance"] = 5
-            risk_factors.append("Unusual sentence length variation detected")
-
-    # --------------------------------------------------
-    # 5. FINALIZE SCORE
-    # --------------------------------------------------
-    risk_score = min(100.0, round(risk_score, 2))
-
-    if risk_score > 80:
-        level = "CRITICAL"
-        recommendation = "Significant plagiarism detected. Extensive rewriting required."
-    elif risk_score > 60:
-        level = "HIGH"
-        recommendation = "High plagiarism risk. Major revisions needed."
-    elif risk_score > 40:
-        level = "MEDIUM"
-        recommendation = "Moderate plagiarism concerns. Review and revise flagged sections."
-    elif risk_score > 20:
-        level = "LOW"
-        recommendation = "Minor similarity detected. Consider adding citations."
-    else:
-        level = "MINIMAL"
-        recommendation = "Text appears original."
-
-    return risk_score, {
-        "risk_level": level,
-        "risk_factors": risk_factors,
-        "detected_patterns": patterns,
-        "recommendation": recommendation,
-        "weight_breakdown": weights,
-        "similarity_metrics": similarity_metrics,
-        "ai_probability": ai_probability
-    }
-    
+        return risk_score, {
+            "risk_level": level,
+            "risk_factors": risk_factors,
+            "detected_patterns": patterns,
+            "recommendation": recommendation,
+            "weight_breakdown": weights,
+            "similarity_metrics": self.calculate_sequence_similarity(text, reference_text) if reference_text else {}
+        }
+   
     def get_detection_report(self, text: str, reference: str = "") -> Tuple[str, float, Dict[str, Any]]:
         """Generate a comprehensive detection report"""
         score, details = self.calculate_plagiarism_risk(text, reference)
