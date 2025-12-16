@@ -909,9 +909,6 @@
 
 
 
-
-
-
 import os
 import logging
 from typing import Dict, Any, List, Tuple, Optional
@@ -1087,6 +1084,22 @@ class PlagiarismDetector:
                                  ngram_overlap * 0.2 + avg_sentence_sim * 0.2)
         }
 
+    def calculate_uniqueness_score(self, original_text: str, rewritten_text: str) -> float:
+        """
+        Calculate uniqueness score (0-100%) based on how different the rewritten text is from original
+        Higher score = more unique/different from original
+        """
+        if not original_text or not rewritten_text:
+            return 0.0
+        
+        # Calculate similarity between original and rewritten
+        similarity_metrics = self.calculate_sequence_similarity(original_text, rewritten_text)
+        
+        # Uniqueness is the inverse of similarity
+        # Convert similarity (0-1) to uniqueness percentage (0-100)
+        uniqueness = (1.0 - similarity_metrics["overall_similarity"]) * 100
+        
+        return max(0.0, min(100.0, uniqueness))  # Clamp between 0-100
     
     def calculate_plagiarism_risk(self, text: str, reference_text: str = "") -> Tuple[float, Dict[str, Any]]:
         """Enhanced risk calculation with multiple factors"""
@@ -1353,7 +1366,7 @@ class PlagiarismDetector:
 
     def remove(self, text: str, rewrite_mode: str = "balanced", reference_text: str = "") -> Tuple[str, Dict[str, Any]]:
         """
-        Rewrites text to remove plagiarism with improved prompting
+        Rewrites text to remove plagiarism with improved prompting and accurate uniqueness scoring
         """
         if self.client:
             try:
@@ -1392,7 +1405,10 @@ Provide only the rewritten text without any preamble or explanation."""
                 
                 rewritten = message.content[0].text.strip()
                 
-                # Calculate new plagiarism score
+                # Calculate uniqueness score (how different from original)
+                uniqueness_score = self.calculate_uniqueness_score(text, rewritten)
+                
+                # Calculate new plagiarism risk score (if reference provided)
                 new_score, new_details = self.calculate_plagiarism_risk(rewritten, reference_text)
                 
                 improvement = initial_score - new_score
@@ -1400,26 +1416,34 @@ Provide only the rewritten text without any preamble or explanation."""
                 return rewritten, {
                     "status": "Successfully rewritten by Claude API",
                     "rewrite_mode": rewrite_mode,
+                    "uniqueness_score": round(uniqueness_score, 2),  # Main score for frontend
                     "original_plagiarism_score": round(initial_score, 2),
                     "new_plagiarism_score": round(new_score, 2),
                     "improvement": round(improvement, 2),
                     "original_risk_level": initial_details["risk_level"],
                     "new_risk_level": new_details["risk_level"],
-                    "success": improvement > 0
+                    "success": improvement > 0 or uniqueness_score > 50,
+                    "word_count": len(rewritten.split())
                 }
             except Exception as e:
                 logger.error(f"Claude API failed: {e}")
                 return text, {
                     "status": f"API Error: {str(e)}",
                     "fallback_used": True,
-                    "error": str(e)
+                    "error": str(e),
+                    "uniqueness_score": 0
                 }
         
         # Fallback: basic synonym replacement
         logger.warning("API not available, using fallback rewriter")
-        return self._fallback_rewrite(text), {
+        rewritten = self._fallback_rewrite(text)
+        uniqueness_score = self.calculate_uniqueness_score(text, rewritten)
+        
+        return rewritten, {
             "status": "API Unavailable - Basic rewriting applied",
-            "fallback_used": True
+            "fallback_used": True,
+            "uniqueness_score": round(uniqueness_score, 2),
+            "word_count": len(rewritten.split())
         }
 
     def _fallback_rewrite(self, text: str) -> str:
@@ -1435,7 +1459,12 @@ Provide only the rewritten text without any preamble or explanation."""
             'bad': 'detrimental',
             'big': 'large',
             'small': 'minor',
-            'help': 'assist'
+            'help': 'assist',
+            'many': 'numerous',
+            'very': 'extremely',
+            'different': 'diverse',
+            'same': 'identical',
+            'new': 'novel'
         }
         
         words = text.split()
